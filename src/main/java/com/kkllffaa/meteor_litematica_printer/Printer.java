@@ -47,6 +47,7 @@ import net.minecraft.util.math.Vec3i;
 public class Printer extends Module {
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
+	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
     private final SettingGroup sgRendering = settings.createGroup("Rendering");
 
 	private final Setting<Integer> printing_range = sgGeneral.add(new IntSetting.Builder()
@@ -133,28 +134,68 @@ public class Printer extends Module {
 			.build()
 	);
 
-	private final Setting<Boolean> directionProtection = sgGeneral.add(new BoolSetting.Builder()
+	// Directional Protection Settings
+	private final Setting<Boolean> directionProtection = sgDirectional.add(new BoolSetting.Builder()
 			.name("direction-protection")
-			.description("Only place directional blocks (observers, pistons, repeaters) when player is facing the correct direction.")
+			.description("Only place directional blocks when player is facing the correct direction.")
 			.defaultValue(true)
 			.build()
 	);
 
-	private final Setting<Integer> directionalProtectionTolerance = sgGeneral.add(new IntSetting.Builder()
-			.name("direction-protection-tolerance")
-			.description("Degrees of tolerance for direction protection.")
+	private final Setting<Integer> angleRange = sgDirectional.add(new IntSetting.Builder()
+			.name("angle-range")
+			.description("Angle range for direction detection (degrees).")
 			.defaultValue(25)
-			.min(1)
-			.sliderMin(1)
-			.max(45)
-			.sliderMax(45)
+			.min(1).sliderMin(1)
+			.max(45).sliderMax(45)
+			.visible(directionProtection::get)
 			.build()
 	);
 
-	private final Setting<Boolean> debugDirection = sgGeneral.add(new BoolSetting.Builder()
-			.name("debug-direction")
-			.description("Show debug messages for direction protection.")
-			.defaultValue(false)
+	// Blocks that face the same direction as player (Forward)
+	private final Setting<List<Block>> facingForward = sgDirectional.add(new BlockListSetting.Builder()
+			.name("facing-forward")
+			.description("Blocks that should face the same direction as player (e.g., Observer, Piston).")
+			.visible(directionProtection::get)
+			.build()
+	);
+
+	// Blocks that face away from player (Backward)
+	private final Setting<List<Block>> facingBackward = sgDirectional.add(new BlockListSetting.Builder()
+			.name("facing-backward")
+			.description("Blocks that should face away from player (e.g., Furnace, Chest).")
+			.visible(directionProtection::get)
+			.build()
+	);
+
+	// Blocks that face to the left of player
+	private final Setting<List<Block>> facingLeft = sgDirectional.add(new BlockListSetting.Builder()
+			.name("facing-left")
+			.description("Blocks that should face to the left of player.")
+			.visible(directionProtection::get)
+			.build()
+	);
+
+	// Blocks that face to the right of player
+	private final Setting<List<Block>> facingRight = sgDirectional.add(new BlockListSetting.Builder()
+			.name("facing-right")
+			.description("Blocks that should face to the right of player.")
+			.visible(directionProtection::get)
+			.build()
+	);
+
+	// Blocks that face upward from player
+	private final Setting<List<Block>> facingUp = sgDirectional.add(new BlockListSetting.Builder()
+			.name("facing-up")
+			.description("Blocks that should face upward from player.")
+			.visible(directionProtection::get)
+			.build()
+	);
+
+	// Blocks that face downward from player
+	private final Setting<List<Block>> facingDown = sgDirectional.add(new BlockListSetting.Builder()
+			.name("facing-down")
+			.description("Blocks that should face downward from player.")
 			.visible(directionProtection::get)
 			.build()
 	);
@@ -306,27 +347,13 @@ public class Printer extends Module {
 							boolean shouldPlace = true;
 							
 							// Direction protection: check if directional block's facing matches player direction
-							if (directionProtection.get() && MyUtils.isDirectionalBlock(required.getBlock())) {
-								if (debugDirection.get()) {
-									info("Found directional block: " + required.getBlock().getName().getString());
-								}
-								
+							if (directionProtection.get()) {
 								Direction requiredDirection = dir(required);
-								Direction playerDirection = MyUtils.getPlayerFacingDirection();
+								Direction playerDirection = MyUtils.getPlayerFacingDirection(angleRange.get());
 								
-								if (debugDirection.get()) {
-									info("Direction check for " + required.getBlock().getName().getString() + 
-										 ": required=" + requiredDirection + ", player=" + playerDirection);
-								}
-								
-								// Skip placement if directions don't match
-								if (requiredDirection != null && playerDirection != null && !MyUtils.isDirectionCompatible(required.getBlock(), requiredDirection, playerDirection)) {
-									if (debugDirection.get()) {
-										info("Skipping " + required.getBlock().getName().getString() + " due to direction mismatch");
-									}
-									shouldPlace = false;
-								} else if (debugDirection.get()) {
-									info("Direction compatible for " + required.getBlock().getName().getString());
+								// Check if block is in any directional list and if directions match
+								if (requiredDirection != null && playerDirection != null) {
+									shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
 								}
 							}
 							
@@ -504,6 +531,63 @@ public class Printer extends Module {
 		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
 		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
 		else return Direction.UP;
+	}
+
+	/**
+	 * Check if directional block placement is allowed based on configuration
+	 */
+	private boolean isDirectionalPlacementAllowed(Block block, Direction requiredDirection, Direction playerDirection) {
+		// Check each directional list to see if this block is configured
+		if (facingForward.get().contains(block)) {
+			// Block should face same direction as player
+			return requiredDirection.equals(playerDirection);
+		} else if (facingBackward.get().contains(block)) {
+			// Block should face away from player
+			return requiredDirection.equals(playerDirection.getOpposite());
+		} else if (facingLeft.get().contains(block)) {
+			// Block should face to the left of player
+			Direction leftDirection = getLeftDirection(playerDirection);
+			return leftDirection != null && requiredDirection.equals(leftDirection);
+		} else if (facingRight.get().contains(block)) {
+			// Block should face to the right of player
+			Direction rightDirection = getRightDirection(playerDirection);
+			return rightDirection != null && requiredDirection.equals(rightDirection);
+		} else if (facingUp.get().contains(block)) {
+			// Block should face upward
+			return requiredDirection.equals(Direction.UP);
+		} else if (facingDown.get().contains(block)) {
+			// Block should face downward
+			return requiredDirection.equals(Direction.DOWN);
+		}
+		
+		// If block is not in any directional list, allow placement
+		return true;
+	}
+
+	/**
+	 * Get the direction to the left of the given direction
+	 */
+	private Direction getLeftDirection(Direction direction) {
+		switch (direction) {
+			case NORTH: return Direction.WEST;
+			case EAST: return Direction.NORTH;
+			case SOUTH: return Direction.EAST;
+			case WEST: return Direction.SOUTH;
+			default: return null; // No left for up/down
+		}
+	}
+
+	/**
+	 * Get the direction to the right of the given direction
+	 */
+	private Direction getRightDirection(Direction direction) {
+		switch (direction) {
+			case NORTH: return Direction.EAST;
+			case EAST: return Direction.SOUTH;
+			case SOUTH: return Direction.WEST;
+			case WEST: return Direction.NORTH;
+			default: return null; // No right for up/down
+		}
 	}
 
 	@EventHandler

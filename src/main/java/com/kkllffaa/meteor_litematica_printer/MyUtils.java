@@ -263,119 +263,21 @@ public class MyUtils {
 	}
 
 	/**
-	 * Check if a block is directional and should be protected from wrong-direction placement
-	 * These blocks should only be placed when player direction matches the intended direction
-	 */
-	/**
-	 * 检查方块是否具有方向性（具有影响放置的朝向属性）
-	 * 这些方块只应在玩家朝向与预期方向匹配时放置
-	 * Check if a block is directional (has facing properties that matter for placement)
-	 * These blocks should only be placed when player direction matches the intended direction
-	 */
-	public static boolean isDirectionalBlock(Block block) {
-		return block instanceof ObserverBlock        // 观察者方块 - 具有检测朝向
-				|| block instanceof PistonBlock      // 活塞 - 推动方向很重要
-				|| block instanceof RepeaterBlock    // 红石中继器 - 信号传递方向
-				|| block instanceof ComparatorBlock  // 红石比较器 - 比较和传递方向
-				|| block instanceof DropperBlock     // 投掷器 - 物品输出方向
-				|| block instanceof DispenserBlock   // 发射器 - 物品发射方向
-				|| block instanceof FurnaceBlock     // 熔炉 - 操作面朝向
-				|| block instanceof BlastFurnaceBlock // 高炉 - 操作面朝向
-				|| block instanceof SmokerBlock      // 烟熏炉 - 操作面朝向
-				|| block instanceof HopperBlock      // 漏斗 - 物品传输方向
-				|| block instanceof ShulkerBoxBlock  // 潜影盒 - 开口朝向
-				|| block instanceof EndRodBlock      // 末地烛 - 指向方向
-				|| block instanceof BedBlock         // 床 - 头部朝向
-				|| block instanceof ChestBlock       // 箱子 - 开口朝向
-				|| block instanceof EnderChestBlock  // 末影箱 - 开口朝向
-				|| block instanceof BarrelBlock      // 桶 - 开口朝向
-				|| block instanceof LecternBlock     // 讲台 - 阅读面朝向
-				|| block instanceof LoomBlock        // 织布机 - 操作面朝向
-				|| block instanceof StonecutterBlock // 切石机 - 操作面朝向
-				|| block instanceof AnvilBlock       // 铁砧 - 使用方向
-				|| block instanceof GrindstoneBlock  // 砂轮 - 操作面朝向
-				;
-	}
-
-	/**
-	 * 检查方块的所需方向是否与玩家的朝向兼容
-	 * Check if the block's required direction is compatible with player's facing direction
-	 */
-	public static boolean isDirectionCompatible(Block block, Direction requiredDirection, Direction playerDirection) {
-		if (block instanceof ObserverBlock) {
-			// 观察者朝向它们观察的方向（与玩家看的方向相同）
-			// Observers face towards what they're observing (same direction as player looking)
-			return requiredDirection.equals(playerDirection);
-		} else if (block instanceof PistonBlock) {
-			// 活塞朝向它们推动的方向（与玩家看的方向相同）
-			// Pistons face towards what they push (same direction as player looking)
-			return requiredDirection.equals(playerDirection);
-		} else if (block instanceof RepeaterBlock || block instanceof ComparatorBlock) {
-			// 中继器和比较器朝向远离玩家的方向
-			// Repeaters and comparators face away from the player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof DropperBlock || block instanceof DispenserBlock) {
-			// 投掷器和发射器朝向它们输出的方向（与玩家方向相同）
-			// Droppers and dispensers face towards where they output (same as player direction)
-			return requiredDirection.equals(playerDirection);
-		} else if (block instanceof FurnaceBlock || block instanceof BlastFurnaceBlock || block instanceof SmokerBlock) {
-			// 熔炉类方块朝向远离玩家的方向（输入面朝向玩家）
-			// Furnaces face away from player (input side towards player)
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof HopperBlock) {
-			// 漏斗更灵活 - 可以朝下或任何水平方向
-			// Hoppers are more flexible - they can face down or any horizontal direction
-			if (requiredDirection == Direction.DOWN) return true;
-			// 对于水平漏斗，它们通常指向物品去向
-			// For horizontal hoppers, they usually point towards where items go
-			return true; // 暂时允许漏斗的任何方向 Allow any direction for hoppers for now
-		} else if (block instanceof ChestBlock || block instanceof EnderChestBlock || block instanceof BarrelBlock) {
-			// 箱子和桶朝向远离玩家的方向
-			// Chests and barrels face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof ShulkerBoxBlock) {
-			// 潜影盒朝向远离玩家的方向
-			// Shulker boxes face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof EndRodBlock) {
-			// 末地烛朝向与玩家相同的方向
-			// End rods face the same direction as player
-			return requiredDirection.equals(playerDirection);
-		} else if (block instanceof BedBlock) {
-			// 床：头部朝向远离玩家的方向
-			// Beds: head faces away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof LecternBlock || block instanceof LoomBlock || block instanceof StonecutterBlock) {
-			// 这些方块朝向远离玩家的方向
-			// These face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof AnvilBlock || block instanceof GrindstoneBlock) {
-			// 这些方块朝向远离玩家的方向
-			// These face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else {
-			// 对于其他方向性方块，使用通用规则：朝向远离玩家的方向
-			// For other directional blocks, use general rule: face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		}
-	}
-
-	/**
 	 * 获取玩家当前面朝的方向
 	 * Get the direction the player is currently facing
 	 */
-	public static Direction getPlayerFacingDirection() {
+	public static Direction getPlayerFacingDirection(int angleRange) {
 		if (mc.player == null) return null;
 		
 		float yaw = mc.player.getYaw();
 		float pitch = mc.player.getPitch();
 		
-		if (isIn(pitch, 90, 25)) {
+		if (isIn(pitch, 90, angleRange)) {
 			return Direction.DOWN;
-		} else if (isIn(pitch, -90, 25)) {
+		} else if (isIn(pitch, -90, angleRange)) {
 			return Direction.UP;
-		} else if (isIn(pitch, 0, 25)) {
-			return getHorizontalDirectionFromYaw(yaw);
+		} else if (isIn(pitch, 0, angleRange)) {
+			return getHorizontalDirectionFromYaw(yaw, angleRange);
 		} else {
 			return null;
 		}
@@ -546,25 +448,30 @@ public class MyUtils {
         }
     }
 
-	public static Direction getHorizontalDirectionFromYaw(float yaw) {
+	public static Direction getHorizontalDirectionFromYaw(float yaw, int angleRange) {
         yaw = yaw % 360.0F;
         if (yaw > 180.0F) {
             yaw -= 360.0F;
         } else if (yaw < -180.0F) {
             yaw += 360.0F;
         }
-        if (isIn(yaw, 90,25)) {
+        if (isIn(yaw, 90, angleRange)) {
             return Direction.WEST;
-        } else if (isIn(yaw, 0, 25)) {
+        } else if (isIn(yaw, 0, angleRange)) {
             return Direction.SOUTH;
-        } else if (isIn(yaw, -90, 25)) {
+        } else if (isIn(yaw, -90, angleRange)) {
             return Direction.EAST;
-        } else if (isIn(yaw, 180, 25) || isIn(yaw, -180, 25)) {
+        } else if (isIn(yaw, 180, angleRange) || isIn(yaw, -180, angleRange)) {
             return Direction.NORTH;
         }else{
 			return null;
 		}
     }
+
+	// 保留旧方法的兼容性，使用默认角度范围45
+	public static Direction getHorizontalDirectionFromYaw(float yaw) {
+		return getHorizontalDirectionFromYaw(yaw, 45);
+	}
 	private static boolean isIn(float subject, float value, float range) {
 		return subject > value - range && subject < value + range;
 	}
