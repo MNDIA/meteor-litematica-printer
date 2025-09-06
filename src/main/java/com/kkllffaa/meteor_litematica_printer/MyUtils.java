@@ -266,6 +266,10 @@ public class MyUtils {
 	 * Check if a block is directional and should be protected from wrong-direction placement
 	 * These blocks should only be placed when player direction matches the intended direction
 	 */
+	/**
+	 * Check if a block is directional (has facing properties that matter for placement)
+	 * These blocks should only be placed when player direction matches the intended direction
+	 */
 	public static boolean isDirectionalBlock(Block block) {
 		return block instanceof ObserverBlock
 				|| block instanceof PistonBlock
@@ -277,6 +281,17 @@ public class MyUtils {
 				|| block instanceof BlastFurnaceBlock
 				|| block instanceof SmokerBlock
 				|| block instanceof HopperBlock
+				|| block instanceof ShulkerBoxBlock
+				|| block instanceof EndRodBlock
+				|| block instanceof BedBlock
+				|| block instanceof ChestBlock
+				|| block instanceof EnderChestBlock
+				|| block instanceof BarrelBlock
+				|| block instanceof LecternBlock
+				|| block instanceof LoomBlock
+				|| block instanceof StonecutterBlock
+				|| block instanceof AnvilBlock
+				|| block instanceof GrindstoneBlock
 				;
 	}
 
@@ -284,21 +299,43 @@ public class MyUtils {
 	 * Check if the block's required direction is compatible with player's facing direction
 	 */
 	public static boolean isDirectionCompatible(Block block, Direction requiredDirection, Direction playerDirection) {
-		if (block instanceof ObserverBlock || block instanceof PistonBlock) {
-			// For observers and pistons, they should face the same direction as player
+		if (block instanceof ObserverBlock) {
+			// Observers face towards what they're observing (same direction as player looking)
+			return requiredDirection.equals(playerDirection);
+		} else if (block instanceof PistonBlock) {
+			// Pistons face towards what they push (same direction as player looking)
 			return requiredDirection.equals(playerDirection);
 		} else if (block instanceof RepeaterBlock || block instanceof ComparatorBlock) {
-			// For repeaters and comparators, they face away from player (opposite direction)
+			// Repeaters and comparators face away from the player
 			return requiredDirection.equals(playerDirection.getOpposite());
 		} else if (block instanceof DropperBlock || block instanceof DispenserBlock) {
-			// For droppers and dispensers, they typically face the same direction as player
+			// Droppers and dispensers face towards where they output (same as player direction)
 			return requiredDirection.equals(playerDirection);
 		} else if (block instanceof FurnaceBlock || block instanceof BlastFurnaceBlock || block instanceof SmokerBlock) {
-			// For furnaces, they face away from player
+			// Furnaces face away from player (input side towards player)
 			return requiredDirection.equals(playerDirection.getOpposite());
 		} else if (block instanceof HopperBlock) {
-			// Hoppers can face down or horizontally, more flexible
+			// Hoppers are more flexible - they can face down or any horizontal direction
 			if (requiredDirection == Direction.DOWN) return true;
+			// For horizontal hoppers, they usually point towards where items go
+			return true; // Allow any direction for hoppers for now
+		} else if (block instanceof ChestBlock || block instanceof EnderChestBlock || block instanceof BarrelBlock) {
+			// Chests and barrels face away from player
+			return requiredDirection.equals(playerDirection.getOpposite());
+		} else if (block instanceof ShulkerBoxBlock) {
+			// Shulker boxes face away from player
+			return requiredDirection.equals(playerDirection.getOpposite());
+		} else if (block instanceof EndRodBlock) {
+			// End rods face the same direction as player
+			return requiredDirection.equals(playerDirection);
+		} else if (block instanceof BedBlock) {
+			// Beds: head faces away from player
+			return requiredDirection.equals(playerDirection.getOpposite());
+		} else if (block instanceof LecternBlock || block instanceof LoomBlock || block instanceof StonecutterBlock) {
+			// These face away from player
+			return requiredDirection.equals(playerDirection.getOpposite());
+		} else if (block instanceof AnvilBlock || block instanceof GrindstoneBlock) {
+			// These face away from player
 			return requiredDirection.equals(playerDirection.getOpposite());
 		} else {
 			// For other directional blocks, use general rule: face away from player

@@ -140,6 +140,14 @@ public class Printer extends Module {
 			.build()
 	);
 
+	private final Setting<Boolean> debugDirection = sgGeneral.add(new BoolSetting.Builder()
+			.name("debug-direction")
+			.description("Show debug messages for direction protection.")
+			.defaultValue(false)
+			.visible(directionProtection::get)
+			.build()
+	);
+
     private final Setting<SortAlgorithm> firstAlgorithm = sgGeneral.add(new EnumSetting.Builder<SortAlgorithm>()
 			.name("first-sorting-mode")
 			.description("The blocks you want to place first.")
@@ -284,18 +292,36 @@ public class Printer extends Module {
 						&& BlockUtils.getPlaceSide(pos) != null
 					) {
 						if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
+							boolean shouldPlace = true;
+							
 							// Direction protection: check if directional block's facing matches player direction
-							if (directionProtection.get() && MyUtils.isDirectionalBlock(required.getBlock()) && advanced.get()) {
+							if (directionProtection.get() && MyUtils.isDirectionalBlock(required.getBlock())) {
+								if (debugDirection.get()) {
+									info("Found directional block: " + required.getBlock().getName().getString());
+								}
+								
 								Direction requiredDirection = dir(required);
 								Direction playerDirection = MyUtils.getPlayerFacingDirection();
 								
+								if (debugDirection.get()) {
+									info("Direction check for " + required.getBlock().getName().getString() + 
+										 ": required=" + requiredDirection + ", player=" + playerDirection);
+								}
+								
 								// Skip placement if directions don't match
 								if (requiredDirection != null && playerDirection != null && !MyUtils.isDirectionCompatible(required.getBlock(), requiredDirection, playerDirection)) {
-									return; // Skip this block
+									if (debugDirection.get()) {
+										info("Skipping " + required.getBlock().getName().getString() + " due to direction mismatch");
+									}
+									shouldPlace = false; // Don't place this block
+								} else if (debugDirection.get()) {
+									info("Direction compatible for " + required.getBlock().getName().getString());
 								}
 							}
 							
-							toSort.add(new BlockPos(pos));
+							if (shouldPlace) {
+								toSort.add(new BlockPos(pos));
+							}
 						}
 					}
 				}
