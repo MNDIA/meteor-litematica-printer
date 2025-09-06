@@ -262,6 +262,31 @@ public class MyUtils {
 				;
 	}
 
+	/**
+	 * Check if a block is directional (has facing properties that matter for placement)
+	 * These blocks should only be placed when player direction matches the intended direction
+	 */
+	public static boolean isDirectionalBlock(Block block) {
+		return block instanceof ObserverBlock
+				|| block instanceof PistonBlock
+				|| block instanceof RepeaterBlock
+				|| block instanceof ComparatorBlock
+				|| block instanceof DropperBlock
+				|| block instanceof DispenserBlock
+				|| block instanceof FurnaceBlock
+				|| block instanceof BlastFurnaceBlock
+				|| block instanceof SmokerBlock
+				|| block instanceof LecternBlock
+				|| block instanceof LoomBlock
+				|| block instanceof StonecutterBlock
+				|| block instanceof AnvilBlock
+				|| block instanceof HopperBlock
+				|| block instanceof CraftingTableBlock
+				|| block instanceof EnchantingTableBlock
+				|| block instanceof BrewingStandBlock
+				;
+	}
+
 	public static boolean isFaceDesired(Block block, Direction blockHorizontalOrientation, Direction against) {
 		return blockHorizontalOrientation == null || !(isBlockSameAsPlaceDir(block) || isBlockPlacementOppositeToPlacePos(block)) || (
 				isBlockSameAsPlaceDir(block) && blockHorizontalOrientation == against
