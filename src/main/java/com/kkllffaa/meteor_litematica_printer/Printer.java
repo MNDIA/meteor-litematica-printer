@@ -31,6 +31,9 @@ import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.ComparatorBlock;
+import net.minecraft.block.NoteBlock;
+import net.minecraft.block.RepeaterBlock;
 import net.minecraft.block.enums.BlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.item.Item;
@@ -390,8 +393,10 @@ public class Printer extends Module {
 								if (playerDirection == null) {
 									shouldPlace = false;
 								} else if (requiredDirection != null) {
+									// Only check direction for blocks that actually have directional properties
 									shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
 								}
+								// If requiredDirection is null (block has no directional properties), allow placement
 								
 							}
 							
@@ -433,17 +438,10 @@ public class Printer extends Module {
 						
 						// 检查是否需要状态交互
 						if (directionProtection.get() && stateBlocks.get().contains(state.getBlock())) {
-							// 等待一个tick让方块状态稳定，然后检查状态
+							
 							mc.execute(() -> {
 								if (!MyUtils.isBlockStateCorrect(pos, state)) {
-									// 状态不匹配，尝试交互修正
-									for (int i = 0; i < 24; i++) { // 最多尝试24次交互
-										if (MyUtils.interactWithBlock(pos)) {
-											if (MyUtils.isBlockStateCorrect(pos, state)) {
-												break; // 状态匹配，停止交互
-											}
-										}
-									}
+									MyUtils.batchInteractToTargetState(pos, state);
 								}
 							});
 						}
@@ -589,7 +587,22 @@ public class Printer extends Module {
 		if (state.contains(Properties.FACING)) return state.get(Properties.FACING);
 		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
 		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
-		else return Direction.UP;
+		else return null; // Return null for blocks without directional properties
+	}
+
+	/**
+	 * Get maximum interaction attempts based on block type
+	 */
+	private int getMaxInteractionAttempts(Block block) {
+		if (block instanceof NoteBlock) {
+			return 25; // Note blocks have 25 different states (0-24)
+		} else if (block instanceof RepeaterBlock) {
+			return 4; // Repeaters have 4 delay states (1-4)
+		} else if (block instanceof ComparatorBlock) {
+			return 2; // Comparators have 2 modes (compare/subtract)
+		} else {
+			return 10; // Default for other state blocks
+		}
 	}
 
 	/**

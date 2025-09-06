@@ -480,6 +480,56 @@ public class MyUtils {
     }
 
 	/**
+	 * 计算到达目标状态需要的交互次数
+	 * Calculate required interactions to reach target state
+	 */
+	public static int calculateRequiredInteractions(BlockPos pos, BlockState targetState) {
+		if (mc.world == null) return 0;
+		
+		BlockState currentState = mc.world.getBlockState(pos);
+		if (currentState.getBlock() != targetState.getBlock()) {
+			return 0;
+		}
+		
+		// For note blocks: calculate note difference
+		if (currentState.getBlock() instanceof NoteBlock) {
+			if (currentState.contains(Properties.NOTE) && targetState.contains(Properties.NOTE)) {
+				int currentNote = currentState.get(Properties.NOTE);
+				int targetNote = targetState.get(Properties.NOTE);
+				
+				// Note blocks cycle through 0-24 (25 states)
+				int diff = (targetNote - currentNote + 25) % 25;
+				return diff;
+			}
+		}
+		
+		// For repeaters: calculate delay difference  
+		if (currentState.getBlock() instanceof RepeaterBlock) {
+			if (currentState.contains(Properties.DELAY) && targetState.contains(Properties.DELAY)) {
+				int currentDelay = currentState.get(Properties.DELAY);
+				int targetDelay = targetState.get(Properties.DELAY);
+				
+				// Repeaters cycle through 1-4 (4 states)
+				int diff = (targetDelay - currentDelay + 4) % 4;
+				return diff;
+			}
+		}
+		
+		// For comparators: calculate mode difference
+		if (currentState.getBlock() instanceof ComparatorBlock) {
+			if (currentState.contains(Properties.COMPARATOR_MODE) && targetState.contains(Properties.COMPARATOR_MODE)) {
+				boolean currentSubtract = currentState.get(Properties.COMPARATOR_MODE).toString().equals("subtract");
+				boolean targetSubtract = targetState.get(Properties.COMPARATOR_MODE).toString().equals("subtract");
+				
+				// Comparators have 2 modes, return 1 if different, 0 if same
+				return currentSubtract == targetSubtract ? 0 : 1;
+			}
+		}
+		
+		return 0; // 如果无法计算或已经匹配，返回0
+	}
+
+	/**
 	 * 检查方块状态是否匹配目标状态
 	 * Check if block state matches the target state
 	 */
@@ -495,7 +545,9 @@ public class MyUtils {
 		// For repeaters: check delay property
 		if (currentState.getBlock() instanceof RepeaterBlock) {
 			if (currentState.contains(Properties.DELAY) && targetState.contains(Properties.DELAY)) {
-				return currentState.get(Properties.DELAY).equals(targetState.get(Properties.DELAY));
+				Integer currentDelay = currentState.get(Properties.DELAY);
+				Integer targetDelay = targetState.get(Properties.DELAY);
+				return currentDelay.equals(targetDelay);
 			}
 		}
 		
@@ -509,7 +561,9 @@ public class MyUtils {
 		// For note blocks: check note property
 		if (currentState.getBlock() instanceof NoteBlock) {
 			if (currentState.contains(Properties.NOTE) && targetState.contains(Properties.NOTE)) {
-				return currentState.get(Properties.NOTE).equals(targetState.get(Properties.NOTE));
+				Integer currentNote = currentState.get(Properties.NOTE);
+				Integer targetNote = targetState.get(Properties.NOTE);
+				return currentNote.equals(targetNote);
 			}
 		}
 		
@@ -528,5 +582,27 @@ public class MyUtils {
 		
 		ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
 		return result.isAccepted();
+	}
+
+	/**
+	 * 批量交互方块以达到目标状态（音符盒、中继器、比较器专用）
+	 * Batch interact with block to reach target state (for note blocks, repeaters, comparators)
+	 */
+	public static boolean batchInteractToTargetState(BlockPos pos, BlockState targetState) {
+		if (mc.player == null || mc.interactionManager == null) return false;
+		
+		int requiredInteractions = calculateRequiredInteractions(pos, targetState);
+		if (requiredInteractions <= 0) {
+			return true; // Already at target state or can't calculate
+		}
+		
+		// Perform all required interactions at once
+		for (int i = 0; i < requiredInteractions; i++) {
+			if (!interactWithBlock(pos)) {
+				return false; // Failed to interact
+			}
+		}
+		
+		return true;
 	}
 }
