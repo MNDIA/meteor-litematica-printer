@@ -586,23 +586,9 @@ public class Printer extends Module {
 	private Direction dir(BlockState state) {
 		if (state.contains(Properties.FACING)) return state.get(Properties.FACING);
 		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
+		else if (state.contains(Properties.HORIZONTAL_FACING)) return state.get(Properties.HORIZONTAL_FACING);
 		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
 		else return null; // Return null for blocks without directional properties
-	}
-
-	/**
-	 * Get maximum interaction attempts based on block type
-	 */
-	private int getMaxInteractionAttempts(Block block) {
-		if (block instanceof NoteBlock) {
-			return 25; // Note blocks have 25 different states (0-24)
-		} else if (block instanceof RepeaterBlock) {
-			return 4; // Repeaters have 4 delay states (1-4)
-		} else if (block instanceof ComparatorBlock) {
-			return 2; // Comparators have 2 modes (compare/subtract)
-		} else {
-			return 10; // Default for other state blocks
-		}
 	}
 
 	/**
