@@ -359,10 +359,14 @@ public class Printer extends Module {
 								Direction requiredDirection = dir(required);
 								Direction playerDirection = MyUtils.getPlayerFacingDirection(angleRange.get());
 								
-								// Check if block is in any directional list and if directions match
-								if (requiredDirection != null && playerDirection != null) {
-									shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
+								
+								// If player direction is null, protect by not placing
+								if (playerDirection == null) {
+										shouldPlace = false;
+								} else if (requiredDirection != null) {
+										shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
 								}
+								
 							}
 							
 							if (shouldPlace) {
@@ -404,7 +408,7 @@ public class Printer extends Module {
 							mc.execute(() -> {
 								if (!MyUtils.isBlockStateCorrect(pos, state)) {
 									// 状态不匹配，尝试交互修正
-									for (int i = 0; i < 4; i++) { // 最多尝试4次交互
+									for (int i = 0; i < 24; i++) { // 最多尝试24次交互
 										if (MyUtils.interactWithBlock(pos)) {
 											if (MyUtils.isBlockStateCorrect(pos, state)) {
 												break; // 状态匹配，停止交互
@@ -557,6 +561,19 @@ public class Printer extends Module {
 		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
 		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
 		else return Direction.UP;
+	}
+
+	/**
+	 * Check if a block is in any of the directional lists
+	 */
+	private boolean isBlockInDirectionalLists(Block block) {
+		return facingForward.get().contains(block) ||
+			   facingBackward.get().contains(block) ||
+			   facingLeft.get().contains(block) ||
+			   facingRight.get().contains(block) ||
+			   facingUp.get().contains(block) ||
+			   facingDown.get().contains(block) ||
+			   stateBlocks.get().contains(block);
 	}
 
 	/**
