@@ -2,6 +2,7 @@ package com.kkllffaa.meteor_litematica_printer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -131,6 +132,23 @@ public class Printer extends Module {
 			.name("dirt-as-grass")
 			.description("Use dirt instead of grass.")
 			.defaultValue(true)
+			.build()
+	);
+
+	private final Setting<Boolean> enableCache = sgGeneral.add(new BoolSetting.Builder()
+			.name("enable-cache")
+			.description("Enable position cache to prevent placing at the same position multiple times.")
+			.defaultValue(true)
+			.build()
+	);
+
+	private final Setting<Integer> cacheSize = sgGeneral.add(new IntSetting.Builder()
+			.name("cache-size")
+			.description("Number of recent positions to cache.")
+			.defaultValue(50)
+			.min(10).sliderMin(10)
+			.max(200).sliderMax(200)
+			.visible(enableCache::get)
 			.build()
 	);
 
@@ -267,6 +285,9 @@ public class Printer extends Module {
     private int usedSlot = -1;
     private final List<BlockPos> toSort = new ArrayList<>();
     private final List<Pair<Integer, BlockPos>> placed_fade = new ArrayList<>();
+    
+    // Position cache to prevent repeated placement attempts
+    private final LinkedHashSet<BlockPos> positionCache = new LinkedHashSet<>();
 
 
 	// TODO: Add an option for smooth rotation. Make it look legit.
@@ -285,6 +306,7 @@ public class Printer extends Module {
 	@Override
     public void onDeactivate() {
 		placed_fade.clear();
+		positionCache.clear();
 	}
 
 	@EventHandler
@@ -354,17 +376,21 @@ public class Printer extends Module {
 						if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
 							boolean shouldPlace = true;
 							
+							// Check if position is in cache (recently attempted)
+							if (isPositionCached(pos)) {
+								shouldPlace = false;
+							}
+							
 							// Direction protection: check if directional block's facing matches player direction
-							if (directionProtection.get()) {
+							if (shouldPlace && directionProtection.get()) {
 								Direction requiredDirection = dir(required);
 								Direction playerDirection = MyUtils.getPlayerFacingDirection(angleRange.get());
 								
-								
 								// If player direction is null, protect by not placing
 								if (playerDirection == null) {
-										shouldPlace = false;
+									shouldPlace = false;
 								} else if (requiredDirection != null) {
-										shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
+									shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
 								}
 								
 							}
@@ -401,6 +427,9 @@ public class Printer extends Module {
 					if (switchItem(item, state, () -> place(state, pos))) {
 						timer = 0;
 						placed++;
+						
+						// Add position to cache after successful placement
+						addToCache(pos);
 						
 						// 检查是否需要状态交互
 						if (directionProtection.get() && stateBlocks.get().contains(state.getBlock())) {
@@ -564,19 +593,6 @@ public class Printer extends Module {
 	}
 
 	/**
-	 * Check if a block is in any of the directional lists
-	 */
-	private boolean isBlockInDirectionalLists(Block block) {
-		return facingForward.get().contains(block) ||
-			   facingBackward.get().contains(block) ||
-			   facingLeft.get().contains(block) ||
-			   facingRight.get().contains(block) ||
-			   facingUp.get().contains(block) ||
-			   facingDown.get().contains(block) ||
-			   stateBlocks.get().contains(block);
-	}
-
-	/**
 	 * Check if directional block placement is allowed based on configuration
 	 */
 	private boolean isDirectionalPlacementAllowed(Block block, Direction requiredDirection, Direction playerDirection) {
@@ -653,6 +669,31 @@ public class Printer extends Module {
 		} else {
 			// Player is looking horizontally, so "up" is simply UP
 			return Direction.UP;
+		}
+	}
+
+	/**
+	 * Check if position is in cache (recently attempted)
+	 */
+	private boolean isPositionCached(BlockPos pos) {
+		return enableCache.get() && positionCache.contains(pos);
+	}
+
+	/**
+	 * Add position to cache and manage cache size
+	 */
+	private void addToCache(BlockPos pos) {
+		if (!enableCache.get()) return;
+		
+		positionCache.add(pos);
+		
+		// Remove oldest entries if cache exceeds limit
+		while (positionCache.size() > cacheSize.get()) {
+			var iterator = positionCache.iterator();
+			if (iterator.hasNext()) {
+				iterator.next();
+				iterator.remove();
+			}
 		}
 	}
 
