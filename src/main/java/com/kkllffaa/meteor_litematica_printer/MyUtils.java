@@ -115,9 +115,6 @@ public class MyUtils {
     
     private static void place(BlockHitResult blockHitResult, boolean swing) {
         if (mc.player == null || mc.interactionManager == null || mc.getNetworkHandler() == null) return;
-        boolean wasSneaking = mc.player.input.playerInput.sneak();
-        boolean sneak = mc.player.input.playerInput.sneak();
-        sneak = false;
 
         ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
 
@@ -125,8 +122,6 @@ public class MyUtils {
             if (swing) mc.player.swingHand(Hand.MAIN_HAND);
             else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
         }
-
-        sneak = wasSneaking;
     }
 
 	public static boolean isBlockNormalCube(BlockState state) {
@@ -483,4 +478,55 @@ public class MyUtils {
             return Direction.DOWN;
         }
     }
+
+	/**
+	 * 检查方块状态是否匹配目标状态
+	 * Check if block state matches the target state
+	 */
+	public static boolean isBlockStateCorrect(BlockPos pos, BlockState targetState) {
+		if (mc.world == null) return false;
+		
+		BlockState currentState = mc.world.getBlockState(pos);
+		if (currentState.getBlock() != targetState.getBlock()) {
+			return false;
+		}
+		
+		// 检查关键属性是否匹配
+		// For repeaters: check delay property
+		if (currentState.getBlock() instanceof RepeaterBlock) {
+			if (currentState.contains(Properties.DELAY) && targetState.contains(Properties.DELAY)) {
+				return currentState.get(Properties.DELAY).equals(targetState.get(Properties.DELAY));
+			}
+		}
+		
+		// For comparators: check mode property
+		if (currentState.getBlock() instanceof ComparatorBlock) {
+			if (currentState.contains(Properties.COMPARATOR_MODE) && targetState.contains(Properties.COMPARATOR_MODE)) {
+				return currentState.get(Properties.COMPARATOR_MODE).equals(targetState.get(Properties.COMPARATOR_MODE));
+			}
+		}
+		
+		// For note blocks: check note property
+		if (currentState.getBlock() instanceof NoteBlock) {
+			if (currentState.contains(Properties.NOTE) && targetState.contains(Properties.NOTE)) {
+				return currentState.get(Properties.NOTE).equals(targetState.get(Properties.NOTE));
+			}
+		}
+		
+		return true; // 如果没有特殊属性需要检查，认为匹配
+	}
+
+	/**
+	 * 与方块交互以改变其状态
+	 * Interact with block to change its state
+	 */
+	public static boolean interactWithBlock(BlockPos pos) {
+		if (mc.player == null || mc.interactionManager == null) return false;
+		
+		Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+		BlockHitResult blockHitResult = new BlockHitResult(hitPos, Direction.UP, pos, false);
+		
+		ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
+		return result.isAccepted();
+	}
 }

@@ -200,6 +200,14 @@ public class Printer extends Module {
 			.build()
 	);
 
+	// Blocks that need state interaction (repeaters, comparators, note blocks, etc.)
+	private final Setting<List<Block>> stateBlocks = sgDirectional.add(new BlockListSetting.Builder()
+			.name("state-blocks")
+			.description("Blocks that need interaction to adjust their state (repeaters, comparators, note blocks, etc.).")
+			.visible(directionProtection::get)
+			.build()
+	);
+
     private final Setting<SortAlgorithm> firstAlgorithm = sgGeneral.add(new EnumSetting.Builder<SortAlgorithm>()
 			.name("first-sorting-mode")
 			.description("The blocks you want to place first.")
@@ -389,6 +397,24 @@ public class Printer extends Module {
 					if (switchItem(item, state, () -> place(state, pos))) {
 						timer = 0;
 						placed++;
+						
+						// 检查是否需要状态交互
+						if (directionProtection.get() && stateBlocks.get().contains(state.getBlock())) {
+							// 等待一个tick让方块状态稳定，然后检查状态
+							mc.execute(() -> {
+								if (!MyUtils.isBlockStateCorrect(pos, state)) {
+									// 状态不匹配，尝试交互修正
+									for (int i = 0; i < 4; i++) { // 最多尝试4次交互
+										if (MyUtils.interactWithBlock(pos)) {
+											if (MyUtils.isBlockStateCorrect(pos, state)) {
+												break; // 状态匹配，停止交互
+											}
+										}
+									}
+								}
+							});
+						}
+						
 						if (renderBlocks.get()) {
 							placed_fade.add(new Pair<>(fadeTime.get(), new BlockPos(pos)));
 						}
