@@ -579,11 +579,13 @@ public class Printer extends Module {
 			Direction rightDirection = getRightDirection(playerDirection);
 			return rightDirection != null && requiredDirection.equals(rightDirection);
 		} else if (facingUp.get().contains(block)) {
-			// Block should face upward
-			return requiredDirection.equals(Direction.UP);
+			// Block should face upward relative to player
+			Direction upDirection = getUpDirection(playerDirection);
+			return upDirection != null && requiredDirection.equals(upDirection);
 		} else if (facingDown.get().contains(block)) {
-			// Block should face downward
-			return requiredDirection.equals(Direction.DOWN);
+			// Block should face downward relative to player
+			Direction downDirection = getDownDirection(playerDirection);
+			return downDirection != null && requiredDirection.equals(downDirection);
 		}
 		
 		// If block is not in any directional list, allow placement
@@ -613,6 +615,47 @@ public class Printer extends Module {
 			case SOUTH: return Direction.WEST;
 			case WEST: return Direction.NORTH;
 			default: return null; // No right for up/down
+		}
+	}
+
+	/**
+	 * Get the upward direction relative to player facing
+	 * When player looks horizontally, up is UP
+	 * When player looks up, up is in the direction player is facing
+	 * When player looks down, up is opposite to the direction player is facing
+	 */
+	private Direction getUpDirection(Direction playerDirection) {
+		if (playerDirection == Direction.UP) {
+			// Player is looking up, so "up" relative to player would be forward from horizontal perspective
+			// Use the player's horizontal facing direction
+			return MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
+		} else if (playerDirection == Direction.DOWN) {
+			// Player is looking down, so "up" relative to player would be backward from horizontal perspective
+			Direction horizontal = MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
+			return horizontal != null ? horizontal.getOpposite() : Direction.UP;
+		} else {
+			// Player is looking horizontally, so "up" is simply UP
+			return Direction.UP;
+		}
+	}
+
+	/**
+	 * Get the downward direction relative to player facing
+	 * When player looks horizontally, down is DOWN
+	 * When player looks up, down is opposite to the direction player is facing
+	 * When player looks down, down is in the direction player is facing
+	 */
+	private Direction getDownDirection(Direction playerDirection) {
+		if (playerDirection == Direction.UP) {
+			// Player is looking up, so "down" relative to player would be backward from horizontal perspective
+			Direction horizontal = MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
+			return horizontal != null ? horizontal.getOpposite() : Direction.DOWN;
+		} else if (playerDirection == Direction.DOWN) {
+			// Player is looking down, so "down" relative to player would be forward from horizontal perspective
+			return MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
+		} else {
+			// Player is looking horizontally, so "down" is simply DOWN
+			return Direction.DOWN;
 		}
 	}
 
