@@ -287,10 +287,10 @@ public class Printer extends Module {
 							// Direction protection: check if directional block's facing matches player direction
 							if (directionProtection.get() && MyUtils.isDirectionalBlock(required.getBlock()) && advanced.get()) {
 								Direction requiredDirection = dir(required);
-								Direction playerDirection = getPlayerFacingDirection();
+								Direction playerDirection = MyUtils.getPlayerFacingDirection();
 								
 								// Skip placement if directions don't match
-								if (requiredDirection != null && playerDirection != null && !isDirectionCompatible(required.getBlock(), requiredDirection, playerDirection)) {
+								if (requiredDirection != null && playerDirection != null && !MyUtils.isDirectionCompatible(required.getBlock(), requiredDirection, playerDirection)) {
 									return; // Skip this block
 								}
 							}
@@ -467,52 +467,6 @@ public class Printer extends Module {
 		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
 		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
 		else return Direction.UP;
-	}
-
-	/**
-	 * Get the direction the player is currently facing
-	 */
-	private Direction getPlayerFacingDirection() {
-		if (mc.player == null) return null;
-		
-		float yaw = mc.player.getYaw();
-		float pitch = mc.player.getPitch();
-		
-		// Handle vertical facing first (for blocks like observers and pistons)
-		if (pitch > 45.0f) {
-			return Direction.DOWN;
-		} else if (pitch < -45.0f) {
-			return Direction.UP;
-		}
-		
-		// Handle horizontal facing
-		return MyUtils.getHorizontalDirectionFromYaw(yaw);
-	}
-
-	/**
-	 * Check if the block's required direction is compatible with player's facing direction
-	 */
-	private boolean isDirectionCompatible(Block block, Direction requiredDirection, Direction playerDirection) {
-		if (block instanceof ObserverBlock || block instanceof PistonBlock) {
-			// For observers and pistons, they should face the same direction as player
-			return requiredDirection.equals(playerDirection);
-		} else if (block instanceof RepeaterBlock || block instanceof ComparatorBlock) {
-			// For repeaters and comparators, they face away from player (opposite direction)
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof DropperBlock || block instanceof DispenserBlock) {
-			// For droppers and dispensers, they typically face the same direction as player
-			return requiredDirection.equals(playerDirection);
-		} else if (block instanceof FurnaceBlock || block instanceof BlastFurnaceBlock || block instanceof SmokerBlock) {
-			// For furnaces, they face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (block instanceof HopperBlock) {
-			// Hoppers can face down or horizontally, more flexible
-			if (requiredDirection == Direction.DOWN) return true;
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else {
-			// For other directional blocks, use general rule: face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		}
 	}
 
 	@EventHandler
