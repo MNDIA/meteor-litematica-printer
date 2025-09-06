@@ -140,6 +140,17 @@ public class Printer extends Module {
 			.build()
 	);
 
+	private final Setting<Integer> directionalProtectionTolerance = sgGeneral.add(new IntSetting.Builder()
+			.name("direction-protection-tolerance")
+			.description("Degrees of tolerance for direction protection.")
+			.defaultValue(25)
+			.min(1)
+			.sliderMin(1)
+			.max(45)
+			.sliderMax(45)
+			.build()
+	);
+
 	private final Setting<Boolean> debugDirection = sgGeneral.add(new BoolSetting.Builder()
 			.name("debug-direction")
 			.description("Show debug messages for direction protection.")
@@ -313,7 +324,7 @@ public class Printer extends Module {
 									if (debugDirection.get()) {
 										info("Skipping " + required.getBlock().getName().getString() + " due to direction mismatch");
 									}
-									shouldPlace = false; // Don't place this block
+									shouldPlace = false;
 								} else if (debugDirection.get()) {
 									info("Direction compatible for " + required.getBlock().getName().getString());
 								}
