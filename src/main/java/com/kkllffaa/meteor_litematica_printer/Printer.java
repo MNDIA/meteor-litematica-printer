@@ -236,22 +236,6 @@ public class Printer extends Module {
 			.build()
 	);
 
-	// Click Face Protection Settings
-	private final Setting<Boolean> clickFaceAccurately = sgDirectional.add(new BoolSetting.Builder()
-			.name("click-face-protection")
-			.description("place blocks with the correct click face.")
-			.defaultValue(true)
-			.build()
-	);
-
-	// Blocks that require specific click faces (stairs, slabs, trapdoors, etc.)
-	private final Setting<List<Block>> clickFaceBlocks = sgDirectional.add(new BlockListSetting.Builder()
-			.name("click-face-blocks")
-			.description("Blocks that require specific click faces for correct placement (stairs, slabs, trapdoors, etc.).")
-			.visible(clickFaceAccurately::get)
-			.build()
-	);
-
     private final Setting<SortAlgorithm> firstAlgorithm = sgGeneral.add(new EnumSetting.Builder<SortAlgorithm>()
 			.name("first-sorting-mode")
 			.description("The blocks you want to place first.")
