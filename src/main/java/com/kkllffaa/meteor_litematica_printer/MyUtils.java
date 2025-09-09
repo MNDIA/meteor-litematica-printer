@@ -587,4 +587,131 @@ public class MyUtils {
 		
 		return true;
 	}
+
+	/**
+	 * Precise face-based placement that completely ignores player orientation
+	 * Places blocks based purely on the required face interaction, like vanilla Minecraft
+	 */
+	public static boolean precisePlaceByFace(BlockPos blockPos, BlockState targetState, boolean airPlace, boolean swingHand, int range) {
+		if (mc.player == null) return false;
+		if (!canPlace(blockPos)) return false;
+
+		// Get the required face for this block state
+		Direction requiredFace = getPrecisePlacementFace(blockPos, targetState);
+		if (requiredFace == null) {
+			// Fallback to simple placement if we can't determine face
+			return simplePlace(blockPos, targetState, airPlace, swingHand);
+		}
+
+		// Calculate hit position and neighbor
+		BlockPos neighbor;
+		Vec3d hitPos;
+
+		if (airPlace) {
+			neighbor = blockPos;
+			hitPos = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
+		} else {
+			neighbor = blockPos.offset(requiredFace.getOpposite());
+			if (!canPlaceAgainst(targetState, mc.world.getBlockState(neighbor), requiredFace)) {
+				return false; // Cannot place against this block
+			}
+			hitPos = new Vec3d(
+				neighbor.getX() + 0.5 + requiredFace.getOffsetX() * 0.5,
+				neighbor.getY() + 0.5 + requiredFace.getOffsetY() * 0.5,
+				neighbor.getZ() + 0.5 + requiredFace.getOffsetZ() * 0.5
+			);
+		}
+
+		// Create precise hit result with correct face
+		BlockHitResult blockHitResult = new BlockHitResult(hitPos, requiredFace, neighbor, false);
+		
+		// Place the block
+		place(blockHitResult, swingHand);
+		return true;
+	}
+
+	/**
+	 * Determine the required face for precise placement based on target block state
+	 */
+	private static Direction getPrecisePlacementFace(BlockPos blockPos, BlockState targetState) {
+		Block block = targetState.getBlock();
+
+		// For slabs, face depends on slab type
+		if (block instanceof SlabBlock && targetState.contains(Properties.SLAB_TYPE)) {
+			SlabType slabType = targetState.get(Properties.SLAB_TYPE);
+			switch (slabType) {
+				case BOTTOM: return Direction.DOWN;
+				case TOP: return Direction.UP;
+				case DOUBLE: return Direction.UP; // Double slabs can be placed from any face
+			}
+		}
+
+		// For stairs, face depends on block half
+		if (block instanceof StairsBlock && targetState.contains(Properties.BLOCK_HALF)) {
+			BlockHalf half = targetState.get(Properties.BLOCK_HALF);
+			switch (half) {
+				case BOTTOM: return Direction.DOWN;
+				case TOP: return Direction.UP;
+			}
+		}
+
+		// For trapdoors, face depends on block half
+		if (block instanceof TrapdoorBlock && targetState.contains(Properties.BLOCK_HALF)) {
+			BlockHalf half = targetState.get(Properties.BLOCK_HALF);
+			switch (half) {
+				case BOTTOM: return Direction.DOWN;
+				case TOP: return Direction.UP;
+			}
+		}
+
+		// For blocks with FACING property that attach to faces (like buttons, levers)
+		if (targetState.contains(Properties.FACING)) {
+			Direction facing = targetState.get(Properties.FACING);
+			
+			// These blocks face the same direction as the surface they're attached to
+			if (block instanceof ButtonBlock || block instanceof LeverBlock) {
+				return facing.getOpposite();
+			}
+			
+			// These blocks face away from the surface (like torches)
+			if (block instanceof TorchBlock || block instanceof WallTorchBlock) {
+				return facing.getOpposite();
+			}
+		}
+
+		// For blocks with HORIZONTAL_FACING that attach to walls
+		if (targetState.contains(Properties.HORIZONTAL_FACING)) {
+			Direction facing = targetState.get(Properties.HORIZONTAL_FACING);
+			
+			// Wall-mounted blocks
+			if (block instanceof LadderBlock || block instanceof WallSignBlock) {
+				return facing.getOpposite();
+			}
+		}
+
+		// For axis-based blocks (logs, pillars), use the axis to determine face
+		if (targetState.contains(Properties.AXIS)) {
+			Axis axis = targetState.get(Properties.AXIS);
+			switch (axis) {
+				case X: return Direction.EAST;
+				case Y: return Direction.UP;
+				case Z: return Direction.SOUTH;
+			}
+		}
+
+		// Default: try to place from above (most common case)
+		return Direction.UP;
+	}
+
+	/**
+	 * Simple placement fallback for blocks that don't need precise face handling
+	 */
+	private static boolean simplePlace(BlockPos blockPos, BlockState targetState, boolean airPlace, boolean swingHand) {
+		Vec3d hitPos = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
+		BlockPos neighbor = airPlace ? blockPos : blockPos.down();
+		BlockHitResult blockHitResult = new BlockHitResult(hitPos, Direction.UP, neighbor, false);
+		
+		place(blockHitResult, swingHand);
+		return true;
+	}
 }
