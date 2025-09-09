@@ -719,7 +719,7 @@ public class MyUtils {
 				case Z: return Direction.SOUTH;
 			}
 		}
-		return null;
+		return Direction.UP;
 	}
 
 }
