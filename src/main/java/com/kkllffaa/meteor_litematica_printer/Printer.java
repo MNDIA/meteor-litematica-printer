@@ -50,10 +50,10 @@ import net.minecraft.util.math.Vec3i;
 public class Printer extends Module {
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
-	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection, make sure blocks based on players direction are placed in the correct direction");
-	private final SettingGroup sgClickFace = settings.createGroup("Make sure the blocks based on the click face are placed in the correct direction");
-	private final SettingGroup sgBlockState = settings.createGroup("Blocks that need state interaction (repeaters, comparators, note blocks, levers, trapdoors, doors, fence gates, etc.)");
-	private final SettingGroup sgCache = settings.createGroup("Prevent repeated placement of the same block in a short period of time");
+	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
+	private final SettingGroup sgClickFace = settings.createGroup("Click Face");
+	private final SettingGroup sgBlockState = settings.createGroup("Interaction");
+	private final SettingGroup sgCache = settings.createGroup("Cache");
     private final SettingGroup sgRendering = settings.createGroup("Rendering");
 
 	private final Setting<Integer> printing_range = sgGeneral.add(new IntSetting.Builder()
