@@ -231,7 +231,7 @@ public class Printer extends Module {
 	// Blocks that need state interaction (repeaters, comparators, note blocks, etc.)
 	private final Setting<List<Block>> stateBlocks = sgDirectional.add(new BlockListSetting.Builder()
 			.name("state-blocks")
-			.description("Blocks that need interaction to adjust their state (repeaters, comparators, note blocks, etc.).")
+			.description("Blocks that need interaction to adjust their state (repeaters, comparators, note blocks, levers, trapdoors, doors, fence gates, etc.).")
 			.visible(directionProtection::get)
 			.build()
 	);
@@ -469,11 +469,10 @@ public class Printer extends Module {
 						addToCache(pos);
 						
 						// 检查是否需要状态交互
-						if (directionProtection.get() && stateBlocks.get().contains(state.getBlock())) {
-							
+						if (stateBlocks.get().contains(state.getBlock())) {
 							mc.execute(() -> {
-								if (!MyUtils.isBlockStateCorrect(pos, state)) {
-									MyUtils.batchInteractToTargetState(pos, state);
+								if (!MyUtils.batchInteractToTargetState(pos, state)) {
+									warning("Failed to interact with block to set correct state at " + pos);
 								}
 							});
 						}
