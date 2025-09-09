@@ -593,12 +593,17 @@ public class MyUtils {
 	 * Precise face-based placement that completely ignores player orientation
 	 * Places blocks based purely on the required face interaction, like vanilla Minecraft
 	 */
-	public static boolean precisePlaceByFace(BlockPos blockPos, BlockState targetState, boolean airPlace, boolean swingHand, int range) {
+	public static boolean precisePlaceByFace(BlockPos blockPos, BlockState targetState, boolean airPlace, boolean swingHand, int range, java.util.List<Block> faceReverseList) {
 		if (mc.player == null) return false;
 		if (!canPlace(blockPos)) return false;
 
 		// Get the required face for this block state
 		Direction requiredFace = getPrecisePlacementFace(blockPos, targetState);
+		
+		// Apply face reversal if block is in the reverse list
+		if (faceReverseList != null && faceReverseList.contains(targetState.getBlock())) {
+			requiredFace = requiredFace.getOpposite();
+		}
 
 		BlockPos neighbor;
 		Vec3d hitPos;

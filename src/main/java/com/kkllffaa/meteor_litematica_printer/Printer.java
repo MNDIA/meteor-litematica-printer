@@ -133,6 +133,14 @@ public class Printer extends Module {
 			.build()
     );
 
+	// Click Face Reverse Protection - similar to directional protection but for face placement
+	private final Setting<List<Block>> faceReverse = sgClickFace.add(new BlockListSetting.Builder()
+			.name("face-reverse")
+			.description("Blocks that need reversed face placement (click on opposite face). Uses required face as reference like directional protection uses player direction.")
+			.visible(precisePlacement::get)
+			.build()
+	);
+
 	private final Setting<Boolean> dirtgrass = sgGeneral.add(new BoolSetting.Builder()
 			.name("dirt-as-grass")
 			.description("Use dirt instead of grass.")
@@ -466,7 +474,7 @@ public class Printer extends Module {
 		if (!mc.world.getBlockState(pos).isReplaceable()) return false;
 
         if (precisePlacement.get()) {
-            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), printing_range.get());
+            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), printing_range.get(), faceReverse.get());
         } else {
     		// Legacy mode - disabled advanced and rotate features
     		Direction wantedSide = null; // disabled: dir(required)
