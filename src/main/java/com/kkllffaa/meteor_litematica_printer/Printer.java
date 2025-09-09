@@ -226,6 +226,22 @@ public class Printer extends Module {
 			.build()
 	);
 
+	// Click Face Protection Settings
+	private final Setting<Boolean> clickFaceAccurately = sgDirectional.add(new BoolSetting.Builder()
+			.name("click-face-protection")
+			.description("place blocks with the correct click face.")
+			.defaultValue(true)
+			.build()
+	);
+
+	// Blocks that require specific click faces (stairs, slabs, trapdoors, etc.)
+	private final Setting<List<Block>> clickFaceBlocks = sgDirectional.add(new BlockListSetting.Builder()
+			.name("click-face-blocks")
+			.description("Blocks that require specific click faces for correct placement (stairs, slabs, trapdoors, etc.).")
+			.visible(clickFaceAccurately::get)
+			.build()
+	);
+
     private final Setting<SortAlgorithm> firstAlgorithm = sgGeneral.add(new EnumSetting.Builder<SortAlgorithm>()
 			.name("first-sorting-mode")
 			.description("The blocks you want to place first.")
@@ -384,17 +400,14 @@ public class Printer extends Module {
 							// Direction protection: check if directional block's facing matches player direction
 							if (shouldPlace && directionProtection.get()) {
 								Direction requiredDirection = dir(required);
-								Direction playerDirection = MyUtils.getPlayerFacingDirection(angleRange.get());
-								
-								// If player direction is null, protect by not placing
-								if (playerDirection == null) {
-									shouldPlace = false;
-								} else if (requiredDirection != null) {
-									// Only check direction for blocks that actually have directional properties
-									shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
+								if (requiredDirection !=null ){
+									Direction playerDirection = MyUtils.getPlayerFacingDirection(angleRange.get());
+									if (playerDirection == null) {
+										shouldPlace = false;
+									} else {
+										shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
+									}
 								}
-								// If requiredDirection is null (block has no directional properties), allow placement
-								
 							}
 							
 							if (shouldPlace) {
@@ -615,34 +628,61 @@ public class Printer extends Module {
 	/**
 	 * Check if directional block placement is allowed based on configuration
 	 */
+	private boolean[] inList = new boolean[6];
 	private boolean isDirectionalPlacementAllowed(Block block, Direction requiredDirection, Direction playerDirection) {
 		// Check each directional list to see if this block is configured
-		if (facingForward.get().contains(block)) {
-			// Block should face same direction as player
-			return requiredDirection.equals(playerDirection);
-		} else if (facingBackward.get().contains(block)) {
-			// Block should face away from player
-			return requiredDirection.equals(playerDirection.getOpposite());
-		} else if (facingLeft.get().contains(block)) {
-			// Block should face to the left of player
-			Direction leftDirection = getLeftDirection(playerDirection);
-			return leftDirection != null && requiredDirection.equals(leftDirection);
-		} else if (facingRight.get().contains(block)) {
-			// Block should face to the right of player
-			Direction rightDirection = getRightDirection(playerDirection);
-			return rightDirection != null && requiredDirection.equals(rightDirection);
-		} else if (facingUp.get().contains(block)) {
-			// Block should face upward relative to player
-			Direction upDirection = getUpDirection(playerDirection);
-			return upDirection != null && requiredDirection.equals(upDirection);
-		} else if (facingDown.get().contains(block)) {
-			// Block should face downward relative to player
-			Direction downDirection = getDownDirection(playerDirection);
-			return downDirection != null && requiredDirection.equals(downDirection);
+		inList[0] = facingForward.get().contains(block);
+		inList[1] = facingBackward.get().contains(block);
+		inList[2] = facingLeft.get().contains(block);
+		inList[3] = facingRight.get().contains(block);
+		inList[4] = facingUp.get().contains(block);
+		inList[5] = facingDown.get().contains(block);
+		if (inList[0] || inList[1] || inList[2] || inList[3] || inList[4] || inList[5]) {
+			if (inList[0]) {
+				// Block should face same direction as player
+				if (requiredDirection.equals(playerDirection)) {
+					return true;
+				}
+			}
+			if (inList[1]) {
+				// Block should face away from player
+				if (requiredDirection.equals(playerDirection.getOpposite())) {
+					return true;
+				}
+			}
+			if (inList[2]) {
+				// Block should face to the left of player
+				Direction leftDirection = getLeftDirection(playerDirection);
+				if (leftDirection != null && requiredDirection.equals(leftDirection)) {
+					return true;
+				}
+			}
+			if (inList[3]) {
+				// Block should face to the right of player
+				Direction rightDirection = getRightDirection(playerDirection);
+				if (rightDirection != null && requiredDirection.equals(rightDirection)) {
+					return true;
+				}
+			}
+			if (inList[4]) {
+				// Block should face upward relative to player
+				Direction upDirection = getUpDirection(playerDirection);
+				if (upDirection != null && requiredDirection.equals(upDirection)) {
+					return true;
+				}
+			}
+			if (inList[5]) {
+				// Block should face downward relative to player
+				Direction downDirection = getDownDirection(playerDirection);
+				if (downDirection != null && requiredDirection.equals(downDirection)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			// Block is not in any directional list, allow placement
+			return true;
 		}
-		
-		// If block is not in any directional list, allow placement
-		return true;
 	}
 
 	/**
