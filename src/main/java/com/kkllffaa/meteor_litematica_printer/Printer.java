@@ -31,9 +31,6 @@ import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.ComparatorBlock;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.block.RepeaterBlock;
 import net.minecraft.block.enums.BlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.item.Item;
@@ -588,7 +585,31 @@ public class Printer extends Module {
 		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
 		else if (state.contains(Properties.HORIZONTAL_FACING)) return state.get(Properties.HORIZONTAL_FACING);
 		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
+		else if (state.contains(Properties.STRAIGHT_RAIL_SHAPE)) return railShapeToDirection(state.get(Properties.STRAIGHT_RAIL_SHAPE));
 		else return null; // Return null for blocks without directional properties
+	}
+
+	/**
+	 * Convert RailShape to Direction for directional placement logic
+	 */
+	private Direction railShapeToDirection(net.minecraft.block.enums.RailShape shape) {
+		switch (shape) {
+			case NORTH_SOUTH:
+				return Direction.SOUTH;
+			case EAST_WEST:
+				return Direction.EAST;
+			case ASCENDING_EAST:
+				return Direction.EAST;
+			case ASCENDING_WEST:
+				return Direction.EAST;
+			case ASCENDING_NORTH:
+				return Direction.SOUTH;
+			case ASCENDING_SOUTH:
+				return Direction.SOUTH;
+			default:
+				// For corner rails
+				return null;
+		}
 	}
 
 	/**
