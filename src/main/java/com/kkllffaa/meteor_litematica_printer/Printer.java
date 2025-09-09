@@ -48,7 +48,10 @@ import net.minecraft.util.math.Vec3i;
 public class Printer extends Module {
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
-	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
+	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection, make sure blocks based on players direction are placed in the correct direction");
+	private final SettingGroup sgClickFace = settings.createGroup("Make sure the blocks based on the click face are placed in the correct direction");
+	private final SettingGroup sgBlockState = settings.createGroup("Blocks that need state interaction (repeaters, comparators, note blocks, levers, trapdoors, doors, fence gates, etc.)");
+	private final SettingGroup sgCache = settings.createGroup("Prevent repeated placement of the same block in a short period of time");
     private final SettingGroup sgRendering = settings.createGroup("Rendering");
 
 	private final Setting<Integer> printing_range = sgGeneral.add(new IntSetting.Builder()
@@ -75,13 +78,6 @@ public class Printer extends Module {
 			.defaultValue(1)
 			.min(1).sliderMin(1)
 			.max(100).sliderMax(100)
-			.build()
-	);
-
-	private final Setting<Boolean> advanced = sgGeneral.add(new BoolSetting.Builder()
-			.name("advanced")
-			.description("Respect block rotation (places blocks in weird places in singleplayer, multiplayer should work fine).")
-			.defaultValue(false)
 			.build()
 	);
 
@@ -128,7 +124,7 @@ public class Printer extends Module {
 			.build()
     );
 
-    private final Setting<Boolean> precisePlacement = sgGeneral.add(new BoolSetting.Builder()
+    private final Setting<Boolean> precisePlacement = sgClickFace.add(new BoolSetting.Builder()
 			.name("precise-placement")
 			.description("Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)")
 			.defaultValue(true)
@@ -142,14 +138,14 @@ public class Printer extends Module {
 			.build()
 	);
 
-	private final Setting<Boolean> enableCache = sgGeneral.add(new BoolSetting.Builder()
+	private final Setting<Boolean> enableCache = sgCache.add(new BoolSetting.Builder()
 			.name("enable-cache")
 			.description("Enable position cache to prevent placing at the same position multiple times.")
 			.defaultValue(true)
 			.build()
 	);
 
-	private final Setting<Integer> cacheSize = sgGeneral.add(new IntSetting.Builder()
+	private final Setting<Integer> cacheSize = sgCache.add(new IntSetting.Builder()
 			.name("cache-size")
 			.description("Number of recent positions to cache.")
 			.defaultValue(50)
@@ -159,7 +155,7 @@ public class Printer extends Module {
 			.build()
 	);
 
-	private final Setting<Integer> cacheCleanupInterval = sgGeneral.add(new IntSetting.Builder()
+	private final Setting<Integer> cacheCleanupInterval = sgCache.add(new IntSetting.Builder()
 			.name("cache-cleanup-interval")
 			.description("Time in seconds between cache cleanups to prevent stale entries.")
 			.defaultValue(3)
@@ -236,10 +232,9 @@ public class Printer extends Module {
 	);
 
 	// Blocks that need state interaction (repeaters, comparators, note blocks, etc.)
-	private final Setting<List<Block>> stateBlocks = sgDirectional.add(new BlockListSetting.Builder()
+	private final Setting<List<Block>> stateBlocks = sgBlockState.add(new BlockListSetting.Builder()
 			.name("state-blocks")
 			.description("Blocks that need interaction to adjust their state (repeaters, comparators, note blocks, levers, trapdoors, doors, fence gates, etc.).")
-			.visible(directionProtection::get)
 			.build()
 	);
 
