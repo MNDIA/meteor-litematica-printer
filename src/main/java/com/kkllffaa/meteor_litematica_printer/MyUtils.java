@@ -599,12 +599,7 @@ public class MyUtils {
 
 		// Get the required face for this block state
 		Direction requiredFace = getPrecisePlacementFace(blockPos, targetState);
-		if (requiredFace == null) {
-			// Fallback to simple placement if we can't determine face
-			return simplePlace(blockPos, targetState, airPlace, swingHand);
-		}
 
-		// Calculate hit position and neighbor
 		BlockPos neighbor;
 		Vec3d hitPos;
 
@@ -722,15 +717,4 @@ public class MyUtils {
 		return null;
 	}
 
-	/**
-	 * Simple placement fallback for blocks that don't need precise face handling
-	 */
-	private static boolean simplePlace(BlockPos blockPos, BlockState targetState, boolean airPlace, boolean swingHand) {
-		Vec3d hitPos = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
-		BlockPos neighbor = airPlace ? blockPos : blockPos.down();
-		BlockHitResult blockHitResult = new BlockHitResult(hitPos, Direction.UP, neighbor, false);
-		
-		place(blockHitResult, swingHand);
-		return true;
-	}
 }
