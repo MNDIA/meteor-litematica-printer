@@ -152,6 +152,16 @@ public class Printer extends Module {
 			.build()
 	);
 
+	private final Setting<Integer> cacheCleanupInterval = sgGeneral.add(new IntSetting.Builder()
+			.name("cache-cleanup-interval")
+			.description("Time in seconds between cache cleanups to prevent stale entries.")
+			.defaultValue(3)
+			.min(1).sliderMin(1)
+			.max(10).sliderMax(10)
+			.visible(enableCache::get)
+			.build()
+	);
+
 	// Directional Protection Settings
 	private final Setting<Boolean> directionProtection = sgDirectional.add(new BoolSetting.Builder()
 			.name("direction-protection")
@@ -304,6 +314,7 @@ public class Printer extends Module {
     
     // Position cache to prevent repeated placement attempts
     private final LinkedHashSet<BlockPos> positionCache = new LinkedHashSet<>();
+    private int cacheCleanupTickTimer = 0;
 
 
 	// TODO: Add an option for smooth rotation. Make it look legit.
@@ -323,6 +334,7 @@ public class Printer extends Module {
     public void onDeactivate() {
 		placed_fade.clear();
 		positionCache.clear();
+		cacheCleanupTickTimer = 0;
 	}
 
 	@EventHandler
@@ -334,6 +346,16 @@ public class Printer extends Module {
 
 		placed_fade.forEach(s -> s.setLeft(s.getLeft() - 1));
 		placed_fade.removeIf(s -> s.getLeft() <= 0);
+
+		// Cache cleanup timer - clears cache periodically to prevent stale entries
+		if (enableCache.get()) {
+			cacheCleanupTickTimer++;
+
+			if (cacheCleanupTickTimer >= cacheCleanupInterval.get() * 20) {
+				positionCache.clear();
+				cacheCleanupTickTimer = 0;
+			}
+		}
 
 		WorldSchematic worldSchematic = SchematicWorldHandler.getSchematicWorld();
 		if (worldSchematic == null) {
@@ -352,7 +374,7 @@ public class Printer extends Module {
 				if (
 						mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
 						&& blockState.isReplaceable()
-						&& !required.isLiquid()
+						&& required.getFluidState().isEmpty()
 						&& !required.isAir()
 						&& blockState.getBlock() != required.getBlock()
 						&& DataManager.getRenderLayerRange().isPositionWithinRange(pos)
