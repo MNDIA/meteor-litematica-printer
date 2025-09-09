@@ -3,6 +3,8 @@ package com.kkllffaa.meteor_litematica_printer;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
+import net.minecraft.block.enums.Attachment;
+import net.minecraft.block.enums.BlockFace;
 import net.minecraft.block.enums.BlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
@@ -189,10 +191,9 @@ public class MyUtils {
 	 */
 	public static boolean isBlockPlacementOppositeToPlacePos(Block block) {
 		return block instanceof AmethystClusterBlock
-				|| block instanceof EndRodBlock
-				|| block instanceof LightningRodBlock
+				|| block instanceof RodBlock
 				|| block instanceof TrapdoorBlock
-				|| block instanceof ChainBlock
+				|| block instanceof PillarBlock
 				|| block == Blocks.OAK_LOG
 				|| block == Blocks.SPRUCE_LOG
 				|| block == Blocks.BIRCH_LOG
@@ -634,10 +635,8 @@ public class MyUtils {
 	 * Determine the required face for precise placement based on target block state
 	 */
 	private static Direction getPrecisePlacementFace(BlockPos blockPos, BlockState targetState) {
-		Block block = targetState.getBlock();
-
-		// For slabs, face depends on slab type
-		if (block instanceof SlabBlock && targetState.contains(Properties.SLAB_TYPE)) {
+		// For slabs
+		if (targetState.contains(Properties.SLAB_TYPE)) {
 			SlabType slabType = targetState.get(Properties.SLAB_TYPE);
 			switch (slabType) {
 				case BOTTOM: return Direction.UP;
@@ -646,60 +645,81 @@ public class MyUtils {
 			}
 		}
 
-		// For stairs, face depends on block half
-		if (block instanceof StairsBlock && targetState.contains(Properties.BLOCK_HALF)) {
+		// For stairs, trapdoors
+		if (targetState.contains(Properties.BLOCK_HALF)) {
 			BlockHalf half = targetState.get(Properties.BLOCK_HALF);
 			switch (half) {
 				case BOTTOM: return Direction.UP;   
 				case TOP: return Direction.DOWN;    
 			}
 		}
+	
+		// For blocks with ATTACHMENT property (bells, grindstones)
+		if (targetState.contains(Properties.ATTACHMENT)) {
+			Attachment attachment = targetState.get(Properties.ATTACHMENT);
+			switch (attachment) {
+				case FLOOR:
+					return Direction.UP;
+				case CEILING:
+					return Direction.DOWN;
+				default:
+					break;
 
-		// For trapdoors, face depends on block half
-		if (block instanceof TrapdoorBlock && targetState.contains(Properties.BLOCK_HALF)) {
-			BlockHalf half = targetState.get(Properties.BLOCK_HALF);
-			switch (half) {
-				case BOTTOM: return Direction.UP;
-				case TOP: return Direction.DOWN;
 			}
 		}
 
-		// For blocks with FACING property that attach to faces (like buttons, levers)
+		// For lanterns
+		if (targetState.contains(Properties.HANGING)) {
+			boolean hanging = targetState.get(Properties.HANGING);
+			if (hanging) {
+				return Direction.DOWN;
+			} else {
+				return Direction.UP;
+			}
+		}
+
+		// For blocks with BLOCK_FACE property (buttons, levers)
+		if (targetState.contains(Properties.BLOCK_FACE)) {
+			BlockFace blockFace = targetState.get(Properties.BLOCK_FACE);
+			switch (blockFace) {
+				case FLOOR: return Direction.UP;
+				case CEILING: return Direction.DOWN;
+				case WALL: break;
+			}
+		}
+
+		Direction facing = null;
 		if (targetState.contains(Properties.FACING)) {
-			Direction facing = targetState.get(Properties.FACING);
-			
-			// These blocks face the same direction as the surface they're attached to
-			if (block instanceof ButtonBlock || block instanceof LeverBlock) {
-				return facing.getOpposite();
-			}
-			
-			// These blocks face away from the surface (like torches)
-			if (block instanceof TorchBlock || block instanceof WallTorchBlock) {
-				return facing.getOpposite();
-			}
+			facing = targetState.get(Properties.FACING);
+		}
+		if (facing == null && targetState.contains(Properties.HOPPER_FACING)) {
+			facing = targetState.get(Properties.HOPPER_FACING);
+		}
+		if (facing == null && targetState.contains(Properties.HORIZONTAL_FACING)) {
+			facing = targetState.get(Properties.HORIZONTAL_FACING);
+		}
+		if (facing == null && targetState.contains(Properties.VERTICAL_DIRECTION)) {
+			facing = targetState.get(Properties.VERTICAL_DIRECTION);
+		}
+		if (facing != null) {
+			return facing.getOpposite();
 		}
 
-		// For blocks with HORIZONTAL_FACING that attach to walls
-		if (targetState.contains(Properties.HORIZONTAL_FACING)) {
-			Direction facing = targetState.get(Properties.HORIZONTAL_FACING);
-			
-			// Wall-mounted blocks
-			if (block instanceof LadderBlock || block instanceof WallSignBlock) {
-				return facing.getOpposite();
-			}
-		}
-
-		// For axis-based blocks (logs, pillars), use the axis to determine face
+		Axis axis = null;
 		if (targetState.contains(Properties.AXIS)) {
-			Axis axis = targetState.get(Properties.AXIS);
+			axis = targetState.get(Properties.AXIS);
+		}
+		if (axis == null && targetState.contains(Properties.HORIZONTAL_AXIS)) {
+			axis = targetState.get(Properties.HORIZONTAL_AXIS);
+		}
+		if (axis != null) {
 			switch (axis) {
 				case X: return Direction.EAST;
 				case Y: return Direction.UP;
 				case Z: return Direction.SOUTH;
 			}
 		}
-
-		return Direction.DOWN;
+		return null;
 	}
 
 	/**
