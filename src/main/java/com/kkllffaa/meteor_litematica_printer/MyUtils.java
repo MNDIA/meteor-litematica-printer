@@ -640,9 +640,9 @@ public class MyUtils {
 		if (block instanceof SlabBlock && targetState.contains(Properties.SLAB_TYPE)) {
 			SlabType slabType = targetState.get(Properties.SLAB_TYPE);
 			switch (slabType) {
-				case BOTTOM: return Direction.DOWN;
-				case TOP: return Direction.UP;
-				case DOUBLE: return Direction.UP; // Double slabs can be placed from any face
+				case BOTTOM: return Direction.UP;
+				case TOP: return Direction.DOWN;
+				case DOUBLE: return Direction.UP;
 			}
 		}
 
@@ -650,8 +650,8 @@ public class MyUtils {
 		if (block instanceof StairsBlock && targetState.contains(Properties.BLOCK_HALF)) {
 			BlockHalf half = targetState.get(Properties.BLOCK_HALF);
 			switch (half) {
-				case BOTTOM: return Direction.DOWN;
-				case TOP: return Direction.UP;
+				case BOTTOM: return Direction.UP;   
+				case TOP: return Direction.DOWN;    
 			}
 		}
 
@@ -659,8 +659,8 @@ public class MyUtils {
 		if (block instanceof TrapdoorBlock && targetState.contains(Properties.BLOCK_HALF)) {
 			BlockHalf half = targetState.get(Properties.BLOCK_HALF);
 			switch (half) {
-				case BOTTOM: return Direction.DOWN;
-				case TOP: return Direction.UP;
+				case BOTTOM: return Direction.UP;
+				case TOP: return Direction.DOWN;
 			}
 		}
 
@@ -699,8 +699,7 @@ public class MyUtils {
 			}
 		}
 
-		// Default: try to place from above (most common case)
-		return Direction.UP;
+		return Direction.DOWN;
 	}
 
 	/**
