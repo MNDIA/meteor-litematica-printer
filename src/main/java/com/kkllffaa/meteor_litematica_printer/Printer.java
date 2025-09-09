@@ -31,7 +31,9 @@ import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.BlockHalf;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -377,7 +379,10 @@ public class Printer extends Module {
 					) {
 						if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
 							boolean shouldPlace = true;
-							
+							// Multi-structure block protection: check bed parts and double-height blocks
+							if (shouldPlace) {
+								shouldPlace = isMultiStructurePlacementAllowed(required);
+							}
 							// Check if position is in cache (recently attempted)
 							if (isPositionCached(pos)) {
 								shouldPlace = false;
@@ -764,6 +769,27 @@ public class Printer extends Module {
 			Color a = new Color(colour.get().r, colour.get().g, colour.get().b, (int) (((float)s.getLeft() / (float) fadeTime.get()) * colour.get().a));
 			event.renderer.box(s.getRight(), a, null, ShapeMode.Sides, 0);
 		});
+	}
+
+	/**
+	 * Check if multi-structure block placement is allowed based on BED_PART and DOUBLE_BLOCK_HALF
+	 * Returns false for certain parts to prevent improper placement
+	 */
+	private boolean isMultiStructurePlacementAllowed(BlockState required) {
+		if (required.contains(Properties.BED_PART)) {
+			BedPart bedPart = required.get(Properties.BED_PART);
+			if (bedPart == BedPart.HEAD) {
+				return false;
+			}
+		}
+		
+		if (required.contains(Properties.DOUBLE_BLOCK_HALF)) {
+			DoubleBlockHalf doubleBlockHalf = required.get(Properties.DOUBLE_BLOCK_HALF);
+			if (doubleBlockHalf == DoubleBlockHalf.UPPER) {
+				return false; 
+			}
+		}
+		return true;
 	}
 
 	@SuppressWarnings("unused")
