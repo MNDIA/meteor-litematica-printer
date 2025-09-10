@@ -668,7 +668,6 @@ public class MyUtils {
 			}
 		}
 
-		// For lanterns
 		if (targetState.contains(Properties.HANGING)) {
 			boolean hanging = targetState.get(Properties.HANGING);
 			if (hanging) {
