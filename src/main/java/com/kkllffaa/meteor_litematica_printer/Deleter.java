@@ -60,21 +60,7 @@ public class Deleter extends Module {
             .max(10).sliderMax(10)
             .build()
     );
-
-    private final Setting<Boolean> swingHand = sgGeneral.add(new BoolSetting.Builder()
-            .name("swing-hand")
-            .description("Swing hand when mining blocks.")
-            .defaultValue(true)
-            .build()
-    );
-
-    private final Setting<Boolean> autoTool = sgGeneral.add(new BoolSetting.Builder()
-            .name("auto-tool")
-            .description("Automatically switch to the best tool for mining.")
-            .defaultValue(true)
-            .build()
-    );
-
+    
     // Whitelist settings
     private final Setting<Boolean> whitelistEnabled = sgWhitelist.add(new BoolSetting.Builder()
             .name("whitelist-enabled")
@@ -112,12 +98,6 @@ public class Deleter extends Module {
             .build()
     );
 
-    private final Setting<Boolean> requireValidTool = sgSafety.add(new BoolSetting.Builder()
-            .name("require-valid-tool")
-            .description("Only mine blocks if holding a valid tool.")
-            .defaultValue(true)
-            .build()
-    );
 
     // Rendering settings
     private final Setting<Boolean> renderBlocks = sgRendering.add(new BoolSetting.Builder()
@@ -207,7 +187,7 @@ public class Deleter extends Module {
                 // 1. The destroyed block should be chain-mined
                 // 2. Player is close enough
                 // 3. This position wasn't recently mined by us (avoid feedback loops)
-                if (shouldMineBlock(destroyedBlock) && 
+                if (shouldMineBlockWithTypeFliter(destroyedBlock) && 
                     mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2) &&
                     !recentlyMinedPositions.contains(pos)) {
                     
@@ -340,7 +320,7 @@ public class Deleter extends Module {
             Block adjacentBlock = adjacentState.getBlock();
             
             // Check if this is the same block type we want to mine
-            if (adjacentBlock == targetBlock && shouldMineBlock(adjacentBlock)) {
+            if (adjacentBlock == targetBlock && shouldMineBlockWithTypeFliter(adjacentBlock)) {
                 processedBlocks.add(adjacentPos);
                 miningQueue.offer(adjacentPos);
                 
@@ -350,7 +330,7 @@ public class Deleter extends Module {
         }
     }
 
-    private boolean shouldMineBlock(Block block) {
+    private boolean shouldMineBlockWithTypeFliter(Block block) {
         // Check blacklist first
         if (blacklist.get().contains(block)) return false;
         
@@ -370,18 +350,10 @@ public class Deleter extends Module {
         Block block = state.getBlock();
         
         // Verify the block is still the same type and mineable
-        if (lastMinedBlock == null || block != lastMinedBlock || !shouldMineBlock(block)) return false;
+        if (lastMinedBlock == null || block != lastMinedBlock || !shouldMineBlockWithTypeFliter(block)) return false;
         
         // Check if we can actually mine this block
         if (!canMineBlock(pos, state)) return false;
-        
-        // Switch to best tool if auto-tool is enabled
-        if (autoTool.get()) {
-            switchToBestTool(state);
-        }
-        
-        // Check if we have a valid tool
-        if (requireValidTool.get() && !hasValidTool(state)) return false;
         
         // Start breaking the block - use actual game mining logic
         Direction direction = getBreakDirection(pos);
@@ -393,7 +365,7 @@ public class Deleter extends Module {
     }
 
     private boolean performActualMining(BlockPos pos, Direction direction) {
-        try {
+      
             // Use the interaction manager's actual attack block method
             // This handles all the game logic including:
             // - Enchantments (efficiency, silk touch, fortune)
@@ -413,17 +385,7 @@ public class Deleter extends Module {
             }
             
             return false;
-        } catch (Exception e) {
-            // Fallback to packet-based mining if interaction fails
-            mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-                    PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, direction));
-            
-            if (swingHand.get()) {
-                mc.player.swingHand(Hand.MAIN_HAND);
-            }
-            
-            return true;
-        }
+   
     }
 
     private boolean canMineBlock(BlockPos pos, BlockState state) {
@@ -444,33 +406,6 @@ public class Deleter extends Module {
         )).getType() == net.minecraft.util.hit.HitResult.Type.MISS;
     }
 
-    private void switchToBestTool(BlockState state) {
-        ClientPlayerEntity player = mc.player;
-        if (player == null) return;
-        
-        int bestSlot = -1;
-        float bestSpeed = 1.0f;
-        
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = player.getInventory().getStack(i);
-            if (stack.isEmpty()) continue;
-            
-            float speed = stack.getMiningSpeedMultiplier(state);
-            if (speed > bestSpeed) {
-                bestSpeed = speed;
-                bestSlot = i;
-            }
-        }
-        
-        if (bestSlot != -1) {
-            InvUtils.swap(bestSlot, false);
-        }
-    }
-
-    private boolean hasValidTool(BlockState state) {
-        ItemStack heldItem = mc.player.getMainHandStack();
-        return heldItem.isSuitableFor(state) || heldItem.getMiningSpeedMultiplier(state) > 1.0f;
-    }
 
     private Direction getBreakDirection(BlockPos pos) {
         Vec3d playerPos = mc.player.getEyePos();
