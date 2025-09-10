@@ -208,20 +208,42 @@ public class Deleter extends Module {
         
         // Listen for player mining actions
         if (event.packet instanceof PlayerActionC2SPacket packet) {
-            if (packet.getAction() == PlayerActionC2SPacket.Action.START_DESTROY_BLOCK ||
-                packet.getAction() == PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK) {
-                
-                BlockPos pos = packet.getPos();
-                BlockState state = mc.world.getBlockState(pos);
-                
+            BlockPos pos = packet.getPos();
+            BlockState state = mc.world.getBlockState(pos);
+            
+            if (packet.getAction() == PlayerActionC2SPacket.Action.START_DESTROY_BLOCK) {
                 if (debugMode.get()) {
-                    info("Player mining action: " + packet.getAction() + " at " + pos + 
+                    info("START_DESTROY_BLOCK packet sent for " + pos + 
                          " block: " + state.getBlock().getName().getString());
                 }
                 
                 // Cache the current state before it potentially changes
                 if (!state.isAir()) {
                     blockStateCache.put(pos, state);
+                }
+                
+            } else if (packet.getAction() == PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK) {
+                if (debugMode.get()) {
+                    info("STOP_DESTROY_BLOCK packet sent for " + pos + 
+                         " block: " + state.getBlock().getName().getString());
+                }
+                
+                // 在多人服务器中，STOP_DESTROY_BLOCK通常意味着方块即将被破坏
+                // 我们缓存状态，等待服务器确认
+                if (!state.isAir()) {
+                    blockStateCache.put(pos, state);
+                }
+                
+            } else if (packet.getAction() == PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK) {
+                if (debugMode.get()) {
+                    info("ABORT_DESTROY_BLOCK packet sent for " + pos);
+                }
+                
+                // 如果我们正在挖掘这个方块，停止挖掘
+                if (pos.equals(currentlyMining)) {
+                    currentlyMining = null;
+                    miningProgress.remove(pos);
+                    miningStartTime.remove(pos);
                 }
             }
         }
@@ -238,21 +260,38 @@ public class Deleter extends Module {
             
             // Debug logging
             if (debugMode.get()) {
-                info("BlockUpdate at " + pos + ": " + newState.getBlock().getName().getString());
+                info("BlockUpdateS2CPacket at " + pos + ": " + 
+                     newState.getBlock().getName().getString() + 
+                     " (multiplayer=" + !mc.isInSingleplayer() + ")");
+            }
+            
+            // Check if this is completion of our own mining operation
+            if (pos.equals(currentlyMining) && newState.isAir()) {
+                if (debugMode.get()) {
+                    info("Our mining operation completed at " + pos);
+                }
+                completeMining(pos);
             }
             
             // Get the previous state from our cache - this is the key fix!
             BlockState oldState = blockStateCache.get(pos);
             if (oldState == null) {
-                // If we don't have cached state, we can't determine what was destroyed
-                // So we just update our cache and continue
-                if (debugMode.get()) {
-                    info("No cached state for " + pos + ", caching new state");
+                // If we don't have cached state, try to get it from the current world
+                // This handles cases where blocks change before we cache them
+                BlockState currentWorldState = mc.world.getBlockState(pos);
+                if (!currentWorldState.equals(newState)) {
+                    // World state is different from packet state, use world state as "old"
+                    oldState = currentWorldState;
+                } else {
+                    // Can't determine what was destroyed, just update cache and continue
+                    if (debugMode.get()) {
+                        info("No cached state for " + pos + ", caching new state");
+                    }
+                    if (!newState.isAir()) {
+                        blockStateCache.put(pos, newState);
+                    }
+                    return;
                 }
-                if (!newState.isAir()) {
-                    blockStateCache.put(pos, newState);
-                }
-                return;
             }
             
             // Detect if a solid block was broken/destroyed (not just replaced)
@@ -260,16 +299,19 @@ public class Deleter extends Module {
                 Block destroyedBlock = oldState.getBlock();
                 
                 if (debugMode.get()) {
-                    info("Block destroyed: " + destroyedBlock.getName().getString() + " at " + pos);
+                    info("Block destroyed: " + destroyedBlock.getName().getString() + " at " + pos +
+                         " (was mining: " + pos.equals(currentlyMining) + ")");
                 }
                 
-                // Only trigger if:
+                // Only trigger chain mining if:
                 // 1. The destroyed block should be chain-mined
                 // 2. Player is close enough
                 // 3. This position wasn't recently mined by us (avoid feedback loops)
+                // 4. We're not currently mining this block (to avoid double-triggering)
                 if (shouldMineBlockWithTypeFliter(destroyedBlock) && 
                     mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2) &&
-                    !recentlyMinedPositions.contains(pos)) {
+                    !recentlyMinedPositions.contains(pos) &&
+                    !pos.equals(currentlyMining)) {
                     
                     if (debugMode.get()) {
                         info("Starting chain mining for " + destroyedBlock.getName().getString());
@@ -279,7 +321,8 @@ public class Deleter extends Module {
                     if (debugMode.get()) {
                         info("Not starting chain mining: filter=" + shouldMineBlockWithTypeFliter(destroyedBlock) + 
                             " distance=" + mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2) +
-                            " notRecent=" + !recentlyMinedPositions.contains(pos));
+                            " notRecent=" + !recentlyMinedPositions.contains(pos) +
+                            " notCurrentlyMining=" + !pos.equals(currentlyMining));
                     }
                 }
             }
@@ -532,6 +575,10 @@ public class Deleter extends Module {
         // Check if block still exists and is the same type
         if (state.isAir() || (lastMinedBlock != null && state.getBlock() != lastMinedBlock)) {
             // Block was broken or changed, we're done
+            // Note: In multiplayer, this will be triggered by BlockUpdateS2CPacket
+            if (debugMode.get()) {
+                info("Block at " + pos + " was broken or changed, completing mining");
+            }
             completeMining(pos);
             return;
         }
@@ -554,11 +601,31 @@ public class Deleter extends Module {
             if (instantBreak.get()) {
                 // For instant break mode, try to break immediately
                 mc.interactionManager.attackBlock(pos, direction);
-                // Force completion
-                completeMining(pos);
+                
+                // In singleplayer, check if block was instantly broken
+                if (mc.isInSingleplayer() && mc.world.getBlockState(pos).isAir()) {
+                    completeMining(pos);
+                }
+                // In multiplayer, we wait for server confirmation via BlockUpdateS2CPacket
             } else {
                 // Normal mining - continue the mining process
+                // 在多人模式中，这会发送持续挖掘的数据包
+                // 服务器会发送挖掘进度更新
                 mc.interactionManager.updateBlockBreakingProgress(pos, direction);
+                
+                // 更新本地挖掘进度估算（仅用于显示）
+                Float currentProgress = miningProgress.get(pos);
+                if (currentProgress != null) {
+                    // 简单的进度估算，基于时间
+                    float timeElapsed = timer - miningStartTime.getOrDefault(pos, timer);
+                    float estimatedBreakTime = getEstimatedBreakTime(state);
+                    float newProgress = Math.min(1.0f, timeElapsed / estimatedBreakTime);
+                    miningProgress.put(pos, newProgress);
+                    
+                    if (debugMode.get() && timer % 10 == 0) { // Log every 0.5 seconds
+                        info("Mining progress for " + pos + ": " + (newProgress * 100) + "%");
+                    }
+                }
             }
         }
     }
@@ -601,7 +668,9 @@ public class Deleter extends Module {
     }
 
     private boolean performActualMining(BlockPos pos, Direction direction) {
-      
+        if (mc.player == null || mc.interactionManager == null) return false;
+        
+        try {
             // Use the interaction manager's actual attack block method
             // This handles all the game logic including:
             // - Enchantments (efficiency, silk touch, fortune)
@@ -610,14 +679,39 @@ public class Deleter extends Module {
             // - Block hardness and mining time
             // - Creative vs survival mode differences
             // - Proper drop calculation
+            
+            // 注意：在多人服务器中，attackBlock只发送数据包给服务器
+            // 实际的方块破坏会通过BlockUpdateS2CPacket异步返回
             boolean started = mc.interactionManager.attackBlock(pos, direction);
             
+            if (debugMode.get()) {
+                info("attackBlock result: " + started + " for " + pos + 
+                     " (singleplayer=" + mc.isInSingleplayer() + ")");
+            }
+            
+            // 在单人模式中，方块可能立即被破坏
+            // 在多人模式中，我们需要等待服务器响应
             if (started) {
+                // 如果是单人模式且方块立即被破坏了
+                if (mc.isInSingleplayer() && mc.world.getBlockState(pos).isAir()) {
+                    if (debugMode.get()) {
+                        info("Block immediately broken in singleplayer at " + pos);
+                    }
+                    completeMining(pos);
+                    return true;
+                }
+                
+                // 多人模式或需要时间挖掘的情况，返回true表示开始挖掘
                 return true;
             }
             
             return false;
-   
+        } catch (Exception e) {
+            if (debugMode.get()) {
+                error("Error during mining at " + pos + ": " + e.getMessage());
+            }
+            return false;
+        }
     }
 
     private boolean canMineBlock(BlockPos pos, BlockState state) {
@@ -665,6 +759,25 @@ public class Deleter extends Module {
         Vec3d diff = blockCenter.subtract(playerPos);
         
         return Direction.getFacing(diff.x, diff.y, diff.z);
+    }
+    
+    /**
+     * 估算破坏方块需要的时间（以tick为单位）
+     * 这只是一个粗略估算，用于进度显示
+     */
+    private float getEstimatedBreakTime(BlockState state) {
+        if (mc.player == null) return 1.0f;
+        
+        float hardness = state.getHardness(mc.world, null);
+        if (hardness <= 0.0f) return 1.0f; // Instant break or unbreakable
+        
+        // 获取工具挖掘速度
+        float speed = mc.player.getMainHandStack().getMiningSpeedMultiplier(state);
+        if (speed <= 1.0f) speed = 1.0f; // 至少为1
+        
+        // 简单计算：hardness * 30 / speed (30是一个经验值)
+        // 这不是完全准确的，但足够用于进度估算
+        return (hardness * 30.0f) / speed;
     }
 
 
