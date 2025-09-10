@@ -214,6 +214,72 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> distanceProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("distance-protection")
+        .description("Prevent mining blocks that are too far or too close to the player.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Double> minDistance = sgProtection.add(new DoubleSetting.Builder()
+        .name("min-distance")
+        .description("Minimum distance from player to mine blocks.")
+        .defaultValue(1.0)
+        .min(0.0)
+        .max(10.0)
+        .sliderRange(0.0, 5.0)
+        .visible(distanceProtection::get)
+        .build()
+    );
+
+    private final Setting<Double> maxDistance = sgProtection.add(new DoubleSetting.Builder()
+        .name("max-distance")
+        .description("Maximum distance from player to mine blocks.")
+        .defaultValue(4.5)
+        .min(1.0)
+        .max(10.0)
+        .sliderRange(1.0, 8.0)
+        .visible(distanceProtection::get)
+        .build()
+    );
+
+    private final Setting<Boolean> heightProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("height-protection")
+        .description("Prevent mining blocks outside specified height range.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<HeightReferenceMode> heightReferenceMode = sgProtection.add(new EnumSetting.Builder<HeightReferenceMode>()
+        .name("height-reference")
+        .description("Reference system for height protection.")
+        .defaultValue(HeightReferenceMode.Player)
+        .visible(heightProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> minHeight = sgProtection.add(new IntSetting.Builder()
+        .name("min-height")
+        .description("Minimum height for mining blocks (relative to reference).")
+        .defaultValue(-5)
+        .min(-64)
+        .max(320)
+        .sliderRange(-20, 20)
+        .visible(heightProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> maxHeight = sgProtection.add(new IntSetting.Builder()
+        .name("max-height")
+        .description("Maximum height for mining blocks (relative to reference).")
+        .defaultValue(5)
+        .min(-64)
+        .max(320)
+        .sliderRange(-20, 20)
+        .visible(heightProtection::get)
+        .build()
+    );
+
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
@@ -359,6 +425,21 @@ public class Deleter extends Module {
                 return true;
             }
 
+            // Check distance protection for actively mining blocks
+            if (distanceProtection.get()) {
+                double distance = getDistanceToPlayer(blockPos);
+                if (distance < minDistance.get() || distance > maxDistance.get()) {
+                    return true;
+                }
+            }
+
+            // Check height protection for actively mining blocks
+            if (heightProtection.get()) {
+                if (!isWithinHeightRange(blockPos)) {
+                    return true;
+                }
+            }
+
             // Check for mining timeout
             if (timeoutProtection.get() && mining && miningStartTime > 0) {
                 long currentTime = System.currentTimeMillis();
@@ -443,9 +524,24 @@ public class Deleter extends Module {
 
     /**
      * Check if a block position should be protected from mining
-     * Returns true if the block is adjacent to fluids or protected blocks
+     * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, or outside height range
      */
     private boolean isProtectedPosition(BlockPos pos) {
+        // Check distance protection
+        if (distanceProtection.get()) {
+            double distance = getDistanceToPlayer(pos);
+            if (distance < minDistance.get() || distance > maxDistance.get()) {
+                return true;
+            }
+        }
+        
+        // Check height protection
+        if (heightProtection.get()) {
+            if (!isWithinHeightRange(pos)) {
+                return true;
+            }
+        }
+        
         // Check all neighboring positions
         for (Vec3i neighbourOffset : blockNeighbours) {
             BlockPos neighbour = pos.add(neighbourOffset);
@@ -463,6 +559,40 @@ public class Deleter extends Module {
         }
         
         return false;
+    }
+
+    /**
+     * Calculate the distance from the player to a block position
+     */
+    private double getDistanceToPlayer(BlockPos pos) {
+        return Utils.distance(
+            mc.player.getX() - 0.5, 
+            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
+            mc.player.getZ() - 0.5, 
+            pos.getX() + 0.5, 
+            pos.getY() + 0.5, 
+            pos.getZ() + 0.5
+        );
+    }
+
+    /**
+     * Check if a block position is within the allowed height range
+     */
+    private boolean isWithinHeightRange(BlockPos pos) {
+        int referenceY;
+        
+        if (heightReferenceMode.get() == HeightReferenceMode.Player) {
+            // Use player's Y position as reference
+            referenceY = mc.player.getBlockPos().getY();
+        } else {
+            // Use world coordinates (Y=0 as reference)
+            referenceY = 0;
+        }
+        
+        int blockY = pos.getY();
+        int relativeHeight = blockY - referenceY;
+        
+        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get();
     }
 
     private void mineNearbyBlocks(Item item, BlockPos pos, Direction dir, int depth) {
@@ -561,22 +691,47 @@ public class Deleter extends Module {
     public String getInfoString() {
         long timedOutBlocks = minedBlockCache.size(); // Approximate count of cached (including timed out) blocks
         
+        StringBuilder info = new StringBuilder();
+        
         if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
-            if (timeoutProtection.get() && timedOutBlocks > 0) {
-                return "Continuous (" + selectedBlocks.get().size() + ") - Mining: " + blocks.size() + " | Cached: " + timedOutBlocks;
-            }
-            return "Continuous (" + selectedBlocks.get().size() + ") - Mining: " + blocks.size();
+            info.append("Continuous (").append(selectedBlocks.get().size()).append(") - Mining: ").append(blocks.size());
+        } else {
+            info.append(mode.get().toString()).append(" (").append(selectedBlocks.get().size()).append(")");
+        }
+        
+        // Add protection info
+        StringBuilder protections = new StringBuilder();
+        if (distanceProtection.get()) {
+            protections.append("D");
+        }
+        if (heightProtection.get()) {
+            protections.append("H");
+        }
+        if (timeoutProtection.get()) {
+            protections.append("T");
+        }
+        if (fluidProtection.get() || customProtection.get()) {
+            protections.append("P");
+        }
+        
+        if (protections.length() > 0) {
+            info.append(" [").append(protections).append("]");
         }
         
         if (timeoutProtection.get() && timedOutBlocks > 0) {
-            return mode.get().toString() + " (" + selectedBlocks.get().size() + ") | Cached: " + timedOutBlocks;
+            info.append(" | Cached: ").append(timedOutBlocks);
         }
         
-        return mode.get().toString() + " (" + selectedBlocks.get().size() + ")";
+        return info.toString();
     }
 
     public enum ListMode {
         Whitelist,
         Blacklist
+    }
+
+    public enum HeightReferenceMode {
+        Player,
+        World
     }
 }
