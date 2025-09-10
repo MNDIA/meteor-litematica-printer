@@ -167,6 +167,8 @@ public class Deleter extends Module {
         miningQueue.clear();
         processedBlocks.clear();
         minedBlocks.clear();
+        blockStateCache.clear();
+        recentlyMinedPositions.clear();
         lastMinedBlock = null;
         timer = 0;
     }
@@ -176,8 +178,14 @@ public class Deleter extends Module {
         miningQueue.clear();
         processedBlocks.clear();
         minedBlocks.clear();
+        blockStateCache.clear();
+        recentlyMinedPositions.clear();
         lastMinedBlock = null;
     }
+
+    // Track blocks before they change to detect what was broken
+    private final Map<BlockPos, BlockState> blockStateCache = new ConcurrentHashMap<>();
+    private final Set<BlockPos> recentlyMinedPositions = ConcurrentHashMap.newKeySet();
 
     @EventHandler
     private void onPacketReceive(PacketEvent.Receive event) {
@@ -188,20 +196,47 @@ public class Deleter extends Module {
             BlockPos pos = packet.getPos();
             BlockState newState = packet.getState();
             
-            // Check if this is a block that was broken (changed to air)
-            if (newState.isAir() || newState.getBlock() == Blocks.WATER || newState.getBlock() == Blocks.LAVA) {
-                // Get the block that was at this position before
-                BlockState oldState = mc.world.getBlockState(pos);
-                if (!oldState.isAir()) {
-                    Block oldBlock = oldState.getBlock();
+            // Get the previous state from our cache
+            BlockState oldState = blockStateCache.getOrDefault(pos, mc.world.getBlockState(pos));
+            
+            // Detect if a solid block was broken/destroyed (not just replaced)
+            if (wasBlockDestroyed(oldState, newState)) {
+                Block destroyedBlock = oldState.getBlock();
+                
+                // Only trigger if:
+                // 1. The destroyed block should be chain-mined
+                // 2. Player is close enough
+                // 3. This position wasn't recently mined by us (avoid feedback loops)
+                if (shouldMineBlock(destroyedBlock) && 
+                    mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2) &&
+                    !recentlyMinedPositions.contains(pos)) {
                     
-                    // Check if this block should trigger chain mining and if player is close enough
-                    if (shouldMineBlock(oldBlock) && mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2)) {
-                        startChainMining(pos, oldBlock);
-                    }
+                    startChainMining(pos, destroyedBlock);
                 }
             }
+            
+            // Update our cache with the new state
+            if (newState.isAir()) {
+                blockStateCache.remove(pos);
+            } else {
+                blockStateCache.put(pos, newState);
+            }
         }
+    }
+
+    /**
+     * Determines if a block was actually destroyed rather than just replaced
+     * This handles various scenarios like water/lava flow, explosions, player mining, etc.
+     */
+    private boolean wasBlockDestroyed(BlockState oldState, BlockState newState) {
+        // Block was solid and is now air/fluid - likely destroyed
+        if (!oldState.isAir() && oldState.getBlock() != Blocks.WATER && oldState.getBlock() != Blocks.LAVA &&
+            (newState.isAir() || newState.getBlock() == Blocks.WATER || newState.getBlock() == Blocks.LAVA)) {
+            return true;
+        }
+        
+        // Block changed to a different solid block - could be replacement, not destruction
+        return false;
     }
 
     private void startChainMining(BlockPos pos, Block block) {
@@ -226,6 +261,11 @@ public class Deleter extends Module {
             return pair.getLeft() <= 0;
         });
 
+        // Clean up cache periodically to prevent memory leaks
+        if (timer % 100 == 0) { // Every 5 seconds
+            cleanupCaches();
+        }
+
         // Process mining queue
         if (timer >= miningDelay.get() && !miningQueue.isEmpty()) {
             int blocksMinedThisTick = 0;
@@ -235,6 +275,9 @@ public class Deleter extends Module {
                 
                 if (pos != null && tryMineBlock(pos)) {
                     blocksMinedThisTick++;
+                    
+                    // Track that we mined this position
+                    recentlyMinedPositions.add(pos);
                     
                     // Add to rendering if enabled
                     if (renderBlocks.get()) {
@@ -247,6 +290,19 @@ public class Deleter extends Module {
         } else {
             timer++;
         }
+    }
+
+    /**
+     * Clean up caches to prevent memory leaks and false positives
+     */
+    private void cleanupCaches() {
+        // Clear recently mined positions that are far from player
+        recentlyMinedPositions.removeIf(pos -> 
+            !mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() * 2));
+        
+        // Clear block state cache for positions far from player
+        blockStateCache.entrySet().removeIf(entry ->
+            !mc.player.getBlockPos().isWithinDistance(entry.getKey(), miningRange.get() * 3));
     }
 
     @EventHandler
@@ -327,26 +383,47 @@ public class Deleter extends Module {
         // Check if we have a valid tool
         if (requireValidTool.get() && !hasValidTool(state)) return false;
         
-        // Start breaking the block
+        // Start breaking the block - use actual game mining logic
         Direction direction = getBreakDirection(pos);
         if (direction == null) return false;
         
-        // Send break packet
-        mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-                PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, direction));
-        
-        // If instant break is possible, send stop packet immediately
-        if (canInstantBreak(state)) {
+        // Use the game's actual mining interaction instead of packets
+        // This respects all game rules, enchantments, effects, etc.
+        return performActualMining(pos, direction);
+    }
+
+    private boolean performActualMining(BlockPos pos, Direction direction) {
+        try {
+            // Use the interaction manager's actual attack block method
+            // This handles all the game logic including:
+            // - Enchantments (efficiency, silk touch, fortune)
+            // - Status effects (haste, mining fatigue)  
+            // - Tool durability and breaking
+            // - Block hardness and mining time
+            // - Creative vs survival mode differences
+            // - Proper drop calculation
+            boolean started = mc.interactionManager.attackBlock(pos, direction);
+            
+            if (started) {
+                // Swing hand if enabled
+                if (swingHand.get()) {
+                    mc.player.swingHand(Hand.MAIN_HAND);
+                }
+                return true;
+            }
+            
+            return false;
+        } catch (Exception e) {
+            // Fallback to packet-based mining if interaction fails
             mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-                    PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, pos, direction));
+                    PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, direction));
+            
+            if (swingHand.get()) {
+                mc.player.swingHand(Hand.MAIN_HAND);
+            }
+            
+            return true;
         }
-        
-        // Swing hand if enabled
-        if (swingHand.get()) {
-            mc.player.swingHand(Hand.MAIN_HAND);
-        }
-        
-        return true;
     }
 
     private boolean canMineBlock(BlockPos pos, BlockState state) {
@@ -403,20 +480,5 @@ public class Deleter extends Module {
         return Direction.getFacing(diff.x, diff.y, diff.z);
     }
 
-    private boolean canInstantBreak(BlockState state) {
-        ClientPlayerEntity player = mc.player;
-        if (player == null) return false;
-        
-        ItemStack tool = player.getMainHandStack();
-        float hardness = state.getHardness(mc.world, null);
-        
-        if (hardness == 0.0f) return true; // Instant break blocks
-        if (hardness < 0.0f) return false; // Unbreakable blocks
-        
-        // Simple speed calculation - just use basic tool speed
-        float speed = tool.getMiningSpeedMultiplier(state);
-        
-        // Basic instant break check - if speed is much higher than hardness
-        return speed > hardness * 30.0f;
-    }
+
 }
