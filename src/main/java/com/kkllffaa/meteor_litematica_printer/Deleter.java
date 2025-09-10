@@ -56,6 +56,22 @@ public class Deleter extends Module {
             .build()
     );
 
+    private final Setting<Boolean> instantBreak = sgGeneral.add(new BoolSetting.Builder()
+            .name("instant-break")
+            .description("Try to break blocks instantly (works better in creative mode).")
+            .defaultValue(false)
+            .build()
+    );
+
+    private final Setting<Integer> miningTimeout = sgGeneral.add(new IntSetting.Builder()
+            .name("mining-timeout")
+            .description("Maximum ticks to spend mining a single block before giving up.")
+            .defaultValue(100)
+            .min(20).sliderMin(20)
+            .max(600).sliderMax(600)
+            .build()
+    );
+
     private final Setting<Boolean> mineThoughWalls = sgGeneral.add(new BoolSetting.Builder()
             .name("mine-through-walls")
             .description("Allow mining blocks that are not in direct line of sight.")
@@ -139,6 +155,11 @@ public class Deleter extends Module {
     private final Set<BlockPos> processedBlocks = ConcurrentHashMap.newKeySet();
     private final List<Pair<Integer, BlockPos>> minedBlocks = new ArrayList<>();
     private Block lastMinedBlock = null;
+    
+    // Mining progress tracking
+    private final Map<BlockPos, Float> miningProgress = new ConcurrentHashMap<>();
+    private final Map<BlockPos, Integer> miningStartTime = new ConcurrentHashMap<>();
+    private BlockPos currentlyMining = null;
 
     // Directions for adjacent block checking
     private static final Direction[] DIRECTIONS = {
@@ -157,6 +178,9 @@ public class Deleter extends Module {
         minedBlocks.clear();
         blockStateCache.clear();
         recentlyMinedPositions.clear();
+        miningProgress.clear();
+        miningStartTime.clear();
+        currentlyMining = null;
         lastMinedBlock = null;
         timer = 0;
     }
@@ -168,6 +192,9 @@ public class Deleter extends Module {
         minedBlocks.clear();
         blockStateCache.clear();
         recentlyMinedPositions.clear();
+        miningProgress.clear();
+        miningStartTime.clear();
+        currentlyMining = null;
         lastMinedBlock = null;
     }
 
@@ -321,23 +348,22 @@ public class Deleter extends Module {
             cleanupCaches();
         }
 
+        // Continue mining current block if we're in progress
+        if (currentlyMining != null) {
+            continueMining(currentlyMining);
+        }
+
         // Process mining queue
-        if (timer >= miningDelay.get() && !miningQueue.isEmpty()) {
-            int blocksMinedThisTick = 0;
+        if (timer >= miningDelay.get() && !miningQueue.isEmpty() && currentlyMining == null) {
+            int blocksStartedThisTick = 0;
             
-            while (!miningQueue.isEmpty() && blocksMinedThisTick < maxBlocksPerTick.get()) {
+            while (!miningQueue.isEmpty() && blocksStartedThisTick < maxBlocksPerTick.get() && currentlyMining == null) {
                 BlockPos pos = miningQueue.poll();
                 
-                if (pos != null) {
-                    if (tryMineBlock(pos)) {
-                        recentlyMinedPositions.add(pos);
-                        if (renderBlocks.get()) {
-                            minedBlocks.add(new Pair<>(fadeTime.get(), pos));
-                        }
-                    }
-                    blocksMinedThisTick++;
-                    
-                    
+                if (pos != null && startMiningBlock(pos)) {
+                    blocksStartedThisTick++;
+                    currentlyMining = pos;
+                    miningStartTime.put(pos, timer);
                 }
             }
             
@@ -345,6 +371,9 @@ public class Deleter extends Module {
         } else {
             timer++;
         }
+        
+        // Clean up timed-out mining operations
+        cleanupTimedOutMining();
     }
 
     /**
@@ -443,14 +472,14 @@ public class Deleter extends Module {
         return true;
     }
 
-    private boolean tryMineBlock(BlockPos pos) {
+    private boolean startMiningBlock(BlockPos pos) {
         if (mc.player == null || mc.world == null || mc.interactionManager == null) return false;
         
         BlockState state = mc.world.getBlockState(pos);
         Block block = state.getBlock();
         
         if (debugMode.get()) {
-            info("Trying to mine block at " + pos + ": " + block.getName().getString());
+            info("Starting to mine block at " + pos + ": " + block.getName().getString());
         }
         
         // Verify the block is still the same type and mineable
@@ -479,15 +508,96 @@ public class Deleter extends Module {
             return false;
         }
         
-        // Use the game's actual mining interaction instead of packets
-        // This respects all game rules, enchantments, effects, etc.
+        // Initialize mining progress
+        miningProgress.put(pos, 0.0f);
+        
+        // Start the mining process
         boolean result = performActualMining(pos, direction);
         
         if (debugMode.get()) {
-            info("Mining attempt result: " + result + " for " + pos);
+            info("Mining start result: " + result + " for " + pos);
         }
         
         return result;
+    }
+    
+    private void continueMining(BlockPos pos) {
+        if (mc.player == null || mc.world == null || mc.interactionManager == null) {
+            currentlyMining = null;
+            return;
+        }
+        
+        BlockState state = mc.world.getBlockState(pos);
+        
+        // Check if block still exists and is the same type
+        if (state.isAir() || (lastMinedBlock != null && state.getBlock() != lastMinedBlock)) {
+            // Block was broken or changed, we're done
+            completeMining(pos);
+            return;
+        }
+        
+        // Check for timeout
+        Integer startTime = miningStartTime.get(pos);
+        if (startTime != null && (timer - startTime) > miningTimeout.get()) {
+            if (debugMode.get()) {
+                info("Mining timed out for " + pos);
+            }
+            currentlyMining = null;
+            miningProgress.remove(pos);
+            miningStartTime.remove(pos);
+            return;
+        }
+        
+        // Continue mining process
+        Direction direction = getBreakDirection(pos);
+        if (direction != null) {
+            if (instantBreak.get()) {
+                // For instant break mode, try to break immediately
+                mc.interactionManager.attackBlock(pos, direction);
+                // Force completion
+                completeMining(pos);
+            } else {
+                // Normal mining - continue the mining process
+                mc.interactionManager.updateBlockBreakingProgress(pos, direction);
+            }
+        }
+    }
+    
+    private void completeMining(BlockPos pos) {
+        currentlyMining = null;
+        miningProgress.remove(pos);
+        miningStartTime.remove(pos);
+        
+        // Track that we mined this position
+        recentlyMinedPositions.add(pos);
+        
+        // Add to rendering if enabled
+        if (renderBlocks.get()) {
+            minedBlocks.add(new Pair<>(fadeTime.get(), pos));
+        }
+        
+        if (debugMode.get()) {
+            info("Completed mining block at " + pos);
+        }
+    }
+    
+    private void cleanupTimedOutMining() {
+        // Clean up any stale mining operations
+        miningStartTime.entrySet().removeIf(entry -> {
+            int elapsedTime = timer - entry.getValue();
+            if (elapsedTime > miningTimeout.get()) {
+                BlockPos pos = entry.getKey();
+                miningProgress.remove(pos);
+                if (pos.equals(currentlyMining)) {
+                    currentlyMining = null;
+                }
+                if (debugMode.get()) {
+                    info("Cleaned up timed-out mining for " + pos);
+                }
+                return true;
+            }
+            return false;
+        });
     }
 
     private boolean performActualMining(BlockPos pos, Direction direction) {
