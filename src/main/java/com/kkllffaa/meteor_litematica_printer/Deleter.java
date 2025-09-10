@@ -406,7 +406,6 @@ public class Deleter extends Module {
                 reboundCache.removeIf(reboundBlock -> {
                     BlockPos pos = reboundBlock.pos;
                     BlockState state = mc.world.getBlockState(pos);
-                    // Remove if block is now air or if expired
                     return state.isAir();
                 });
                 
