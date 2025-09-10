@@ -788,11 +788,6 @@ public class Deleter extends Module {
                         continue;
                     }
                     
-                    // Check hardness
-                    if (state.getHardness(mc.world, scanPos) < 0) {
-                        continue;
-                    }
-                    
                     // Check if already being mined or in cache
                     if (isMiningBlock(scanPos) || isPositionCached(scanPos)) {
                         continue;
