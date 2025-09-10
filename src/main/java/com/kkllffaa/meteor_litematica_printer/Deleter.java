@@ -173,6 +173,21 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> enableReboundCache = sgCache.add(new BoolSetting.Builder()
+        .name("enable-rebound-cache")
+        .description("Enable separate cache for rebounding blocks that appear within 0.5s of mining.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> renderReboundCache = sgCache.add(new BoolSetting.Builder()
+        .name("render-rebound-cache")
+        .description("Render green outlines for blocks in rebound cache.")
+        .defaultValue(true)
+        .visible(enableReboundCache::get)
+        .build()
+    );
+
     // Protection Settings
     private final Setting<Boolean> fluidProtection = sgProtection.add(new BoolSetting.Builder()
         .name("fluid-protection")
@@ -287,6 +302,10 @@ public class Deleter extends Module {
     // Mining cache to prevent rebounding block issues
     private final LinkedHashSet<BlockPos> minedBlockCache = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
+    
+    // Rebound cache for blocks that reappear after mining
+    private final LinkedHashSet<ReboundBlock> reboundCache = new LinkedHashSet<>();
+    private int reboundCacheCleanupTimer = 0;
 
     private int tick = 0;
     
@@ -305,6 +324,8 @@ public class Deleter extends Module {
         foundBlockPositions.clear();
         minedBlockCache.clear();
         cacheCleanupTickTimer = 0;
+        reboundCache.clear();
+        reboundCacheCleanupTimer = 0;
         lastPlayerPos = null;
         continuousScanTimer = 0;
     }
@@ -337,6 +358,10 @@ public class Deleter extends Module {
         if (isPositionCached(event.blockPos))
             return;
 
+        // Check if this position is in rebound cache
+        if (isPositionInReboundCache(event.blockPos))
+            return;
+
         // Check if this position is protected (adjacent to fluids or protected blocks)
         if (isProtectedPosition(event.blockPos))
             return;
@@ -367,6 +392,23 @@ public class Deleter extends Module {
             }
         }
 
+        // Rebound cache cleanup - every 10 ticks (0.5 seconds)
+        if (enableReboundCache.get()) {
+            reboundCacheCleanupTimer++;
+            
+            if (reboundCacheCleanupTimer >= 10) {
+                // Check for blocks that have been successfully mined (no longer exist)
+                reboundCache.removeIf(reboundBlock -> {
+                    BlockPos pos = reboundBlock.pos;
+                    BlockState state = mc.world.getBlockState(pos);
+                    // Remove if block is now air or if expired
+                    return state.isAir() || reboundBlock.isExpired();
+                });
+                
+                reboundCacheCleanupTimer = 0;
+            }
+        }
+
         // Continuous mode logic - scan for blocks around player
         if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
             handleContinuousMode();
@@ -386,6 +428,13 @@ public class Deleter extends Module {
     private void onRender(Render3DEvent event) {
         if (render.get()) {
             for (MyBlock block : blocks) block.render(event);
+        }
+        
+        // Render rebound cache blocks with green outlines
+        if (enableReboundCache.get() && renderReboundCache.get()) {
+            for (ReboundBlock reboundBlock : reboundCache) {
+                renderReboundBlock(event, reboundBlock.pos);
+            }
         }
     }
 
@@ -497,11 +546,47 @@ public class Deleter extends Module {
         }
     }
 
+    private static class ReboundBlock {
+        public final BlockPos pos;
+        public final long minedTime;
+        
+        public ReboundBlock(BlockPos pos) {
+            this.pos = pos;
+            this.minedTime = System.currentTimeMillis();
+        }
+        
+        public boolean isExpired() {
+            return System.currentTimeMillis() - minedTime > 500; // 0.5 seconds
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            ReboundBlock that = (ReboundBlock) obj;
+            return pos.equals(that.pos);
+        }
+        
+        @Override
+        public int hashCode() {
+            return pos.hashCode();
+        }
+    }
+
     /**
      * Check if a position is in the mined block cache
      */
     private boolean isPositionCached(BlockPos pos) {
         return enableCache.get() && minedBlockCache.contains(pos);
+    }
+
+    /**
+     * Check if a position is in the rebound cache
+     */
+    private boolean isPositionInReboundCache(BlockPos pos) {
+        if (!enableReboundCache.get()) return false;
+        
+        return reboundCache.stream().anyMatch(reboundBlock -> reboundBlock.pos.equals(pos));
     }
 
     /**
@@ -520,6 +605,41 @@ public class Deleter extends Module {
                 iterator.remove();
             }
         }
+        
+        // Add to rebound cache if enabled
+        if (enableReboundCache.get()) {
+            reboundCache.add(new ReboundBlock(pos));
+        }
+    }
+
+
+    /**
+     * Render a rebound block with green outline
+     */
+    private void renderReboundBlock(Render3DEvent event, BlockPos pos) {
+        VoxelShape shape = mc.world.getBlockState(pos).getOutlineShape(mc.world, pos);
+
+        double x1 = pos.getX();
+        double y1 = pos.getY();
+        double z1 = pos.getZ();
+        double x2 = pos.getX() + 1;
+        double y2 = pos.getY() + 1;
+        double z2 = pos.getZ() + 1;
+
+        if (!shape.isEmpty()) {
+            x1 = pos.getX() + shape.getMin(Direction.Axis.X);
+            y1 = pos.getY() + shape.getMin(Direction.Axis.Y);
+            z1 = pos.getZ() + shape.getMin(Direction.Axis.Z);
+            x2 = pos.getX() + shape.getMax(Direction.Axis.X);
+            y2 = pos.getY() + shape.getMax(Direction.Axis.Y);
+            z2 = pos.getZ() + shape.getMax(Direction.Axis.Z);
+        }
+
+        // Green colors for rebound blocks
+        SettingColor greenSide = new SettingColor(0, 255, 0, 10);
+        SettingColor greenLine = new SettingColor(0, 255, 0, 255);
+
+        event.renderer.box(x1, y1, z1, x2, y2, z2, greenSide, greenLine, shapeMode.get(), 0);
     }
 
     /**
@@ -605,6 +725,9 @@ public class Deleter extends Module {
             // Check if this neighbor block was recently mined (cache check for rebounding blocks)
             if (isPositionCached(neighbour)) continue;
             
+            // Check if this neighbor is in rebound cache
+            if (isPositionInReboundCache(neighbour)) continue;
+            
             // Check if this neighbor position is protected (adjacent to fluids or protected blocks)
             if (isProtectedPosition(neighbour)) continue;
             
@@ -672,6 +795,11 @@ public class Deleter extends Module {
                         continue;
                     }
                     
+                    // Check if in rebound cache
+                    if (isPositionInReboundCache(scanPos)) {
+                        continue;
+                    }
+                    
                     // Check protection
                     if (isProtectedPosition(scanPos)) {
                         continue;
@@ -690,6 +818,7 @@ public class Deleter extends Module {
     @Override
     public String getInfoString() {
         long timedOutBlocks = minedBlockCache.size(); // Approximate count of cached (including timed out) blocks
+        long reboundBlocks = reboundCache.size(); // Count of rebound blocks
         
         StringBuilder info = new StringBuilder();
         
@@ -713,6 +842,9 @@ public class Deleter extends Module {
         if (fluidProtection.get() || customProtection.get()) {
             protections.append("P");
         }
+        if (enableReboundCache.get()) {
+            protections.append("R");
+        }
         
         if (protections.length() > 0) {
             info.append(" [").append(protections).append("]");
@@ -720,6 +852,10 @@ public class Deleter extends Module {
         
         if (timeoutProtection.get() && timedOutBlocks > 0) {
             info.append(" | Cached: ").append(timedOutBlocks);
+        }
+        
+        if (enableReboundCache.get() && reboundBlocks > 0) {
+            info.append(" | Rebound: ").append(reboundBlocks);
         }
         
         return info.toString();
