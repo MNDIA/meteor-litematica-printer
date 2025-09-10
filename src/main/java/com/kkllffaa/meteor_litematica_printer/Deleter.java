@@ -59,6 +59,13 @@ public class Deleter extends Module {
 
 
 
+    private final Setting<Boolean> includeDiagonals = sgGeneral.add(new BoolSetting.Builder()
+        .name("include-diagonals")
+        .description("Include diagonally adjacent blocks.")
+        .defaultValue(false)
+        .build()
+    );
+
     private final Setting<SearchMode> searchMode = sgGeneral.add(new EnumSetting.Builder<SearchMode>()
         .name("search-mode")
         .description("How to search for connected blocks.")
@@ -139,6 +146,8 @@ public class Deleter extends Module {
     private final Set<BlockPos> processed = new HashSet<>();
     private final List<Pair<Integer, BlockPos>> minedBlocks = new ArrayList<>();
     private Block lastMinedBlockType = null;
+    private BlockPos lastMinedPos = null;
+    private final Map<BlockPos, Block> pendingBreaks = new HashMap<>();
 
     public Deleter() {
         super(Addon.CATEGORY, "block-deleter", "Automatically mines connected blocks of the same type");
@@ -158,7 +167,9 @@ public class Deleter extends Module {
         miningQueue.clear();
         processed.clear();
         minedBlocks.clear();
+        pendingBreaks.clear();
         lastMinedBlockType = null;
+        lastMinedPos = null;
         timer = 0;
     }
 
@@ -177,10 +188,10 @@ public class Deleter extends Module {
 
         // Check if we should start mining
         if (shouldStartMining()) {
-            BlockPos startPos = getLastMinedBlock();
-            if (startPos != null && lastMinedBlockType != null) {
-                findConnectedBlocks(startPos, lastMinedBlockType);
+            if (lastMinedPos != null && lastMinedBlockType != null) {
+                findConnectedBlocks(lastMinedPos, lastMinedBlockType);
                 lastMinedBlockType = null; // Reset to avoid repeated scanning
+                lastMinedPos = null;
             }
         }
 
@@ -197,21 +208,7 @@ public class Deleter extends Module {
         return miningQueue.isEmpty() && lastMinedBlockType != null;
     }
 
-    private BlockPos getLastMinedBlock() {
-        // This is a simplified implementation
-        // In a real implementation, you'd track the last block the player mined
-        // For now, we'll use a heuristic based on what the player is looking at
-        if (mc.crosshairTarget != null && mc.crosshairTarget.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK) {
-            net.minecraft.util.hit.BlockHitResult blockHit = (net.minecraft.util.hit.BlockHitResult) mc.crosshairTarget;
-            BlockPos pos = blockHit.getBlockPos();
-            
-            // Check if this position was recently mined (air block now)
-            if (mc.world.getBlockState(pos).isAir()) {
-                return pos;
-            }
-        }
-        return null;
-    }
+
 
     private void findConnectedBlocks(BlockPos startPos, Block blockType) {
         processed.clear();
@@ -232,9 +229,7 @@ public class Deleter extends Module {
         while (!searchQueue.isEmpty() && processed.size() < range.get()) {
             BlockPos current = searchQueue.poll();
             
-            for (Direction direction : getDirections()) {
-                BlockPos adjacent = current.offset(direction);
-                
+            for (BlockPos adjacent : getAdjacentPositions(current)) {
                 if (shouldMineBlock(adjacent, blockType) && !processed.contains(adjacent)) {
                     processed.add(adjacent);
                     searchQueue.offer(adjacent);
@@ -254,9 +249,7 @@ public class Deleter extends Module {
             if (processed.contains(current)) continue;
             processed.add(current);
 
-            for (Direction direction : getDirections()) {
-                BlockPos adjacent = current.offset(direction);
-                
+            for (BlockPos adjacent : getAdjacentPositions(current)) {
                 if (shouldMineBlock(adjacent, blockType) && !processed.contains(adjacent)) {
                     searchStack.push(adjacent);
                     miningQueue.offer(adjacent);
@@ -265,8 +258,27 @@ public class Deleter extends Module {
         }
     }
 
-    private Direction[] getDirections() {
-        return Direction.values(); // 6 face directions
+    private List<BlockPos> getAdjacentPositions(BlockPos center) {
+        List<BlockPos> adjacent = new ArrayList<>();
+        
+        if (includeDiagonals.get()) {
+            // Include all 26 adjacent positions (including diagonals)
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    for (int z = -1; z <= 1; z++) {
+                        if (x == 0 && y == 0 && z == 0) continue;
+                        adjacent.add(center.add(x, y, z));
+                    }
+                }
+            }
+        } else {
+            // Only include the 6 face-adjacent positions
+            for (Direction direction : Direction.values()) {
+                adjacent.add(center.offset(direction));
+            }
+        }
+        
+        return adjacent;
     }
 
 
@@ -348,11 +360,17 @@ public class Deleter extends Module {
     }
 
     private void performMining(BlockPos pos) {
-        if (mc.getNetworkHandler() == null) return;
+        if (mc.getNetworkHandler() == null || mc.player == null) return;
 
+        BlockState state = mc.world.getBlockState(pos);
+        if (state.isAir()) return;
+
+        // Get the correct face to mine from
+        Direction face = getMiningSide(pos);
+        
         // Start mining
         mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-            PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, Direction.UP
+            PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, pos, face
         ));
 
         // Swing hand
@@ -360,10 +378,30 @@ public class Deleter extends Module {
             mc.player.swingHand(Hand.MAIN_HAND);
         }
 
-        // Stop mining (instant break)
-        mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(
-            PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, pos, Direction.UP
-        ));
+    }
+
+    private Direction getMiningSide(BlockPos pos) {
+        Vec3d playerPos = mc.player.getPos();
+        Vec3d blockCenter = Vec3d.ofCenter(pos);
+        
+        // Find the face closest to the player
+        Direction closestFace = Direction.UP;
+        double closestDistance = Double.MAX_VALUE;
+        
+        for (Direction face : Direction.values()) {
+            Vec3d faceCenter = blockCenter.add(
+                face.getOffsetX() * 0.5,
+                face.getOffsetY() * 0.5, 
+                face.getOffsetZ() * 0.5
+            );
+            double distance = playerPos.distanceTo(faceCenter);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestFace = face;
+            }
+        }
+        
+        return closestFace;
     }
 
     @EventHandler
@@ -371,17 +409,27 @@ public class Deleter extends Module {
         if (mc.player == null || mc.world == null) return;
         
         if (event.packet instanceof PlayerActionC2SPacket packet) {
+            BlockPos pos = packet.getPos();
+            
             if (packet.getAction() == PlayerActionC2SPacket.Action.START_DESTROY_BLOCK) {
-                BlockPos pos = packet.getPos();
+                // Record what block type is at this position before it's destroyed
                 BlockState state = mc.world.getBlockState(pos);
-                
                 if (!state.isAir()) {
-                    // Store the block type and position for connected mining
-                    lastMinedBlockType = state.getBlock();
+                    pendingBreaks.put(pos, state.getBlock());
+                }
+            } else if (packet.getAction() == PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK) {
+                // Check if we have a pending break for this position
+                Block brokenBlockType = pendingBreaks.remove(pos);
+                if (brokenBlockType != null) {
+                    // Schedule connected mining for this block type
+                    lastMinedBlockType = brokenBlockType;
+                    lastMinedPos = pos;
                 }
             }
         }
     }
+
+
 
     @EventHandler
     private void onRender(Render3DEvent event) {
