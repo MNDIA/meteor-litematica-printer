@@ -402,7 +402,7 @@ public class Deleter extends Module {
                     BlockPos pos = reboundBlock.pos;
                     BlockState state = mc.world.getBlockState(pos);
                     // Remove if block is now air or if expired
-                    return state.isAir() || reboundBlock.isExpired();
+                    return state.isAir();
                 });
                 
                 reboundCacheCleanupTimer = 0;
@@ -555,9 +555,6 @@ public class Deleter extends Module {
             this.minedTime = System.currentTimeMillis();
         }
         
-        public boolean isExpired() {
-            return System.currentTimeMillis() - minedTime > 500; // 0.5 seconds
-        }
         
         @Override
         public boolean equals(Object obj) {
