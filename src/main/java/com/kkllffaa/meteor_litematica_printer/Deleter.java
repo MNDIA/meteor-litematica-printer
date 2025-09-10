@@ -64,6 +64,25 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> continuousMode = sgGeneral.add(new BoolSetting.Builder()
+        .name("continuous-mode")
+        .description("Continuously mine whitelist blocks around player position. Only works in whitelist mode.")
+        .defaultValue(false)
+        .visible(() -> mode.get() == ListMode.Whitelist)
+        .build()
+    );
+
+    private final Setting<Integer> scanRadius = sgGeneral.add(new IntSetting.Builder()
+        .name("scan-radius")
+        .description("Radius to scan for blocks in continuous mode.")
+        .defaultValue(5)
+        .min(1)
+        .max(10)
+        .sliderRange(1, 10)
+        .visible(() -> mode.get() == ListMode.Whitelist && continuousMode.get())
+        .build()
+    );
+
     private final Setting<Integer> depth = sgGeneral.add(new IntSetting.Builder()
         .name("depth")
         .description("Amount of iterations used to scan for similar blocks.")
@@ -186,6 +205,10 @@ public class Deleter extends Module {
     private int cacheCleanupTickTimer = 0;
 
     private int tick = 0;
+    
+    // Continuous mode variables
+    private BlockPos lastPlayerPos = null;
+    private int continuousScanTimer = 0;
 
     public Deleter() {
         super(Categories.World, "deleter", "Mines all nearby blocks with this type");
@@ -198,6 +221,8 @@ public class Deleter extends Module {
         foundBlockPositions.clear();
         minedBlockCache.clear();
         cacheCleanupTickTimer = 0;
+        lastPlayerPos = null;
+        continuousScanTimer = 0;
     }
 
     private boolean isMiningBlock(BlockPos pos) {
@@ -210,6 +235,11 @@ public class Deleter extends Module {
 
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
+        // Skip manual breaking in continuous mode
+        if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
+            return;
+        }
+
         BlockState state = mc.world.getBlockState(event.blockPos);
 
         if (state.getHardness(mc.world, event.blockPos) < 0)
@@ -251,6 +281,11 @@ public class Deleter extends Module {
                 minedBlockCache.clear();
                 cacheCleanupTickTimer = 0;
             }
+        }
+
+        // Continuous mode logic - scan for blocks around player
+        if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
+            handleContinuousMode();
         }
 
         if (!blocks.isEmpty()) {
@@ -403,8 +438,79 @@ public class Deleter extends Module {
         }
     }
 
+    /**
+     * Handle continuous mining mode - scan for blocks around player position
+     */
+    private void handleContinuousMode() {
+        BlockPos currentPlayerPos = mc.player.getBlockPos();
+        
+        // Check if player moved or it's time for a periodic scan (every 10 ticks)
+        boolean playerMoved = lastPlayerPos == null || !lastPlayerPos.equals(currentPlayerPos);
+        continuousScanTimer++;
+        boolean timeForScan = continuousScanTimer >= 10;
+        
+        if (playerMoved || timeForScan) {
+            lastPlayerPos = currentPlayerPos.toImmutable();
+            continuousScanTimer = 0;
+            scanForWhitelistBlocks(currentPlayerPos);
+        }
+    }
+
+    /**
+     * Scan for whitelist blocks around the given position
+     */
+    private void scanForWhitelistBlocks(BlockPos centerPos) {
+        int radius = scanRadius.get();
+        
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos scanPos = centerPos.add(x, y, z);
+                    
+                    // Check if within interaction range
+                    if (Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
+                                     mc.player.getZ() - 0.5, scanPos.getX(), scanPos.getY(), scanPos.getZ()) 
+                                     > mc.player.getBlockInteractionRange()) {
+                        continue;
+                    }
+                    
+                    BlockState state = mc.world.getBlockState(scanPos);
+                    
+                    // Check if it's a whitelist block
+                    if (!selectedBlocks.get().contains(state.getBlock())) {
+                        continue;
+                    }
+                    
+                    // Check hardness
+                    if (state.getHardness(mc.world, scanPos) < 0) {
+                        continue;
+                    }
+                    
+                    // Check if already being mined or in cache
+                    if (isMiningBlock(scanPos) || isPositionCached(scanPos)) {
+                        continue;
+                    }
+                    
+                    // Check protection
+                    if (isProtectedPosition(scanPos)) {
+                        continue;
+                    }
+                    
+                    // Add to mining queue
+                    MyBlock block = blockPool.get();
+                    block.set(scanPos, Direction.UP); // Default direction for continuous mode
+                    blocks.add(block);
+                    addToMinedCache(scanPos);
+                }
+            }
+        }
+    }
+
     @Override
     public String getInfoString() {
+        if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
+            return "Continuous (" + selectedBlocks.get().size() + ") - Mining: " + blocks.size();
+        }
         return mode.get().toString() + " (" + selectedBlocks.get().size() + ")";
     }
 
