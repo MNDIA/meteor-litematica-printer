@@ -196,6 +196,24 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> timeoutProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("timeout-protection")
+        .description("Skip blocks that take too long to mine and add them to cache.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Double> miningTimeout = sgProtection.add(new DoubleSetting.Builder()
+        .name("mining-timeout")
+        .description("Maximum time in seconds to spend mining a single block before skipping it.")
+        .defaultValue(5.0)
+        .min(0.5)
+        .max(30.0)
+        .sliderRange(0.5, 15.0)
+        .visible(timeoutProtection::get)
+        .build()
+    );
+
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
@@ -310,12 +328,16 @@ public class Deleter extends Module {
         public Direction direction;
         public Block originalBlock;
         public boolean mining;
+        public long miningStartTime;
+        public boolean timedOut;
 
         public void set(StartBreakingBlockEvent event) {
             this.blockPos = event.blockPos;
             this.direction = event.direction;
             this.originalBlock = mc.world.getBlockState(blockPos).getBlock();
             this.mining = false;
+            this.miningStartTime = 0;
+            this.timedOut = false;
         }
 
         public void set(BlockPos pos, Direction dir) {
@@ -323,16 +345,41 @@ public class Deleter extends Module {
             this.direction = dir;
             this.originalBlock = mc.world.getBlockState(pos).getBlock();
             this.mining = false;
+            this.miningStartTime = 0;
+            this.timedOut = false;
         }
 
         public boolean shouldRemove() {
-            return mc.world.getBlockState(blockPos).getBlock() != originalBlock || Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ() - 0.5, blockPos.getX() + direction.getOffsetX(), blockPos.getY() + direction.getOffsetY(), blockPos.getZ() + direction.getOffsetZ()) > mc.player.getBlockInteractionRange();
+            // Check if block changed or out of range
+            if (mc.world.getBlockState(blockPos).getBlock() != originalBlock || 
+                Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
+                             mc.player.getZ() - 0.5, blockPos.getX() + direction.getOffsetX(), 
+                             blockPos.getY() + direction.getOffsetY(), blockPos.getZ() + direction.getOffsetZ()) 
+                             > mc.player.getBlockInteractionRange()) {
+                return true;
+            }
+
+            // Check for mining timeout
+            if (timeoutProtection.get() && mining && miningStartTime > 0) {
+                long currentTime = System.currentTimeMillis();
+                double elapsedSeconds = (currentTime - miningStartTime) / 1000.0;
+                
+                if (elapsedSeconds > miningTimeout.get()) {
+                    // Add to cache to prevent re-mining this problematic block
+                    addToMinedCache(blockPos);
+                    timedOut = true;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void mine() {
             if (!mining) {
                 mc.player.swingHand(Hand.MAIN_HAND);
                 mining = true;
+                miningStartTime = System.currentTimeMillis(); // Record mining start time
             }
             if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
             else updateBlockBreakingProgress();
@@ -361,7 +408,11 @@ public class Deleter extends Module {
                 z2 = blockPos.getZ() + shape.getMax(Direction.Axis.Z);
             }
 
-            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColor.get(), lineColor.get(), shapeMode.get(), 0);
+            // Use different colors for timed out blocks
+            SettingColor sideColorToUse = timedOut ? new SettingColor(255, 165, 0, 10) : sideColor.get(); // Orange for timed out
+            SettingColor lineColorToUse = timedOut ? new SettingColor(255, 165, 0, 255) : lineColor.get(); // Orange for timed out
+
+            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode.get(), 0);
         }
     }
 
@@ -508,9 +559,19 @@ public class Deleter extends Module {
 
     @Override
     public String getInfoString() {
+        long timedOutBlocks = minedBlockCache.size(); // Approximate count of cached (including timed out) blocks
+        
         if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
+            if (timeoutProtection.get() && timedOutBlocks > 0) {
+                return "Continuous (" + selectedBlocks.get().size() + ") - Mining: " + blocks.size() + " | Cached: " + timedOutBlocks;
+            }
             return "Continuous (" + selectedBlocks.get().size() + ") - Mining: " + blocks.size();
         }
+        
+        if (timeoutProtection.get() && timedOutBlocks > 0) {
+            return mode.get().toString() + " (" + selectedBlocks.get().size() + ") | Cached: " + timedOutBlocks;
+        }
+        
         return mode.get().toString() + " (" + selectedBlocks.get().size() + ")";
     }
 
