@@ -9,19 +9,14 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.client.network.ClientPlayerEntity;
-
-import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
-import net.minecraft.util.Hand;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -86,6 +81,13 @@ public class Deleter extends Module {
                     Blocks.SPAWNER, Blocks.END_PORTAL, Blocks.END_PORTAL_FRAME,
                     Blocks.NETHER_PORTAL, Blocks.OBSIDIAN, Blocks.CRYING_OBSIDIAN
             ))
+            .build()
+    );
+
+    private final Setting<Boolean> debugMode = sgSafety.add(new BoolSetting.Builder()
+            .name("debug-mode")
+            .description("Show debug messages in chat.")
+            .defaultValue(false)
             .build()
     );
 
@@ -168,6 +170,31 @@ public class Deleter extends Module {
     private final Set<BlockPos> recentlyMinedPositions = ConcurrentHashMap.newKeySet();
 
     @EventHandler
+    private void onPacketSend(PacketEvent.Send event) {
+        if (mc.player == null || mc.world == null) return;
+        
+        // Listen for player mining actions
+        if (event.packet instanceof PlayerActionC2SPacket packet) {
+            if (packet.getAction() == PlayerActionC2SPacket.Action.START_DESTROY_BLOCK ||
+                packet.getAction() == PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK) {
+                
+                BlockPos pos = packet.getPos();
+                BlockState state = mc.world.getBlockState(pos);
+                
+                if (debugMode.get()) {
+                    info("Player mining action: " + packet.getAction() + " at " + pos + 
+                         " block: " + state.getBlock().getName().getString());
+                }
+                
+                // Cache the current state before it potentially changes
+                if (!state.isAir()) {
+                    blockStateCache.put(pos, state);
+                }
+            }
+        }
+    }
+
+    @EventHandler
     private void onPacketReceive(PacketEvent.Receive event) {
         if (mc.player == null || mc.world == null) return;
         
@@ -176,12 +203,32 @@ public class Deleter extends Module {
             BlockPos pos = packet.getPos();
             BlockState newState = packet.getState();
             
-            // Get the previous state from our cache
-            BlockState oldState = blockStateCache.getOrDefault(pos, mc.world.getBlockState(pos));
+            // Debug logging
+            if (debugMode.get()) {
+                info("BlockUpdate at " + pos + ": " + newState.getBlock().getName().getString());
+            }
+            
+            // Get the previous state from our cache - this is the key fix!
+            BlockState oldState = blockStateCache.get(pos);
+            if (oldState == null) {
+                // If we don't have cached state, we can't determine what was destroyed
+                // So we just update our cache and continue
+                if (debugMode.get()) {
+                    info("No cached state for " + pos + ", caching new state");
+                }
+                if (!newState.isAir()) {
+                    blockStateCache.put(pos, newState);
+                }
+                return;
+            }
             
             // Detect if a solid block was broken/destroyed (not just replaced)
             if (wasBlockDestroyed(oldState, newState)) {
                 Block destroyedBlock = oldState.getBlock();
+                
+                if (debugMode.get()) {
+                    info("Block destroyed: " + destroyedBlock.getName().getString() + " at " + pos);
+                }
                 
                 // Only trigger if:
                 // 1. The destroyed block should be chain-mined
@@ -191,7 +238,16 @@ public class Deleter extends Module {
                     mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2) &&
                     !recentlyMinedPositions.contains(pos)) {
                     
+                    if (debugMode.get()) {
+                        info("Starting chain mining for " + destroyedBlock.getName().getString());
+                    }
                     startChainMining(pos, destroyedBlock);
+                } else {
+                    if (debugMode.get()) {
+                        info("Not starting chain mining: filter=" + shouldMineBlockWithTypeFliter(destroyedBlock) + 
+                            " distance=" + mc.player.getBlockPos().isWithinDistance(pos, miningRange.get() + 2) +
+                            " notRecent=" + !recentlyMinedPositions.contains(pos));
+                    }
                 }
             }
             
@@ -227,8 +283,16 @@ public class Deleter extends Module {
         // Start new mining session
         lastMinedBlock = block;
         
+        if (debugMode.get()) {
+            info("Starting chain mining session for " + block.getName().getString() + " at " + pos);
+        }
+        
         // Add adjacent blocks to queue
         addAdjacentBlocks(pos, block, 0);
+        
+        if (debugMode.get()) {
+            info("Added " + miningQueue.size() + " blocks to mining queue");
+        }
     }
 
     @EventHandler
@@ -240,6 +304,11 @@ public class Deleter extends Module {
             pair.setLeft(pair.getLeft() - 1);
             return pair.getLeft() <= 0;
         });
+
+        // Pre-cache block states around player every few ticks
+        if (timer % 10 == 0) { // Every 0.5 seconds
+            cacheNearbyBlocks();
+        }
 
         // Clean up cache periodically to prevent memory leaks
         if (timer % 100 == 0) { // Every 5 seconds
@@ -269,6 +338,35 @@ public class Deleter extends Module {
             timer = 0;
         } else {
             timer++;
+        }
+    }
+
+    /**
+     * Pre-cache block states around the player to detect changes
+     */
+    private void cacheNearbyBlocks() {
+        if (mc.player == null || mc.world == null) return;
+        
+        BlockPos playerPos = mc.player.getBlockPos();
+        int range = miningRange.get() + 1;
+        
+        // Cache blocks in a cube around the player
+        for (int x = -range; x <= range; x++) {
+            for (int y = -range; y <= range; y++) {
+                for (int z = -range; z <= range; z++) {
+                    BlockPos pos = playerPos.add(x, y, z);
+                    BlockState state = mc.world.getBlockState(pos);
+                    
+                    // Only cache non-air blocks to save memory
+                    if (!state.isAir()) {
+                        blockStateCache.put(pos, state);
+                    }
+                }
+            }
+        }
+        
+        if (debugMode.get()) {
+            info("Cached " + blockStateCache.size() + " block states around player");
         }
     }
 
@@ -349,19 +447,45 @@ public class Deleter extends Module {
         BlockState state = mc.world.getBlockState(pos);
         Block block = state.getBlock();
         
+        if (debugMode.get()) {
+            info("Trying to mine block at " + pos + ": " + block.getName().getString());
+        }
+        
         // Verify the block is still the same type and mineable
-        if (lastMinedBlock == null || block != lastMinedBlock || !shouldMineBlockWithTypeFliter(block)) return false;
+        if (lastMinedBlock == null || block != lastMinedBlock || !shouldMineBlockWithTypeFliter(block)) {
+            if (debugMode.get()) {
+                info("Block verification failed: lastMined=" + (lastMinedBlock != null ? lastMinedBlock.getName().getString() : "null") +
+                     " current=" + block.getName().getString() + " filter=" + shouldMineBlockWithTypeFliter(block));
+            }
+            return false;
+        }
         
         // Check if we can actually mine this block
-        if (!canMineBlock(pos, state)) return false;
+        if (!canMineBlock(pos, state)) {
+            if (debugMode.get()) {
+                info("Cannot mine block at " + pos + " (hardness, range, or line of sight)");
+            }
+            return false;
+        }
         
         // Start breaking the block - use actual game mining logic
         Direction direction = getBreakDirection(pos);
-        if (direction == null) return false;
+        if (direction == null) {
+            if (debugMode.get()) {
+                info("Could not determine break direction for " + pos);
+            }
+            return false;
+        }
         
         // Use the game's actual mining interaction instead of packets
         // This respects all game rules, enchantments, effects, etc.
-        return performActualMining(pos, direction);
+        boolean result = performActualMining(pos, direction);
+        
+        if (debugMode.get()) {
+            info("Mining attempt result: " + result + " for " + pos);
+        }
+        
+        return result;
     }
 
     private boolean performActualMining(BlockPos pos, Direction direction) {
