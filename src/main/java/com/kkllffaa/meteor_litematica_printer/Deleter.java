@@ -377,10 +377,6 @@ public class Deleter extends Module {
             boolean started = mc.interactionManager.attackBlock(pos, direction);
             
             if (started) {
-                // Swing hand if enabled
-                if (swingHand.get()) {
-                    mc.player.swingHand(Hand.MAIN_HAND);
-                }
                 return true;
             }
             
