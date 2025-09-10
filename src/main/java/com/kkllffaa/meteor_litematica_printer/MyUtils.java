@@ -708,7 +708,7 @@ public class MyUtils {
 			facing = targetState.get(Properties.VERTICAL_DIRECTION);
 		}
 		if (facing != null) {
-			return facing.getOpposite();
+			return facing;
 		}
 
 		Axis axis = null;
