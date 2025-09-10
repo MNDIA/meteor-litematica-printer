@@ -188,7 +188,7 @@ public class Deleter extends Module {
     private int tick = 0;
 
     public Deleter() {
-        super(Categories.World, "vein-miner", "Mines all nearby blocks with this type");
+        super(Categories.World, "deleter", "Mines all nearby blocks with this type");
     }
 
     @Override
