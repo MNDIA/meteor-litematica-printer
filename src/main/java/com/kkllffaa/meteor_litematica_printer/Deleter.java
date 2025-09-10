@@ -331,14 +331,13 @@ public class Deleter extends Module {
                 if (pos != null) {
                     if (tryMineBlock(pos)) {
                         recentlyMinedPositions.add(pos);
+                        if (renderBlocks.get()) {
+                            minedBlocks.add(new Pair<>(fadeTime.get(), pos));
+                        }
                     }
                     blocksMinedThisTick++;
                     
                     
-                    // Add to rendering if enabled
-                    if (renderBlocks.get()) {
-                        minedBlocks.add(new Pair<>(fadeTime.get(), pos));
-                    }
                 }
             }
             
