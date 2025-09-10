@@ -55,6 +55,13 @@ public class Deleter extends Module {
             .max(10).sliderMax(10)
             .build()
     );
+
+    private final Setting<Boolean> mineThoughWalls = sgGeneral.add(new BoolSetting.Builder()
+            .name("mine-through-walls")
+            .description("Allow mining blocks that are not in direct line of sight.")
+            .defaultValue(false)
+            .build()
+    );
     
     // Whitelist settings
     private final Setting<Boolean> whitelistEnabled = sgWhitelist.add(new BoolSetting.Builder()
@@ -99,7 +106,6 @@ public class Deleter extends Module {
             .max(512).sliderMax(512)
             .build()
     );
-
 
     // Rendering settings
     private final Setting<Boolean> renderBlocks = sgRendering.add(new BoolSetting.Builder()
@@ -322,11 +328,12 @@ public class Deleter extends Module {
             while (!miningQueue.isEmpty() && blocksMinedThisTick < maxBlocksPerTick.get()) {
                 BlockPos pos = miningQueue.poll();
                 
-                if (pos != null && tryMineBlock(pos)) {
+                if (pos != null) {
+                    if (tryMineBlock(pos)) {
+                        recentlyMinedPositions.add(pos);
+                    }
                     blocksMinedThisTick++;
                     
-                    // Track that we mined this position
-                    recentlyMinedPositions.add(pos);
                     
                     // Add to rendering if enabled
                     if (renderBlocks.get()) {
@@ -363,10 +370,6 @@ public class Deleter extends Module {
                     }
                 }
             }
-        }
-        
-        if (debugMode.get()) {
-            info("Cached " + blockStateCache.size() + " block states around player");
         }
     }
 
@@ -515,15 +518,35 @@ public class Deleter extends Module {
         // Check if player can reach the block
         if (!mc.player.getBlockPos().isWithinDistance(pos, miningRange.get())) return false;
         
-        // Check line of sight (basic check)
+        // Skip line of sight check if mine-through-walls is enabled
+        if (mineThoughWalls.get()) {
+            return true;
+        }
+        
+        // Check line of sight - only mine blocks we can see
         Vec3d playerPos = mc.player.getEyePos();
         Vec3d blockPos = Vec3d.ofCenter(pos);
-        return mc.world.raycast(new net.minecraft.world.RaycastContext(
+        
+        var hitResult = mc.world.raycast(new net.minecraft.world.RaycastContext(
                 playerPos, blockPos,
                 net.minecraft.world.RaycastContext.ShapeType.OUTLINE,
                 net.minecraft.world.RaycastContext.FluidHandling.NONE,
                 mc.player
-        )).getType() == net.minecraft.util.hit.HitResult.Type.MISS;
+        ));
+        
+        // Allow mining if:
+        // 1. No blocks in the way (MISS)
+        // 2. Only hit the target block itself  
+        // 3. Hit a block very close to target (for chain mining)
+        if (hitResult.getType() == net.minecraft.util.hit.HitResult.Type.MISS) {
+            return true;
+        } else if (hitResult.getType() == net.minecraft.util.hit.HitResult.Type.BLOCK) {
+            BlockPos hitPos = ((net.minecraft.util.hit.BlockHitResult) hitResult).getBlockPos();
+            // Allow if we hit the target block itself or a nearby block
+            return hitPos.equals(pos) || hitPos.isWithinDistance(pos, 1);
+        }
+        
+        return false;
     }
 
 
