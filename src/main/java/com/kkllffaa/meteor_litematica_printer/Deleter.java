@@ -26,6 +26,7 @@ import net.minecraft.util.shape.VoxelShape;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 public class Deleter extends Module {
@@ -309,6 +310,10 @@ public class Deleter extends Module {
 
     private int tick = 0;
     
+    // Random delay array: 4x 0, 2x 1, 1x 2
+    private static final int[] RANDOM_DELAYS = {0, 0, 0, 0, 1, 1, 2};
+    private final Random random = new Random();
+    
     // Continuous mode variables
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
@@ -415,7 +420,11 @@ public class Deleter extends Module {
         }
 
         if (!blocks.isEmpty()) {
-            if (tick < delay.get() && !blocks.getFirst().mining) {
+            // Add random delay to the base delay
+            int randomDelay = RANDOM_DELAYS[random.nextInt(RANDOM_DELAYS.length)];
+            int totalDelay = delay.get() + randomDelay;
+            
+            if (tick < totalDelay && !blocks.getFirst().mining) {
                 tick++;
                 return;
             }
@@ -548,11 +557,9 @@ public class Deleter extends Module {
 
     private static class ReboundBlock {
         public final BlockPos pos;
-        public final long minedTime;
         
         public ReboundBlock(BlockPos pos) {
             this.pos = pos;
-            this.minedTime = System.currentTimeMillis();
         }
         
         
