@@ -633,8 +633,14 @@ public class MyUtils {
 		Vec3d hitPos;
 
 		if (airPlace) {
-			neighbor = blockPos;
-			hitPos = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
+			// In air place mode, we still need to simulate clicking on the correct face
+			// Calculate the neighbor position based on required face
+			neighbor = blockPos.offset(requiredFace.getOpposite());
+			hitPos = new Vec3d(
+				blockPos.getX() + 0.5 + requiredFace.getOffsetX() * 0.5,
+				blockPos.getY() + 0.5 + requiredFace.getOffsetY() * 0.5,
+				blockPos.getZ() + 0.5 + requiredFace.getOffsetZ() * 0.5
+			);
 		} else {
 			neighbor = blockPos.offset(requiredFace.getOpposite());
 			if (!canPlaceAgainst(targetState, mc.world.getBlockState(neighbor), requiredFace)) {
