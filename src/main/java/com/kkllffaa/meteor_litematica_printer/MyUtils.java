@@ -598,7 +598,7 @@ public class MyUtils {
 		if (!canPlace(blockPos)) return false;
 
 		// Get the required face for this block state
-		Direction requiredFace = getPrecisePlacementFace(blockPos, targetState);
+		Direction requiredFace = getPrecisePlacementFace(targetState);
 		
 		// Debug: Log placement face for torch, lantern, lever blocks
 		Block block = targetState.getBlock();
@@ -658,51 +658,7 @@ public class MyUtils {
 	/**
 	 * Determine the required face for precise placement based on target block state
 	 */
-	private static Direction getPrecisePlacementFace(BlockPos blockPos, BlockState targetState) {
-		Block block = targetState.getBlock();
-		
-		// Special handling for blocks that should always attach to a specific face based on their type
-		// regardless of their facing property (to prevent player orientation dependency)
-		
-		// Torches: always place on floor/wall based on type, not facing property
-		if (block == Blocks.TORCH || block == Blocks.REDSTONE_TORCH) {
-			return Direction.UP; // Place on floor
-		}
-		if (block == Blocks.WALL_TORCH || block == Blocks.REDSTONE_WALL_TORCH) {
-			// For wall torches, determine face from their facing property but keep it deterministic
-			if (targetState.contains(Properties.HORIZONTAL_FACING)) {
-				Direction torchFacing = targetState.get(Properties.HORIZONTAL_FACING);
-				return torchFacing.getOpposite(); // Torch faces away from the wall it's attached to
-			}
-			return Direction.NORTH; // Default fallback
-		}
-		
-		// Lanterns: check hanging property first
-		if (block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN) {
-			if (targetState.contains(Properties.HANGING)) {
-				boolean hanging = targetState.get(Properties.HANGING);
-				return hanging ? Direction.DOWN : Direction.UP;
-			}
-			return Direction.UP; // Default to floor placement
-		}
-		
-		// Levers: check face property (LeverBlock uses FACE, not ATTACHMENT)
-		if (block == Blocks.LEVER) {
-			if (targetState.contains(Properties.BLOCK_FACE)) {
-				BlockFace face = targetState.get(Properties.BLOCK_FACE);
-				switch (face) {
-					case FLOOR: return Direction.UP;
-					case CEILING: return Direction.DOWN;
-					case WALL: 
-						// For wall levers, use facing to determine which wall
-						if (targetState.contains(Properties.HORIZONTAL_FACING)) {
-							Direction leverFacing = targetState.get(Properties.HORIZONTAL_FACING);
-							return leverFacing.getOpposite();
-						}
-						return Direction.NORTH; // Default fallback
-				}
-			}
-		}
+	public static Direction getPrecisePlacementFace(BlockState targetState) {
 
 		// For slabs
 		if (targetState.contains(Properties.SLAB_TYPE)) {
