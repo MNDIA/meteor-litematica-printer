@@ -600,30 +600,6 @@ public class MyUtils {
 		// Get the required face for this block state
 		Direction requiredFace = getPrecisePlacementFace(targetState);
 		
-		// Debug: Log placement face for torch, lantern, lever blocks
-		Block block = targetState.getBlock();
-		if (block == Blocks.TORCH || block == Blocks.REDSTONE_TORCH || 
-			block == Blocks.WALL_TORCH || block == Blocks.REDSTONE_WALL_TORCH ||
-			block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN ||
-			block == Blocks.LEVER) {
-			
-			// Check what properties this block state actually contains
-			String properties = "";
-			if (targetState.contains(Properties.FACING)) properties += "FACING=" + targetState.get(Properties.FACING) + " ";
-			if (targetState.contains(Properties.HORIZONTAL_FACING)) properties += "HORIZONTAL_FACING=" + targetState.get(Properties.HORIZONTAL_FACING) + " ";
-			if (targetState.contains(Properties.BLOCK_FACE)) properties += "BLOCK_FACE=" + targetState.get(Properties.BLOCK_FACE) + " ";
-			if (targetState.contains(Properties.ATTACHMENT)) properties += "ATTACHMENT=" + targetState.get(Properties.ATTACHMENT) + " ";
-			if (targetState.contains(Properties.HANGING)) properties += "HANGING=" + targetState.get(Properties.HANGING) + " ";
-			
-			meteordevelopment.meteorclient.utils.player.ChatUtils.info(
-				"[DEBUG PLACEMENT] Block=" + block.getTranslationKey().replace("block.minecraft.", "") + 
-				" Pos=" + blockPos + 
-				" Properties=[" + properties.trim() + "]" +
-				" RequiredFace=" + requiredFace +
-				" PlayerYaw=" + (mc.player != null ? String.format("%.1f", mc.player.getYaw()) : "null")
-			);
-		}
-		
 		// Apply face reversal if block is in the reverse list
 		if (faceReverseList != null && faceReverseList.contains(targetState.getBlock())) {
 			requiredFace = requiredFace.getOpposite();

@@ -368,48 +368,6 @@ public class Printer extends Module {
 		if (timer >= printing_delay.get()) {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
-				
-				// Debug: Check if schematic state changes with player orientation
-				Block block = required.getBlock();
-				if ((block == Blocks.TORCH || block == Blocks.REDSTONE_TORCH || 
-					block == Blocks.WALL_TORCH || block == Blocks.REDSTONE_WALL_TORCH ||
-					block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN ||
-					block == Blocks.LEVER) && mc.player != null) {
-					
-					String properties1 = "";
-					if (required.contains(Properties.FACING)) properties1 += "FACING=" + required.get(Properties.FACING) + " ";
-					if (required.contains(Properties.HORIZONTAL_FACING)) properties1 += "HORIZONTAL_FACING=" + required.get(Properties.HORIZONTAL_FACING) + " ";
-					if (required.contains(Properties.BLOCK_FACE)) properties1 += "BLOCK_FACE=" + required.get(Properties.BLOCK_FACE) + " ";
-					Direction properties2 = MyUtils.getPrecisePlacementFace(required);
-					switch (properties2) {
-						case UP:
-							properties1 += "REQUIRED_FACE=UP ";
-							break;
-						case DOWN:
-							properties1 += "REQUIRED_FACE=DOWN ";
-							break;
-						case NORTH:
-							properties1 += "REQUIRED_FACE=NORTH ";
-							break;
-						case SOUTH:
-							properties1 += "REQUIRED_FACE=SOUTH ";
-							break;
-						case EAST:
-							properties1 += "REQUIRED_FACE=EAST ";
-							break;
-						case WEST:
-							properties1 += "REQUIRED_FACE=WEST ";
-							break;
-						default:
-							break;
-					}
-					meteordevelopment.meteorclient.utils.player.ChatUtils.info(
-						"[放置属性] Block=" + block.getTranslationKey().replace("block.minecraft.", "") + 
-						" SchematicState=[" + properties1.trim() + "]" +
-						" PlayerYaw=" + String.format("%.1f", mc.player.getYaw())
-					);
-				}
-
 				if (
 						mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
 						&& blockState.isReplaceable()
