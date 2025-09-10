@@ -600,6 +600,30 @@ public class MyUtils {
 		// Get the required face for this block state
 		Direction requiredFace = getPrecisePlacementFace(blockPos, targetState);
 		
+		// Debug: Log placement face for torch, lantern, lever blocks
+		Block block = targetState.getBlock();
+		if (block == Blocks.TORCH || block == Blocks.REDSTONE_TORCH || 
+			block == Blocks.WALL_TORCH || block == Blocks.REDSTONE_WALL_TORCH ||
+			block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN ||
+			block == Blocks.LEVER) {
+			
+			// Check what properties this block state actually contains
+			String properties = "";
+			if (targetState.contains(Properties.FACING)) properties += "FACING=" + targetState.get(Properties.FACING) + " ";
+			if (targetState.contains(Properties.HORIZONTAL_FACING)) properties += "HORIZONTAL_FACING=" + targetState.get(Properties.HORIZONTAL_FACING) + " ";
+			if (targetState.contains(Properties.BLOCK_FACE)) properties += "BLOCK_FACE=" + targetState.get(Properties.BLOCK_FACE) + " ";
+			if (targetState.contains(Properties.ATTACHMENT)) properties += "ATTACHMENT=" + targetState.get(Properties.ATTACHMENT) + " ";
+			if (targetState.contains(Properties.HANGING)) properties += "HANGING=" + targetState.get(Properties.HANGING) + " ";
+			
+			meteordevelopment.meteorclient.utils.player.ChatUtils.info(
+				"[DEBUG PLACEMENT] Block=" + block.getTranslationKey().replace("block.minecraft.", "") + 
+				" Pos=" + blockPos + 
+				" Properties=[" + properties.trim() + "]" +
+				" RequiredFace=" + requiredFace +
+				" PlayerYaw=" + (mc.player != null ? String.format("%.1f", mc.player.getYaw()) : "null")
+			);
+		}
+		
 		// Apply face reversal if block is in the reverse list
 		if (faceReverseList != null && faceReverseList.contains(targetState.getBlock())) {
 			requiredFace = requiredFace.getOpposite();
@@ -635,6 +659,51 @@ public class MyUtils {
 	 * Determine the required face for precise placement based on target block state
 	 */
 	private static Direction getPrecisePlacementFace(BlockPos blockPos, BlockState targetState) {
+		Block block = targetState.getBlock();
+		
+		// Special handling for blocks that should always attach to a specific face based on their type
+		// regardless of their facing property (to prevent player orientation dependency)
+		
+		// Torches: always place on floor/wall based on type, not facing property
+		if (block == Blocks.TORCH || block == Blocks.REDSTONE_TORCH) {
+			return Direction.UP; // Place on floor
+		}
+		if (block == Blocks.WALL_TORCH || block == Blocks.REDSTONE_WALL_TORCH) {
+			// For wall torches, determine face from their facing property but keep it deterministic
+			if (targetState.contains(Properties.HORIZONTAL_FACING)) {
+				Direction torchFacing = targetState.get(Properties.HORIZONTAL_FACING);
+				return torchFacing.getOpposite(); // Torch faces away from the wall it's attached to
+			}
+			return Direction.NORTH; // Default fallback
+		}
+		
+		// Lanterns: check hanging property first
+		if (block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN) {
+			if (targetState.contains(Properties.HANGING)) {
+				boolean hanging = targetState.get(Properties.HANGING);
+				return hanging ? Direction.DOWN : Direction.UP;
+			}
+			return Direction.UP; // Default to floor placement
+		}
+		
+		// Levers: check face property (LeverBlock uses FACE, not ATTACHMENT)
+		if (block == Blocks.LEVER) {
+			if (targetState.contains(Properties.BLOCK_FACE)) {
+				BlockFace face = targetState.get(Properties.BLOCK_FACE);
+				switch (face) {
+					case FLOOR: return Direction.UP;
+					case CEILING: return Direction.DOWN;
+					case WALL: 
+						// For wall levers, use facing to determine which wall
+						if (targetState.contains(Properties.HORIZONTAL_FACING)) {
+							Direction leverFacing = targetState.get(Properties.HORIZONTAL_FACING);
+							return leverFacing.getOpposite();
+						}
+						return Direction.NORTH; // Default fallback
+				}
+			}
+		}
+
 		// For slabs
 		if (targetState.contains(Properties.SLAB_TYPE)) {
 			SlabType slabType = targetState.get(Properties.SLAB_TYPE);

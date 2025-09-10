@@ -31,6 +31,7 @@ import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.BlockHalf;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -366,6 +367,26 @@ public class Printer extends Module {
 		if (timer >= printing_delay.get()) {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
+				
+				// Debug: Check if schematic state changes with player orientation
+				Block block = required.getBlock();
+				if ((block == Blocks.TORCH || block == Blocks.REDSTONE_TORCH || 
+					block == Blocks.WALL_TORCH || block == Blocks.REDSTONE_WALL_TORCH ||
+					block == Blocks.LANTERN || block == Blocks.SOUL_LANTERN ||
+					block == Blocks.LEVER) && mc.player != null) {
+					
+					String properties = "";
+					if (required.contains(Properties.FACING)) properties += "FACING=" + required.get(Properties.FACING) + " ";
+					if (required.contains(Properties.HORIZONTAL_FACING)) properties += "HORIZONTAL_FACING=" + required.get(Properties.HORIZONTAL_FACING) + " ";
+					if (required.contains(Properties.BLOCK_FACE)) properties += "BLOCK_FACE=" + required.get(Properties.BLOCK_FACE) + " ";
+					
+					meteordevelopment.meteorclient.utils.player.ChatUtils.info(
+						"[DEBUG SCHEMATIC] Block=" + block.getTranslationKey().replace("block.minecraft.", "") + 
+						" Pos=" + pos + 
+						" SchematicState=[" + properties.trim() + "]" +
+						" PlayerYaw=" + String.format("%.1f", mc.player.getYaw())
+					);
+				}
 
 				if (
 						mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
