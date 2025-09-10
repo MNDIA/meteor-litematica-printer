@@ -654,7 +654,7 @@ public class MyUtils {
 			}
 		}
 	
-		// For blocks with ATTACHMENT property (bells, grindstones)
+
 		if (targetState.contains(Properties.ATTACHMENT)) {
 			Attachment attachment = targetState.get(Properties.ATTACHMENT);
 			switch (attachment) {
@@ -678,7 +678,7 @@ public class MyUtils {
 			}
 		}
 
-		// For blocks with BLOCK_FACE property (buttons, levers)
+
 		if (targetState.contains(Properties.BLOCK_FACE)) {
 			BlockFace blockFace = targetState.get(Properties.BLOCK_FACE);
 			switch (blockFace) {
