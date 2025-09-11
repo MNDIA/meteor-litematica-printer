@@ -7,8 +7,7 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
+
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
@@ -20,15 +19,12 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
-import net.minecraft.world.LightType;
 import net.minecraft.item.Item;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
-import net.minecraft.util.shape.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -73,25 +69,36 @@ public class Deleter extends Module {
 
     // General
 
-    private final Setting<List<Block>> selectedBlocks = sgGeneral.add(new BlockListSetting.Builder()
-        .name("blocks")
+    private final Setting<Boolean> whiteList = sgGeneral.add(new BoolSetting.Builder()
+        .name("whiteList")
+        .description("Whitelist for selected blocks.")
+        .defaultValue(true)
+        .build()
+    );
+    private final Setting<List<Block>> whiteListBlocks = sgGeneral.add(new BlockListSetting.Builder()
+        .name("whiteListBlocks")
         .description("Which blocks to select.")
-        .defaultValue(Blocks.STONE, Blocks.DIRT, Blocks.GRASS_BLOCK)
+        .visible(whiteList::get)
         .build()
     );
 
-    private final Setting<ListMode> mode = sgGeneral.add(new EnumSetting.Builder<ListMode>()
-        .name("mode")
-        .description("Selection mode.")
-        .defaultValue(ListMode.Blacklist)
+    private final Setting<Boolean> blackList = sgGeneral.add(new BoolSetting.Builder()
+        .name("blackList")
+        .description("Blacklist for selected blocks.")
+        .defaultValue(true)
+        .build()
+    );
+    private final Setting<List<Block>> blackListBlocks = sgGeneral.add(new BlockListSetting.Builder()
+        .name("blackListBlocks")
+        .description("Which blocks to ignore.")
+        .visible(blackList::get)
         .build()
     );
 
     private final Setting<Boolean> continuousMode = sgGeneral.add(new BoolSetting.Builder()
         .name("continuous-mode")
-        .description("Continuously mine whitelist blocks around player position. Only works in whitelist mode.")
+        .description("Continuously mine blocks around player position.")
         .defaultValue(false)
-        .visible(() -> mode.get() == ListMode.Whitelist)
         .build()
     );
 
@@ -102,7 +109,7 @@ public class Deleter extends Module {
         .min(1)
         .max(10)
         .sliderRange(1, 10)
-        .visible(() -> mode.get() == ListMode.Whitelist && continuousMode.get())
+        .visible(continuousMode::get)
         .build()
     );
 
@@ -123,6 +130,12 @@ public class Deleter extends Module {
         .sliderRange(0, 20)
         .build()
     );
+    private final Setting<MyUtils.RandomDelayMode> randomDelayMode = sgGeneral.add(new EnumSetting.Builder<MyUtils.RandomDelayMode>()
+        .name("random-delay-mode")
+        .description("Random delay distribution pattern.")
+        .defaultValue(MyUtils.RandomDelayMode.Balanced)
+        .build()
+    );
 
     private final Setting<Integer> maxBlocksPerTick = sgGeneral.add(new IntSetting.Builder()
         .name("max-blocks-per-tick")
@@ -132,22 +145,18 @@ public class Deleter extends Module {
         .max(1024)
         .build()
     );
-
-    private final Setting<RandomDelayMode> randomDelayMode = sgGeneral.add(new EnumSetting.Builder<RandomDelayMode>()
-        .name("random-delay-mode")
-        .description("Random delay distribution pattern.")
-        .defaultValue(RandomDelayMode.Balanced)
+    private final Setting<MyUtils.DirectionMode> directionMode = sgGeneral.add(new EnumSetting.Builder<MyUtils.DirectionMode>()
+        .name("direction-mode")
+        .description("Method to determine which face of the block to mine.")
+        .defaultValue(MyUtils.DirectionMode.PlayerPosition)
         .build()
     );
-
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
         .description("Sends rotation packets to the server when mining.")
-        .defaultValue(true)
+        .defaultValue(false)
         .build()
     );
-
-    // Render
 
     private final Setting<Boolean> swingHand = sgRender.add(new BoolSetting.Builder()
         .name("swing-hand")
@@ -166,7 +175,7 @@ public class Deleter extends Module {
     private final Setting<ShapeMode> shapeMode = sgRender.add(new EnumSetting.Builder<ShapeMode>()
         .name("shape-mode")
         .description("How the shapes are rendered.")
-        .defaultValue(ShapeMode.Both)
+        .defaultValue(ShapeMode.Lines)
         .build()
     );
 
@@ -277,21 +286,10 @@ public class Deleter extends Module {
         .build()
     );
 
-    private final Setting<Boolean> distanceProtection = sgProtection.add(new BoolSetting.Builder()
+    private final Setting<DistanceMode> distanceProtection = sgProtection.add(new EnumSetting.Builder<DistanceMode>()
         .name("distance-protection")
         .description("Prevent mining blocks that are too far or too close to the player.")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<Double> minDistance = sgProtection.add(new DoubleSetting.Builder()
-        .name("min-distance")
-        .description("Minimum distance from player to mine blocks.")
-        .defaultValue(1.0)
-        .min(0.0)
-        .max(10.0)
-        .sliderRange(0.0, 5.0)
-        .visible(distanceProtection::get)
+        .defaultValue(DistanceMode.Auto)
         .build()
     );
 
@@ -300,9 +298,9 @@ public class Deleter extends Module {
         .description("Maximum distance from player to mine blocks.")
         .defaultValue(4.5)
         .min(1.0)
-        .max(10.0)
+        .max(1024.0)
         .sliderRange(1.0, 8.0)
-        .visible(distanceProtection::get)
+        .visible(() -> distanceProtection.get() == DistanceMode.Max)
         .build()
     );
 
@@ -340,6 +338,35 @@ public class Deleter extends Module {
         .max(320)
         .sliderRange(-20, 20)
         .visible(heightProtection::get)
+        .build()
+    );
+
+    private final Setting<Boolean> widthProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("width-protection")
+        .description("Limit mining within a width tunnel relative to player's facing direction (player reference frame).")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Integer> widthLeft = sgProtection.add(new IntSetting.Builder()
+        .name("width-left")
+        .description("Number of blocks to the left of player's facing direction (negative values = right side).")
+        .defaultValue(-1)
+        .min(-10)
+        .max(10)
+        .sliderRange(-5, 5)
+        .visible(widthProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> widthRight = sgProtection.add(new IntSetting.Builder()
+        .name("width-right")
+        .description("Number of blocks to the right of player's facing direction (negative values = left side).")
+        .defaultValue(2)
+        .min(-10)
+        .max(10)
+        .sliderRange(-5, 5)
+        .visible(widthProtection::get)
         .build()
     );
 
@@ -428,6 +455,15 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> groundProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("ground-protection")
+        .description("Stop mining when player is not on ground (airborne).")
+        .defaultValue(false)
+        .build()
+    );
+
+
+
     // Auto Lighting Settings
     private final Setting<Boolean> autoLighting = sgLighting.add(new BoolSetting.Builder()
         .name("auto-lighting")
@@ -503,29 +539,18 @@ public class Deleter extends Module {
         .build()
     );
 
-    private final Setting<Boolean> groundProtection = sgProtection.add(new BoolSetting.Builder()
-        .name("ground-protection")
-        .description("Stop mining when player is not on ground (airborne).")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<DirectionMode> directionMode = sgGeneral.add(new EnumSetting.Builder<DirectionMode>()
-        .name("direction-mode")
-        .description("Method to determine which face of the block to mine.")
-        .defaultValue(DirectionMode.RayCast)
-        .build()
-    );
-
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
     
     // Mining cache to prevent rebounding block issues
     private final LinkedHashSet<BlockPos> minedBlockCache = new LinkedHashSet<>();
-    // 二级缓存
     private final LinkedHashSet<BlockPos> minedBlockCache2 = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
+
+    // Static color constants for rebound cache rendering
+    private static final SettingColor REBOUND_CACHE_SIDE_COLOR = new SettingColor(0, 255, 0, 10);
+    private static final SettingColor REBOUND_CACHE_LINE_COLOR = new SettingColor(0, 255, 0, 255);
 
     // Light source placement
     private final List<BlockPos> potentialLightPositions = new ArrayList<>();
@@ -540,12 +565,7 @@ public class Deleter extends Module {
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
     
-    // Static random delay arrays to avoid creating new arrays each time
-    private static final int[] DELAY_NONE = {0};
-    private static final int[] DELAY_FAST = {0, 0, 1};
-    private static final int[] DELAY_BALANCED = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
-    private static final int[] DELAY_SLOW = {0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6};
-    private static final int[] DELAY_VARIABLE = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
 
     public Deleter() {
         super(Categories.World, "deleter", "Mines all nearby blocks with this type");
@@ -577,27 +597,19 @@ public class Deleter extends Module {
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
         // Skip manual breaking in continuous mode
-        if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
+        if (continuousMode.get()) {
             return;
         }
 
         BlockState state = mc.world.getBlockState(event.blockPos);
-
-        if (state.getHardness(mc.world, event.blockPos) < 0)
+        if (isAirOrFluid(state)||
+            isPositionCached(event.blockPos)||
+            !isListBlock(state)||
+            isProtectedPosition(event.blockPos)
+        ) {
             return;
-        if (mode.get() == ListMode.Whitelist && !selectedBlocks.get().contains(state.getBlock()))
-            return;
-        if (mode.get() == ListMode.Blacklist && selectedBlocks.get().contains(state.getBlock()))
-            return;
-
-        // Check if this position was recently mined (cache check for rebounding blocks)
-        if (isPositionCached(event.blockPos))
-            return;
-
-        // Check if this position is protected (adjacent to fluids or protected blocks)
-        if (isProtectedPosition(event.blockPos))
-            return;
-
+        }
+        
         foundBlockPositions.clear();
 
         if (!isMiningBlock(event.blockPos)) {
@@ -608,6 +620,31 @@ public class Deleter extends Module {
         }
     }
 
+    private void mineNearbyBlocks(Item item, BlockPos pos, Direction dir, int depth) {
+        if (depth<=0) return;
+        if (foundBlockPositions.contains(pos)) return;
+        foundBlockPositions.add(pos);
+        if (Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ() - 0.5, pos.getX(), pos.getY(), pos.getZ()) > mc.player.getBlockInteractionRange()) return;
+        for(Vec3i neighbourOffset: blockNeighbours) {
+            BlockPos neighbour = pos.add(neighbourOffset);
+            BlockState neighbourState = mc.world.getBlockState(neighbour);
+            if (isAirOrFluid(neighbourState)||
+                    isPositionCached(neighbour)||
+                    !isListBlock(neighbourState)||
+                    isProtectedPosition(neighbour)
+                ) {
+                    continue;
+            }
+
+            if (neighbourState.getBlock().asItem() == item) {
+                MyBlock block = blockPool.get();
+                block.set(neighbour,dir);
+                blocks.add(block);
+                mineNearbyBlocks(item, neighbour, dir, depth-1);
+            }
+        }
+    }
+    
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         blocks.removeIf(MyBlock::shouldRemove);
@@ -620,13 +657,13 @@ public class Deleter extends Module {
                 // 一级缓存中不是空气且不是流体的砖放入二级缓存
                 for (BlockPos pos : minedBlockCache) {
                     BlockState state = mc.world.getBlockState(pos);
-                    if (!isBlockMinedSuccessfully(state)) {
+                    if (!isAirOrFluid(state)) {
                         minedBlockCache2.add(pos);
                     }
                 }
                 minedBlockCache.clear();
                 // 清理二级缓存中已变为空气或流体的砖
-                minedBlockCache2.removeIf(pos -> isBlockMinedSuccessfully(mc.world.getBlockState(pos)));
+                minedBlockCache2.removeIf(pos -> isAirOrFluid(mc.world.getBlockState(pos)));
                 cacheCleanupTickTimer = 0;
             }
         }
@@ -641,7 +678,7 @@ public class Deleter extends Module {
 
         if (!blocks.isEmpty()) {
             // Add random delay to the base delay
-            int[] randomDelays = getRandomDelayArray();
+            int[] randomDelays = MyUtils.getRandomDelayArray(randomDelayMode.get());
             int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
             int totalDelay = delay.get() + randomDelay;
             
@@ -655,9 +692,6 @@ public class Deleter extends Module {
             int count = 0;
             for (MyBlock block : blocks) {
                 if (count >= maxBlocksPerTick.get()) break;
-                
-                // Add successfully mined block to cache
-                addToMinedCache(block.blockPos);
                 block.mine();
                 
                 count++;
@@ -676,13 +710,18 @@ public class Deleter extends Module {
         // 渲染回弹砖块
         if (renderReboundCache.get()) {
             for (BlockPos pos : minedBlockCache2) {
-                renderReboundBlock(event, pos);
+                MyUtils.renderPos(event, pos, shapeMode.get(), 115, REBOUND_CACHE_SIDE_COLOR, REBOUND_CACHE_LINE_COLOR);
             }
         }
         // Render light source positions
         if (autoLighting.get() && renderLightPositions.get()) {
             for (BlockPos pos : potentialLightPositions) {
-                renderLightPosition(event, pos);
+                
+            int lightLevel = MyUtils.getLightLevel(pos);
+            int intensity = Math.max(50, 255 - (lightLevel * 15)); // Darker = more intense yellow
+
+            SettingColor yellowLine = new SettingColor(255, 255, 0, intensity);
+                MyUtils.renderPos(event, pos, ShapeMode.Lines, 116, yellowLine, yellowLine);
             }
         }
     }
@@ -715,25 +754,19 @@ public class Deleter extends Module {
 
         public boolean shouldRemove() {
             BlockState currentState = mc.world.getBlockState(blockPos);
-            
-            // Check if block has been successfully mined (air or fluid)
-            if (isBlockMinedSuccessfully(currentState)) {
-                return true;
-            }
-            
             // Check if block changed to something else or out of range
-            if (currentState.getBlock() != originalBlock || 
-                Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
-                             mc.player.getZ() - 0.5, blockPos.getX() + direction.getOffsetX(), 
-                             blockPos.getY() + direction.getOffsetY(), blockPos.getZ() + direction.getOffsetZ()) 
-                             > mc.player.getBlockInteractionRange()) {
+            if (currentState.getBlock() != originalBlock){
+                addToMinedCache(blockPos);
                 return true;
             }
-
-            if (isProtectedPosition(blockPos)) {
+            
+            if( isOutOfDistance()||
+                !isListBlock(currentState)||
+                isProtectedPosition(blockPos)
+            ){
                 return true;
             }
-
+            
             // Check for mining timeout
             if (timeoutProtection.get() && mining && miningStartTime > 0) {
                 long currentTime = System.currentTimeMillis();
@@ -746,10 +779,19 @@ public class Deleter extends Module {
                     return true;
                 }
             }
-
+            
             return false;
         }
 
+        public boolean isOutOfDistance() {
+             double handDistance =  distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
+
+            return Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()),
+                mc.player.getZ() - 0.5, blockPos.getX() + direction.getOffsetX(),
+                blockPos.getY() + direction.getOffsetY(), blockPos.getZ() + direction.getOffsetZ())
+                > handDistance;
+
+        }
         public void mine() {
             if (!mining) {
                 mc.player.swingHand(Hand.MAIN_HAND);
@@ -761,43 +803,68 @@ public class Deleter extends Module {
         }
 
         private void updateBlockBreakingProgress() {
-            breakBlock(blockPos, swingHand.get());
+            MyUtils.breakBlock(blockPos, swingHand.get(), directionMode.get());
         }
 
         public void render(Render3DEvent event) {
-            VoxelShape shape = mc.world.getBlockState(blockPos).getOutlineShape(mc.world, blockPos);
-
-            double x1 = blockPos.getX();
-            double y1 = blockPos.getY();
-            double z1 = blockPos.getZ();
-            double x2 = blockPos.getX() + 1;
-            double y2 = blockPos.getY() + 1;
-            double z2 = blockPos.getZ() + 1;
-
-            if (!shape.isEmpty()) {
-                x1 = blockPos.getX() + shape.getMin(Direction.Axis.X);
-                y1 = blockPos.getY() + shape.getMin(Direction.Axis.Y);
-                z1 = blockPos.getZ() + shape.getMin(Direction.Axis.Z);
-                x2 = blockPos.getX() + shape.getMax(Direction.Axis.X);
-                y2 = blockPos.getY() + shape.getMax(Direction.Axis.Y);
-                z2 = blockPos.getZ() + shape.getMax(Direction.Axis.Z);
-            }
-
             // Use different colors for timed out blocks
             SettingColor sideColorToUse = timedOut ? new SettingColor(255, 165, 0, 10) : sideColor.get(); // Orange for timed out
             SettingColor lineColorToUse = timedOut ? new SettingColor(255, 165, 0, 255) : lineColor.get(); // Orange for timed out
-
-            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode.get(), 0);
+            MyUtils.renderPos(event, blockPos, shapeMode.get(), 114, sideColorToUse, lineColorToUse);
         }
     }
 
+
     /**
-     * Check if a position is in the mined block cache
+     * Handle continuous mining mode - scan for blocks around player position
      */
-    private boolean isPositionCached(BlockPos pos) {
-        return enableCache.get() && (minedBlockCache.contains(pos) || minedBlockCache2.contains(pos));
+    private void handleContinuousMode() {
+        BlockPos currentPlayerPos = mc.player.getBlockPos();
+        
+        // Check if player moved or it's time for a periodic scan (every 10 ticks)
+        boolean playerMoved = lastPlayerPos == null || !lastPlayerPos.equals(currentPlayerPos);
+        continuousScanTimer++;
+        boolean timeForScan = continuousScanTimer >= 10;
+        
+        if (playerMoved || timeForScan) {
+            lastPlayerPos = currentPlayerPos.toImmutable();
+            continuousScanTimer = 0;
+            scanBlocks(currentPlayerPos);
+        }
     }
 
+    private void scanBlocks(BlockPos centerPos) {
+        int radius = scanRadius.get();
+        
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos scanPos = centerPos.add(x, y, z);
+                    BlockState state = mc.world.getBlockState(scanPos);
+
+                    double handDistance =  distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
+                    if (MyUtils.getDistanceToPlayerEyes(scanPos) > handDistance) {
+                        continue;
+                    }
+                    if (
+                        isPositionCached(scanPos) ||
+                        isAirOrFluid(state) ||
+                        !isListBlock(state) ||
+                        isMiningBlock(scanPos) || 
+                        isProtectedPosition(scanPos)
+                    ) {
+                        continue;
+                    }
+                    // Add to mining queue
+                    MyBlock block = blockPool.get();
+                    block.set(scanPos, Direction.UP); // Default direction for continuous mode
+                    blocks.add(block);
+                }
+            }
+        }
+    }
+
+    
     /**
      * Add position to mined cache and manage cache size
      */
@@ -817,77 +884,35 @@ public class Deleter extends Module {
     }
 
     /**
+     * Check if a position is in the mined block cache
+     */
+    private boolean isPositionCached(BlockPos pos) {
+        return enableCache.get() && (minedBlockCache.contains(pos) || minedBlockCache2.contains(pos));
+    }
+    /**
      * Check if a block has been successfully mined (is air or fluid)
      */
-    private boolean isBlockMinedSuccessfully(BlockState state) {
+    private boolean isAirOrFluid(BlockState state) {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
-
-    /**
-     * Render a rebound block with green outline
-     */
-    private void renderReboundBlock(Render3DEvent event, BlockPos pos) {
-        VoxelShape shape = mc.world.getBlockState(pos).getOutlineShape(mc.world, pos);
-
-        double x1 = pos.getX();
-        double y1 = pos.getY();
-        double z1 = pos.getZ();
-        double x2 = pos.getX() + 1;
-        double y2 = pos.getY() + 1;
-        double z2 = pos.getZ() + 1;
-
-        if (!shape.isEmpty()) {
-            x1 = pos.getX() + shape.getMin(Direction.Axis.X);
-            y1 = pos.getY() + shape.getMin(Direction.Axis.Y);
-            z1 = pos.getZ() + shape.getMin(Direction.Axis.Z);
-            x2 = pos.getX() + shape.getMax(Direction.Axis.X);
-            y2 = pos.getY() + shape.getMax(Direction.Axis.Y);
-            z2 = pos.getZ() + shape.getMax(Direction.Axis.Z);
+    private boolean isListBlock(BlockState state) {
+        // Check list block
+        if (whiteList.get() && ! whiteListBlocks.get().contains(state.getBlock())) {
+            return false;
         }
-
-        // Green colors for rebound blocks
-        SettingColor greenSide = new SettingColor(0, 255, 0, 10);
-        SettingColor greenLine = new SettingColor(0, 255, 0, 255);
-
-        event.renderer.box(x1, y1, z1, x2, y2, z2, greenSide, greenLine, shapeMode.get(), 0);
+        if (blackList.get() && blackListBlocks.get().contains(state.getBlock())) {
+            return false;
+        }
+        return true;
     }
-
-    /**
-     * Render a potential light source position with yellow outline
-     */
-    private void renderLightPosition(Render3DEvent event, BlockPos pos) {
-        double x1 = pos.getX();
-        double y1 = pos.getY();
-        double z1 = pos.getZ();
-        double x2 = pos.getX() + 1;
-        double y2 = pos.getY() + 1;
-        double z2 = pos.getZ() + 1;
-
-        // Get light level for color intensity
-        int lightLevel = getLightLevel(pos);
-        int intensity = Math.max(50, 255 - (lightLevel * 15)); // Darker = more intense yellow
-
-        // Yellow colors for light positions (darker areas get brighter yellow)
-        SettingColor yellowSide = new SettingColor(255, 255, 0, 15);
-        SettingColor yellowLine = new SettingColor(255, 255, 0, intensity);
-
-        event.renderer.box(x1, y1, z1, x2, y2, z2, yellowSide, yellowLine, shapeMode.get(), 0);
-    }
-
-    /**
-     * Check if a block position should be protected from mining
-     * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, outside height range, outside region, or outside directional range
-     */
     private boolean isProtectedPosition(BlockPos pos) {
-        // Check ground protection
-         if (groundProtection.get() && !mc.player.isOnGround()) {
+        if (isGroundProtection()) {
             return true;
         }
-
-        // Check distance protection
-        if (distanceProtection.get()) {
-            double distance = getDistanceToPlayer(pos);
-            if (distance < minDistance.get() || distance > maxDistance.get()) {
+        
+        // Check width protection
+        if (widthProtection.get()) {
+            if (!isWithinWidthRange(pos)) {
                 return true;
             }
         }
@@ -977,20 +1002,13 @@ public class Deleter extends Module {
         return false;
     }
 
-    /**
-     * Calculate the distance from the player to a block position
-     */
-    private double getDistanceToPlayer(BlockPos pos) {
-        return Utils.distance(
-            mc.player.getX() - 0.5, 
-            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
-            mc.player.getZ() - 0.5, 
-            pos.getX() + 0.5, 
-            pos.getY() + 0.5, 
-            pos.getZ() + 0.5
-        );
+    
+    private boolean isGroundProtection(){
+        if (groundProtection.get() && !mc.player.isOnGround()) {
+            return true;
+        }
+        return false;
     }
-
     /**
      * Check if a block position is within the allowed height range
      */
@@ -1029,13 +1047,153 @@ public class Deleter extends Module {
                pos.getZ() >= minZ && pos.getZ() <= maxZ;
     }
 
+
     /**
-     * Get the light level at a specific position
+     * Check if a block position is within the directional range based on player's yaw
      */
-    private int getLightLevel(BlockPos pos) {
-        if (mc.world == null) return 15;
-        return mc.world.getLightLevel(LightType.BLOCK, pos);
+    private boolean isWithinDirectionalRange(BlockPos pos) {
+        // Get player position and yaw
+        double playerX = mc.player.getX();
+        double playerZ = mc.player.getZ();
+        
+        // Get player's yaw and normalize it to -180 to 180
+        float playerYaw = mc.player.getYaw() % 360;
+        if (playerYaw > 180) playerYaw -= 360;
+        if (playerYaw < -180) playerYaw += 360;
+        
+        // Define the four corners of the block (on the horizontal plane)
+        double[][] corners = {
+            {pos.getX(), pos.getZ()},           // Bottom-left
+            {pos.getX() + 1, pos.getZ()},      // Bottom-right  
+            {pos.getX(), pos.getZ() + 1},      // Top-left
+            {pos.getX() + 1, pos.getZ() + 1}   // Top-right
+        };
+        
+        // Check if all corners are within the directional range
+        for (double[] corner : corners) {
+            // Calculate the direction vector from player to corner
+            double deltaYMath = corner[0] - playerX;
+            double deltaXMath = corner[1] - playerZ;
+            
+            // Skip if corner is at player position (avoid division by zero)
+            if (deltaYMath == 0 && deltaXMath == 0) continue;
+            
+            // Calculate the angle to the corner in degrees (-180 to 180)
+            double angleToCorner = -Math.toDegrees(Math.atan2(deltaYMath, deltaXMath));
+            
+            // Calculate the angle difference
+            double angleDifference = Math.abs(angleToCorner - playerYaw);
+            if (angleDifference > 180) {
+                angleDifference = 360 - angleDifference;
+            }
+            
+            // If any corner is outside the allowed range, reject the block
+            if (angleDifference > directionalAngle.get()) {
+                return false;
+            }
+        }
+        
+        // All corners are within range
+        return true;
     }
+
+    /**
+     * Check if a block position is within the width tunnel relative to player's reference frame
+     */
+    private boolean isWithinWidthRange(BlockPos pos) {
+        if (mc.player == null) return false;
+        
+        // Get player position
+        double playerX = mc.player.getX();
+        double playerZ = mc.player.getZ();
+        
+        // Get player's yaw and normalize it to -180 to 180
+        float playerYaw = mc.player.getYaw() % 360;
+        if (playerYaw > 180) playerYaw -= 360;
+        if (playerYaw < -180) playerYaw += 360;
+        
+        // Classify player's yaw into four main directions (East, South, West, North)
+        Direction primaryDirection = classifyYawToDirection(playerYaw);
+        
+        // Transform block position to player's reference frame
+        int[] playerRefCoords = transformToPlayerReference(pos, playerX, playerZ, primaryDirection);
+        int leftRightPos = playerRefCoords[0]; // Left-right position in player's reference frame
+        
+        // Check if the block is within the specified width range
+        // widthLeft is the leftmost boundary (negative = right side)
+        // widthRight is the rightmost boundary (negative = left side)
+        int minWidth = Math.min(widthLeft.get(), widthRight.get());
+        int maxWidth = Math.max(widthLeft.get(), widthRight.get());
+        
+        return leftRightPos >= minWidth && leftRightPos <= maxWidth;
+    }
+
+    /**
+     * Classify player's yaw angle into one of four cardinal directions
+     */
+    private Direction classifyYawToDirection(float yaw) {
+        // Normalize yaw to 0-360 range
+        yaw = yaw % 360;
+        if (yaw < 0) yaw += 360;
+        
+        // Classify into four directions with 90-degree ranges
+        if (yaw >= 315 || yaw < 45) {
+            return Direction.SOUTH; // 0° (facing negative Z)
+        } else if (yaw >= 45 && yaw < 135) {
+            return Direction.WEST; // 90° (facing negative X) 
+        } else if (yaw >= 135 && yaw < 225) {
+            return Direction.NORTH; // 180° (facing positive Z)
+        } else {
+            return Direction.EAST; // 270° (facing positive X)
+        }
+    }
+
+    /**
+     * Transform world coordinates to player's reference frame
+     * Returns [leftRight, forwardBack] where:
+     * - leftRight: negative = left of player, positive = right of player  
+     * - forwardBack: negative = behind player, positive = in front of player
+     */
+    private int[] transformToPlayerReference(BlockPos blockPos, double playerX, double playerZ, Direction playerFacing) {
+        // Calculate relative position from player to block
+        int relativeX = blockPos.getX() - (int)Math.floor(playerX);
+        int relativeZ = blockPos.getZ() - (int)Math.floor(playerZ);
+        
+        int leftRight, forwardBack;
+        
+        // Transform coordinates based on player's primary facing direction
+        switch (playerFacing) {
+            case SOUTH: // Player facing negative Z (yaw ≈ 0°)
+                leftRight = -relativeX;   // Left = negative X direction
+                forwardBack = -relativeZ; // Forward = negative Z direction
+                break;
+                
+            case WEST: // Player facing negative X (yaw ≈ 90°)  
+                leftRight = -relativeZ;   // Left = negative Z direction
+                forwardBack = relativeX;  // Forward = positive X direction
+                break;
+                
+            case NORTH: // Player facing positive Z (yaw ≈ 180°)
+                leftRight = relativeX;    // Left = positive X direction  
+                forwardBack = relativeZ;  // Forward = positive Z direction
+                break;
+                
+            case EAST: // Player facing positive X (yaw ≈ 270°)
+                leftRight = relativeZ;    // Left = positive Z direction
+                forwardBack = -relativeX; // Forward = negative X direction
+                break;
+                
+            default:
+                leftRight = 0;
+                forwardBack = 0;
+                break;
+        }
+        
+        return new int[]{leftRight, forwardBack};
+    }
+
+
+
 
     /**
      * Check if a position is suitable for placing a light source
@@ -1069,11 +1227,11 @@ public class Deleter extends Module {
         if (placedLightSources.contains(pos)) return false;
         
         // Check if the position is within range
-        double distance = getDistanceToPlayer(pos);
+        double distance = MyUtils.getDistanceToPlayerEyes(pos);
         if (distance > lightingScanRadius.get()) return false;
         
         // Check if light level is below threshold
-        int lightLevel = getLightLevel(pos);
+        int lightLevel = MyUtils.getLightLevel(pos);
         return lightLevel < lightLevelThreshold.get();
     }
 
@@ -1116,16 +1274,16 @@ public class Deleter extends Module {
         
         // Sort by light level (darkest first) then by distance to player
         potentialLightPositions.sort((pos1, pos2) -> {
-            int light1 = getLightLevel(pos1);
-            int light2 = getLightLevel(pos2);
-            
+            int light1 = MyUtils.getLightLevel(pos1);
+            int light2 = MyUtils.getLightLevel(pos2);
+
             if (light1 != light2) {
                 return Integer.compare(light1, light2); // Darker positions first
             }
             
             // If same light level, prefer closer positions
-            double dist1 = getDistanceToPlayer(pos1);
-            double dist2 = getDistanceToPlayer(pos2);
+            double dist1 = MyUtils.getDistanceToPlayerEyes(pos1);
+            double dist2 = MyUtils.getDistanceToPlayerEyes(pos2);
             return Double.compare(dist1, dist2);
         });
     }
@@ -1182,297 +1340,24 @@ public class Deleter extends Module {
         }
     }
 
-    /**
-     * Check if a block position is within the directional range based on player's yaw
-     */
-    private boolean isWithinDirectionalRange(BlockPos pos) {
-        // Get player position and yaw
-        double playerX = mc.player.getX();
-        double playerZ = mc.player.getZ();
-        
-        // Get player's yaw and normalize it to -180 to 180
-        float playerYaw = mc.player.getYaw() % 360;
-        if (playerYaw > 180) playerYaw -= 360;
-        if (playerYaw < -180) playerYaw += 360;
-        
-        // Define the four corners of the block (on the horizontal plane)
-        double[][] corners = {
-            {pos.getX(), pos.getZ()},           // Bottom-left
-            {pos.getX() + 1, pos.getZ()},      // Bottom-right  
-            {pos.getX(), pos.getZ() + 1},      // Top-left
-            {pos.getX() + 1, pos.getZ() + 1}   // Top-right
-        };
-        
-        // Check if all corners are within the directional range
-        for (double[] corner : corners) {
-            // Calculate the direction vector from player to corner
-            double deltaYMath = corner[0] - playerX;
-            double deltaXMath = corner[1] - playerZ;
-            
-            // Skip if corner is at player position (avoid division by zero)
-            if (deltaYMath == 0 && deltaXMath == 0) continue;
-            
-            // Calculate the angle to the corner in degrees (-180 to 180)
-            double angleToCorner = -Math.toDegrees(Math.atan2(deltaYMath, deltaXMath));
-            
-            // Calculate the angle difference
-            double angleDifference = Math.abs(angleToCorner - playerYaw);
-            if (angleDifference > 180) {
-                angleDifference = 360 - angleDifference;
-            }
-            
-            // If any corner is outside the allowed range, reject the block
-            if (angleDifference > directionalAngle.get()) {
-                return false;
-            }
-        }
-        
-        // All corners are within range
-        return true;
-    }
 
-    private void mineNearbyBlocks(Item item, BlockPos pos, Direction dir, int depth) {
-        if (depth<=0) return;
-        if (foundBlockPositions.contains(pos)) return;
-        foundBlockPositions.add(pos);
-        if (Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ() - 0.5, pos.getX(), pos.getY(), pos.getZ()) > mc.player.getBlockInteractionRange()) return;
-        for(Vec3i neighbourOffset: blockNeighbours) {
-            BlockPos neighbour = pos.add(neighbourOffset);
-            // Check if this neighbor block was recently mined (cache check for rebounding blocks)
-            if (isPositionCached(neighbour)) continue;
-            
-            // Check if this neighbor position is protected (adjacent to fluids or protected blocks)
-            if (isProtectedPosition(neighbour)) continue;
-            
-            if (mc.world.getBlockState(neighbour).getBlock().asItem() == item) {
-                MyBlock block = blockPool.get();
-                block.set(neighbour,dir);
-                blocks.add(block);
-                mineNearbyBlocks(item, neighbour, dir, depth-1);
-            }
-        }
-    }
-
-    /**
-     * Handle continuous mining mode - scan for blocks around player position
-     */
-    private void handleContinuousMode() {
-        BlockPos currentPlayerPos = mc.player.getBlockPos();
-        
-        // Check if player moved or it's time for a periodic scan (every 10 ticks)
-        boolean playerMoved = lastPlayerPos == null || !lastPlayerPos.equals(currentPlayerPos);
-        continuousScanTimer++;
-        boolean timeForScan = continuousScanTimer >= 10;
-        
-        if (playerMoved || timeForScan) {
-            lastPlayerPos = currentPlayerPos.toImmutable();
-            continuousScanTimer = 0;
-            scanBlocks(currentPlayerPos);
-        }
-    }
-
-    /**
-     * Get the random delay array based on current mode setting
-     */
-    private int[] getRandomDelayArray() {
-        switch (randomDelayMode.get()) {
-            case None:
-                return DELAY_NONE;
-            case Fast:
-                return DELAY_FAST;
-            case Balanced:
-                return DELAY_BALANCED;
-            case Slow:
-                return DELAY_SLOW;
-            case Variable:
-                return DELAY_VARIABLE;
-            default:
-                return DELAY_BALANCED; // Default to Balanced
-        }
-    }
-
-    /**
-     * Scan for whitelist blocks around the given position
-     */
-    private void scanBlocks(BlockPos centerPos) {
-        int radius = scanRadius.get();
-        
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    BlockPos scanPos = centerPos.add(x, y, z);
-                    
-                    // Check if within interaction range
-                    if (Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
-                                     mc.player.getZ() - 0.5, scanPos.getX(), scanPos.getY(), scanPos.getZ()) 
-                                     > mc.player.getBlockInteractionRange()) {
-                        continue;
-                    }
-                    
-                    BlockState state = mc.world.getBlockState(scanPos);
-                    
-                    // Check if it's a whitelist block
-                    if (mode.get() == ListMode.Whitelist && !selectedBlocks.get().contains(state.getBlock())) {
-                        continue;
-                    }
-                    if (mode.get() == ListMode.Blacklist && selectedBlocks.get().contains(state.getBlock())) {
-                        continue;
-                    }
-                    
-                    // Check if already being mined or in cache
-                    if (isMiningBlock(scanPos) || isPositionCached(scanPos)) {
-                        continue;
-                    }
-                    
-                    // Check protection
-                    if (isProtectedPosition(scanPos)) {
-                        continue;
-                    }
-                    
-                    // Add to mining queue
-                    MyBlock block = blockPool.get();
-                    block.set(scanPos, Direction.UP); // Default direction for continuous mode
-                    blocks.add(block);
-                }
-            }
-        }
-    }
-
-    public boolean breakBlock(BlockPos blockPos, boolean swing) {
-        if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
-
-        // Creating new instance of block pos because minecraft assigns the parameter to a field, and we don't want it to change when it has been stored in a field somewhere
-        BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
-
-        InstantRebreak ir = Modules.get().get(InstantRebreak.class);
-        if (ir != null && ir.isActive() && ir.blockPos.equals(pos) && ir.shouldMine()) {
-            ir.sendPacket();
-            return true;
-        }
-
-        if (mc.interactionManager.isBreakingBlock())
-            mc.interactionManager.updateBlockBreakingProgress(pos, getDirection(blockPos));
-        else mc.interactionManager.attackBlock(pos,getDirection(blockPos));
-
-        if (swing) mc.player.swingHand(Hand.MAIN_HAND);
-        else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-
-        return true;
-    }
-    // Finds the best block direction using ray casting from player eye to block center
-    public Direction getDirection(BlockPos pos) {
-        if (directionMode.get() == DirectionMode.Original) {
-            return BlockUtils.getDirection(pos);
-        }
-        // Get player eye position
-        Vec3d eyePos = new Vec3d(
-            mc.player.getX(), 
-            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
-            mc.player.getZ()
-        );
-        
-        // Get block center position
-        Vec3d blockCenter = new Vec3d(
-            pos.getX() + 0.5, 
-            pos.getY() + 0.5, 
-            pos.getZ() + 0.5
-        );
-        
-        // Calculate direction vector from eye to block center
-        Vec3d direction = blockCenter.subtract(eyePos);
-        
-        // Get absolute values of direction components
-        double absX = Math.abs(direction.x);
-        double absY = Math.abs(direction.y);
-        double absZ = Math.abs(direction.z);
-        
-        // Find which component is largest - this determines which face the ray hits
-        if (absX >= absY && absX >= absZ) {
-            // Ray hits either EAST or WEST face
-            return direction.x > 0 ? Direction.WEST : Direction.EAST;
-        } else if (absY >= absX && absY >= absZ) {
-            // Ray hits either UP or DOWN face
-            return direction.y > 0 ? Direction.DOWN : Direction.UP;
-        } else {
-            // Ray hits either SOUTH or NORTH face
-            return direction.z > 0 ? Direction.NORTH : Direction.SOUTH;
-        }
-    }
     @Override
     public String getInfoString() {
-        long timedOutBlocks = minedBlockCache.size(); // Approximate count of cached (including timed out) blocks
-
-        StringBuilder info = new StringBuilder();
-        
-        if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
-            info.append("Continuous (").append(selectedBlocks.get().size()).append(") - Mining: ").append(blocks.size());
-        } else {
-            info.append(mode.get().toString()).append(" (").append(selectedBlocks.get().size()).append(")");
-        }
-        
-        // Add auto lighting info
-        if (autoLighting.get()) {
-            info.append(" | Lights: ").append(potentialLightPositions.size()).append("/").append(placedLightSources.size());
-        }
-        
-        // Add protection info
-        StringBuilder protections = new StringBuilder();
-        if (distanceProtection.get()) {
-            protections.append("D");
-        }
-        if (heightProtection.get()) {
-            protections.append("H");
-        }
-        if (regionProtection.get()) {
-            protections.append("R");
-        }
-        if (directionalProtection.get()) {
-            protections.append("Dir");
-        }
-        if (timeoutProtection.get()) {
-            protections.append("T");
-        }
-        if (fluidProtection.get() || customProtection.get()) {
-            protections.append("P");
-        }
-        if (groundProtection.get()) {
-            protections.append("G");
-        }
-        if (autoLighting.get()) {
-            protections.append("L");
-        }
-        
-        if (protections.length() > 0) {
-            info.append(" [").append(protections).append("]");
-        }
-        
-        if (timeoutProtection.get() && timedOutBlocks > 0) {
-            info.append(" | Cached: ").append(timedOutBlocks);
-        }
-        
-        return info.toString();
+        return " (" + blackListBlocks.get().size() + whiteListBlocks.get().size() + ")";
     }
 
     public enum ListMode {
         Whitelist,
         Blacklist
     }
-
+    public enum DistanceMode {
+        Auto,
+        Max,
+    }
     public enum HeightReferenceMode {
         Player,
         World
     }
 
-    public enum RandomDelayMode {
-        None,    
-        Fast,     
-        Balanced, 
-        Slow,      
-        Variable   
-    }
 
-    public enum DirectionMode {
-        Original,  // Use BlockUtils.getDirection method
-        RayCast    // Use ray casting from player eye to block center
-    }
 }

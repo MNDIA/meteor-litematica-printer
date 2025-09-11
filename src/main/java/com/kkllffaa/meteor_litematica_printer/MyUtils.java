@@ -1,6 +1,10 @@
 package com.kkllffaa.meteor_litematica_printer;
 
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
+import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
+import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.Attachment;
@@ -19,12 +23,16 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
+import net.minecraft.world.LightType;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.RaycastContext.FluidHandling;
 import net.minecraft.world.RaycastContext.ShapeType;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
-import static meteordevelopment.meteorclient.utils.world.BlockUtils.canPlace;
+
+import meteordevelopment.meteorclient.events.render.Render3DEvent;
+import meteordevelopment.meteorclient.renderer.ShapeMode;
+
 
 //import baritone.api.utils.BetterBlockPos;
 //import baritone.api.utils.RayTraceUtils;
@@ -35,7 +43,7 @@ public class MyUtils {
 
 	public static boolean place(BlockPos blockPos, Direction direction, SlabType slabType, BlockHalf blockHalf, Direction blockHorizontalOrientation, Axis wantedAxies, boolean airPlace, boolean swingHand, boolean rotate, boolean clientSide, int range) {
 		if (mc.player == null) return false;
-		if (!canPlace(blockPos)) return false;
+		if (!BlockUtils.canPlace(blockPos)) return false;
 
 		Vec3d hitPos = new Vec3d(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
 
@@ -595,10 +603,13 @@ public class MyUtils {
 	 */
 	public static boolean precisePlaceByFace(BlockPos blockPos, BlockState targetState, boolean airPlace, boolean swingHand, java.util.List<Block> faceReverseList) {
 		if (mc.player == null) return false;
-		if (!canPlace(blockPos)) return false;
+		if (!BlockUtils.canPlace(blockPos)) return false;
 
 		// Get the required face for this block state
 		Direction requiredFace = getPrecisePlacementFace(targetState);
+		if (requiredFace == null) {
+			requiredFace = getBlockClickFace(blockPos, DirectionMode.PlayerPosition);
+		}
 		
 		// Apply face reversal if block is in the reverse list
 		if (faceReverseList != null && faceReverseList.contains(targetState.getBlock())) {
@@ -640,6 +651,7 @@ public class MyUtils {
 	/**
 	 * Determine the required face for precise placement based on target block state
 	 */
+	private static boolean switchDir = false;
 	public static Direction getPrecisePlacementFace(BlockState targetState) {
 
 		// For slabs
@@ -719,13 +731,148 @@ public class MyUtils {
 			axis = targetState.get(Properties.HORIZONTAL_AXIS);
 		}
 		if (axis != null) {
+			switchDir = !switchDir;
 			switch (axis) {
-				case X: return Direction.EAST;
-				case Y: return Direction.UP;
-				case Z: return Direction.SOUTH;
+				case X: return switchDir ? Direction.EAST : Direction.WEST;
+				case Y: return switchDir ? Direction.UP : Direction.DOWN;
+				case Z: return switchDir ? Direction.SOUTH : Direction.NORTH;
 			}
 		}
-		return Direction.UP;
+		return null;
 	}
 
+
+	public static Direction getBlockClickFace(BlockPos pos , DirectionMode directionMode) {
+        if (directionMode == DirectionMode.PlayerRotation) {
+            return BlockUtils.getDirection(pos);
+        }
+        // Get player eye position
+        Vec3d eyePos = new Vec3d(
+            mc.player.getX(), 
+            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
+            mc.player.getZ()
+        );
+        
+        // Get block center position
+        Vec3d blockCenter = new Vec3d(
+            pos.getX() + 0.5, 
+            pos.getY() + 0.5, 
+            pos.getZ() + 0.5
+        );
+        
+        // Calculate direction vector from eye to block center
+        Vec3d direction = blockCenter.subtract(eyePos);
+        
+        // Get absolute values of direction components
+        double absX = Math.abs(direction.x);
+        double absY = Math.abs(direction.y);
+        double absZ = Math.abs(direction.z);
+        
+        // Find which component is largest - this determines which face the ray hits
+        if (absX >= absY && absX >= absZ) {
+            // Ray hits either EAST or WEST face
+            return direction.x > 0 ? Direction.WEST : Direction.EAST;
+        } else if (absY >= absX && absY >= absZ) {
+            // Ray hits either UP or DOWN face
+            return direction.y > 0 ? Direction.DOWN : Direction.UP;
+        } else {
+            // Ray hits either SOUTH or NORTH face
+            return direction.z > 0 ? Direction.NORTH : Direction.SOUTH;
+        }
+    }
+    public enum DirectionMode {
+        PlayerRotation,  // Use BlockUtils.getDirection method
+        PlayerPosition    // Use ray casting from player eye to block center
+    }
+
+	public static boolean breakBlock(BlockPos blockPos, boolean swing, DirectionMode directionMode) {
+        if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
+
+        // Creating new instance of block pos because minecraft assigns the parameter to a field, and we don't want it to change when it has been stored in a field somewhere
+        BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
+
+        InstantRebreak ir = Modules.get().get(InstantRebreak.class);
+        if (ir != null && ir.isActive() && ir.blockPos.equals(pos) && ir.shouldMine()) {
+            ir.sendPacket();
+            return true;
+        }
+
+        if (mc.interactionManager.isBreakingBlock())
+            mc.interactionManager.updateBlockBreakingProgress(pos, getBlockClickFace(blockPos, directionMode));
+        else mc.interactionManager.attackBlock(pos,getBlockClickFace(blockPos, directionMode));
+
+        if (swing) mc.player.swingHand(Hand.MAIN_HAND);
+        else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+
+        return true;
+    }
+    // Static random delay arrays to avoid creating new arrays each time
+    private static final int[] DELAY_NONE = {0};
+    private static final int[] DELAY_FAST = {0, 0, 1};
+    private static final int[] DELAY_BALANCED = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
+    private static final int[] DELAY_SLOW = {0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6};
+    private static final int[] DELAY_VARIABLE = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	/**
+     * Get the random delay array based on current mode setting
+     */
+    public static int[] getRandomDelayArray(RandomDelayMode mode) {
+        switch (mode) {
+            case None:
+                return DELAY_NONE;
+            case Fast:
+                return DELAY_FAST;
+            case Balanced:
+                return DELAY_BALANCED;
+            case Slow:
+                return DELAY_SLOW;
+            case Variable:
+                return DELAY_VARIABLE;
+            default:
+                return DELAY_BALANCED; // Default to Balanced
+        }
+    }
+    public enum RandomDelayMode {
+        None,    
+        Fast,     
+        Balanced, 
+        Slow,      
+        Variable   
+    }
+    public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, int excludeDir, SettingColor sideColorToUse, SettingColor lineColorToUse) {
+            VoxelShape shape = mc.world.getBlockState(blockPos).getOutlineShape(mc.world, blockPos);
+
+            double x1 = blockPos.getX();
+            double y1 = blockPos.getY();
+            double z1 = blockPos.getZ();
+            double x2 = blockPos.getX() + 1;
+            double y2 = blockPos.getY() + 1;
+            double z2 = blockPos.getZ() + 1;
+
+            if (!shape.isEmpty()) {
+                x1 = blockPos.getX() + shape.getMin(Direction.Axis.X);
+                y1 = blockPos.getY() + shape.getMin(Direction.Axis.Y);
+                z1 = blockPos.getZ() + shape.getMin(Direction.Axis.Z);
+                x2 = blockPos.getX() + shape.getMax(Direction.Axis.X);
+                y2 = blockPos.getY() + shape.getMax(Direction.Axis.Y);
+                z2 = blockPos.getZ() + shape.getMax(Direction.Axis.Z);
+            }
+            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode, excludeDir);
+    }
+	public static double getDistanceToPlayerEyes(BlockPos pos) {
+        return Utils.distance(
+            mc.player.getX(), 
+            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
+            mc.player.getZ(), 
+            pos.getX() + 0.5, 
+            pos.getY() + 0.5, 
+            pos.getZ() + 0.5
+        );
+    }
+	    /**
+     * Get the light level at a specific position
+     */
+    public static int getLightLevel(BlockPos pos) {
+        if (mc.world == null) return 15;
+        return mc.world.getLightLevel(LightType.BLOCK, pos);
+    }
 }
