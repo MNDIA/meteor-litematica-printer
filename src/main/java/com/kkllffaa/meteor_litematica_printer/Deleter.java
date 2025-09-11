@@ -18,6 +18,9 @@ import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import meteordevelopment.meteorclient.utils.player.FindItemResult;
+import meteordevelopment.meteorclient.utils.player.InvUtils;
+import net.minecraft.world.LightType;
 import net.minecraft.item.Item;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.util.Hand;
@@ -38,6 +41,7 @@ public class Deleter extends Module {
     private final SettingGroup sgRender = settings.createGroup("Render");
     private final SettingGroup sgProtection = settings.createGroup("Mining Protection");
     private final SettingGroup sgCache = settings.createGroup("Cache");
+    private final SettingGroup sgLighting = settings.createGroup("Auto Lighting");
 
     private final Set<Vec3i> upperNeighbours = Set.of(
         new Vec3i(0, 1, 0)
@@ -424,6 +428,81 @@ public class Deleter extends Module {
         .build()
     );
 
+    // Auto Lighting Settings
+    private final Setting<Boolean> autoLighting = sgLighting.add(new BoolSetting.Builder()
+        .name("auto-lighting")
+        .description("Automatically place light sources on dark blocks to prevent mob spawning.")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<List<Block>> lightSources = sgLighting.add(new BlockListSetting.Builder()
+        .name("light-sources")
+        .description("List of blocks to use as light sources.")
+        .defaultValue(Blocks.TORCH, Blocks.SEA_LANTERN)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Integer> lightLevelThreshold = sgLighting.add(new IntSetting.Builder()
+        .name("light-level-threshold")
+        .description("Place light sources on blocks with light level below this value.")
+        .defaultValue(8)
+        .min(0)
+        .max(15)
+        .sliderRange(0, 15)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Integer> lightingScanRadius = sgLighting.add(new IntSetting.Builder()
+        .name("lighting-scan-radius")
+        .description("Radius to scan for dark blocks around player position.")
+        .defaultValue(8)
+        .min(1)
+        .max(16)
+        .sliderRange(1, 16)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Integer> lightingDelay = sgLighting.add(new IntSetting.Builder()
+        .name("lighting-delay")
+        .description("Delay between placing light sources (in ticks).")
+        .defaultValue(10)
+        .min(1)
+        .max(60)
+        .sliderRange(1, 40)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Boolean> renderLightPositions = sgLighting.add(new BoolSetting.Builder()
+        .name("render-light-positions")
+        .description("Render positions where light sources will be placed.")
+        .defaultValue(true)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<ListMode> lightingMode = sgLighting.add(new EnumSetting.Builder<ListMode>()
+        .name("lighting-mode")
+        .description("Mode for selecting suitable blocks for light source placement.")
+        .defaultValue(ListMode.Whitelist)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<List<Block>> lightingBlocks = sgLighting.add(new BlockListSetting.Builder()
+        .name("lighting-blocks")
+        .description("Blocks to place light sources on (whitelist) or avoid (blacklist).")
+        .defaultValue(Blocks.STONE, Blocks.COBBLESTONE, Blocks.DIRT, Blocks.GRASS_BLOCK, Blocks.NETHERRACK, 
+                     Blocks.END_STONE, Blocks.DEEPSLATE, Blocks.COBBLED_DEEPSLATE, Blocks.ANDESITE, 
+                     Blocks.GRANITE, Blocks.DIORITE, Blocks.SANDSTONE, Blocks.RED_SANDSTONE)
+        .visible(autoLighting::get)
+        .build()
+    );
+
     private final Setting<Boolean> groundProtection = sgProtection.add(new BoolSetting.Builder()
         .name("ground-protection")
         .description("Stop mining when player is not on ground (airborne).")
@@ -447,6 +526,11 @@ public class Deleter extends Module {
     // 二级缓存
     private final LinkedHashSet<BlockPos> minedBlockCache2 = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
+
+    // Light source placement
+    private final List<BlockPos> potentialLightPositions = new ArrayList<>();
+    private final LinkedHashSet<BlockPos> placedLightSources = new LinkedHashSet<>();
+    private int lightingTickTimer = 0;
 
     private int tick = 0;
     
@@ -477,6 +561,9 @@ public class Deleter extends Module {
         cacheCleanupTickTimer = 0;
         lastPlayerPos = null;
         continuousScanTimer = 0;
+        potentialLightPositions.clear();
+        placedLightSources.clear();
+        lightingTickTimer = 0;
     }
 
     private boolean isMiningBlock(BlockPos pos) {
@@ -549,6 +636,9 @@ public class Deleter extends Module {
             handleContinuousMode();
         }
 
+        // Handle automatic lighting
+        handleAutoLighting();
+
         if (!blocks.isEmpty()) {
             // Add random delay to the base delay
             int[] randomDelays = getRandomDelayArray();
@@ -587,6 +677,12 @@ public class Deleter extends Module {
         if (renderReboundCache.get()) {
             for (BlockPos pos : minedBlockCache2) {
                 renderReboundBlock(event, pos);
+            }
+        }
+        // Render light source positions
+        if (autoLighting.get() && renderLightPositions.get()) {
+            for (BlockPos pos : potentialLightPositions) {
+                renderLightPosition(event, pos);
             }
         }
     }
@@ -757,6 +853,28 @@ public class Deleter extends Module {
     }
 
     /**
+     * Render a potential light source position with yellow outline
+     */
+    private void renderLightPosition(Render3DEvent event, BlockPos pos) {
+        double x1 = pos.getX();
+        double y1 = pos.getY();
+        double z1 = pos.getZ();
+        double x2 = pos.getX() + 1;
+        double y2 = pos.getY() + 1;
+        double z2 = pos.getZ() + 1;
+
+        // Get light level for color intensity
+        int lightLevel = getLightLevel(pos);
+        int intensity = Math.max(50, 255 - (lightLevel * 15)); // Darker = more intense yellow
+
+        // Yellow colors for light positions (darker areas get brighter yellow)
+        SettingColor yellowSide = new SettingColor(255, 255, 0, 15);
+        SettingColor yellowLine = new SettingColor(255, 255, 0, intensity);
+
+        event.renderer.box(x1, y1, z1, x2, y2, z2, yellowSide, yellowLine, shapeMode.get(), 0);
+    }
+
+    /**
      * Check if a block position should be protected from mining
      * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, outside height range, outside region, or outside directional range
      */
@@ -909,6 +1027,159 @@ public class Deleter extends Module {
         return pos.getX() >= minX && pos.getX() <= maxX &&
                pos.getY() >= minY && pos.getY() <= maxY &&
                pos.getZ() >= minZ && pos.getZ() <= maxZ;
+    }
+
+    /**
+     * Get the light level at a specific position
+     */
+    private int getLightLevel(BlockPos pos) {
+        if (mc.world == null) return 15;
+        return mc.world.getLightLevel(LightType.BLOCK, pos);
+    }
+
+    /**
+     * Check if a position is suitable for placing a light source
+     */
+    private boolean isSuitableForLightSource(BlockPos pos) {
+        if (mc.world == null || mc.player == null) return false;
+        
+        // Check if position is air
+        if (!mc.world.getBlockState(pos).isAir()) return false;
+        
+        // Check if we have a solid block below to place the light source on
+        BlockPos belowPos = pos.down();
+        BlockState belowState = mc.world.getBlockState(belowPos);
+        
+        // Must have a solid block below for torches, or allow placement on any solid block for sea lanterns
+        if (belowState.isAir() || !Block.isShapeFullCube(belowState.getCollisionShape(mc.world, belowPos))) {
+            return false;
+        }
+        
+        // Use blacklist/whitelist to determine if the block below is suitable
+        Block belowBlock = belowState.getBlock();
+        if (lightingMode.get() == ListMode.Whitelist) {
+            // Only place on blocks in the whitelist
+            if (!lightingBlocks.get().contains(belowBlock)) return false;
+        } else {
+            // Don't place on blocks in the blacklist
+            if (lightingBlocks.get().contains(belowBlock)) return false;
+        }
+        
+        // Don't place where we already have a light source
+        if (placedLightSources.contains(pos)) return false;
+        
+        // Check if the position is within range
+        double distance = getDistanceToPlayer(pos);
+        if (distance > lightingScanRadius.get()) return false;
+        
+        // Check if light level is below threshold
+        int lightLevel = getLightLevel(pos);
+        return lightLevel < lightLevelThreshold.get();
+    }
+
+    /**
+     * Find the best light source block to place from inventory
+     */
+    private Block getBestLightSource() {
+        if (mc.player == null) return null;
+        
+        for (Block lightSource : lightSources.get()) {
+            FindItemResult result = InvUtils.findInHotbar(lightSource.asItem());
+            if (result.found()) {
+                return lightSource;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Scan for positions where light sources should be placed
+     */
+    private void scanForLightPositions() {
+        if (!autoLighting.get() || mc.player == null || mc.world == null) return;
+        
+        potentialLightPositions.clear();
+        BlockPos playerPos = mc.player.getBlockPos();
+        int radius = lightingScanRadius.get();
+        
+        for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos checkPos = playerPos.add(x, y, z);
+                    
+                    if (isSuitableForLightSource(checkPos)) {
+                        potentialLightPositions.add(checkPos.toImmutable());
+                    }
+                }
+            }
+        }
+        
+        // Sort by light level (darkest first) then by distance to player
+        potentialLightPositions.sort((pos1, pos2) -> {
+            int light1 = getLightLevel(pos1);
+            int light2 = getLightLevel(pos2);
+            
+            if (light1 != light2) {
+                return Integer.compare(light1, light2); // Darker positions first
+            }
+            
+            // If same light level, prefer closer positions
+            double dist1 = getDistanceToPlayer(pos1);
+            double dist2 = getDistanceToPlayer(pos2);
+            return Double.compare(dist1, dist2);
+        });
+    }
+
+    /**
+     * Place a light source at the specified position
+     */
+    private boolean placeLightSource(BlockPos pos, Block lightSource) {
+        if (mc.player == null || mc.world == null) return false;
+        
+        // Find the light source in inventory
+        FindItemResult result = InvUtils.findInHotbar(lightSource.asItem());
+        if (!result.found()) return false;
+        
+        // Switch to the light source item
+        InvUtils.swap(result.slot(), false);
+        
+        // Place the light source using MyUtils placement system
+        BlockState targetState = lightSource.getDefaultState();
+        boolean placed = MyUtils.precisePlaceByFace(pos, targetState, false, true, null);
+        
+        if (placed) {
+            placedLightSources.add(pos);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Handle automatic light source placement
+     */
+    private void handleAutoLighting() {
+        if (!autoLighting.get()) return;
+        
+        lightingTickTimer++;
+        if (lightingTickTimer < lightingDelay.get()) return;
+        
+        lightingTickTimer = 0;
+        
+        // Scan for positions that need lighting
+        scanForLightPositions();
+        
+        if (potentialLightPositions.isEmpty()) return;
+        
+        // Get the best light source available
+        Block lightSource = getBestLightSource();
+        if (lightSource == null) return;
+        
+        // Try to place a light source at the darkest position
+        BlockPos targetPos = potentialLightPositions.get(0);
+        if (placeLightSource(targetPos, lightSource)) {
+            // Successfully placed light source
+        }
     }
 
     /**
@@ -1139,6 +1410,11 @@ public class Deleter extends Module {
             info.append(mode.get().toString()).append(" (").append(selectedBlocks.get().size()).append(")");
         }
         
+        // Add auto lighting info
+        if (autoLighting.get()) {
+            info.append(" | Lights: ").append(potentialLightPositions.size()).append("/").append(placedLightSources.size());
+        }
+        
         // Add protection info
         StringBuilder protections = new StringBuilder();
         if (distanceProtection.get()) {
@@ -1161,6 +1437,9 @@ public class Deleter extends Module {
         }
         if (groundProtection.get()) {
             protections.append("G");
+        }
+        if (autoLighting.get()) {
+            protections.append("L");
         }
         
         if (protections.length() > 0) {

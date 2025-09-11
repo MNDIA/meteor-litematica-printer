@@ -542,7 +542,7 @@ public class Printer extends Module {
 		if (!mc.world.getBlockState(pos).isReplaceable()) return false;
 
         if (precisePlacement.get()) {
-            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), printing_range.get(), faceReverse.get());
+            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), faceReverse.get());
         } else {
     		// Legacy mode - disabled advanced and rotate features
     		Direction wantedSide = null; // disabled: dir(required)
