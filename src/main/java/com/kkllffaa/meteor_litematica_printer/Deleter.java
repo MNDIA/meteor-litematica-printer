@@ -491,16 +491,16 @@ public class Deleter extends Module {
             cacheCleanupTickTimer++;
             if (cacheCleanupTickTimer >= cacheCleanupInterval.get() * 20) {
                 
-                // 一级缓存中不是空气的砖放入二级缓存
+                // 一级缓存中不是空气且不是流体的砖放入二级缓存
                 for (BlockPos pos : minedBlockCache) {
                     BlockState state = mc.world.getBlockState(pos);
-                    if (!state.isAir()) {
+                    if (!isBlockMinedSuccessfully(state)) {
                         minedBlockCache2.add(pos);
                     }
                 }
                 minedBlockCache.clear();
-                // 清理二级缓存中已变为空气的砖
-                minedBlockCache2.removeIf(pos -> mc.world.getBlockState(pos).isAir());
+                // 清理二级缓存中已变为空气或流体的砖
+                minedBlockCache2.removeIf(pos -> isBlockMinedSuccessfully(mc.world.getBlockState(pos)));
                 cacheCleanupTickTimer = 0;
             }
         }
@@ -569,8 +569,15 @@ public class Deleter extends Module {
         }
 
         public boolean shouldRemove() {
-            // Check if block changed or out of range
-            if (mc.world.getBlockState(blockPos).getBlock() != originalBlock || 
+            BlockState currentState = mc.world.getBlockState(blockPos);
+            
+            // Check if block has been successfully mined (air or fluid)
+            if (isBlockMinedSuccessfully(currentState)) {
+                return true;
+            }
+            
+            // Check if block changed to something else or out of range
+            if (currentState.getBlock() != originalBlock || 
                 Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
                              mc.player.getZ() - 0.5, blockPos.getX() + direction.getOffsetX(), 
                              blockPos.getY() + direction.getOffsetY(), blockPos.getZ() + direction.getOffsetZ()) 
@@ -662,6 +669,13 @@ public class Deleter extends Module {
                 iterator.remove();
             }
         }
+    }
+
+    /**
+     * Check if a block has been successfully mined (is air or fluid)
+     */
+    private boolean isBlockMinedSuccessfully(BlockState state) {
+        return state.isAir() || !state.getFluidState().isEmpty();
     }
 
     /**
@@ -1077,11 +1091,11 @@ public class Deleter extends Module {
     }
 
     public enum RandomDelayMode {
-        None,      // No random delay: [0]
-        Fast,      // Fast mining: [0, 0, 0, 0, 0, 1]  
-        Balanced,  // Balanced: [0, 0, 0, 0, 1, 1, 1, 2, 2, 3] (current default)
-        Slow,      // Slow mining: [1, 1, 1, 2, 2, 3, 3, 4]
-        Variable   // High variation: [0, 0, 1, 2, 3, 4, 5]
+        None,    
+        Fast,     
+        Balanced, 
+        Slow,      
+        Variable   
     }
 
     public enum DirectionMode {
