@@ -102,6 +102,13 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<RandomDelayMode> randomDelayMode = sgGeneral.add(new EnumSetting.Builder<RandomDelayMode>()
+        .name("random-delay-mode")
+        .description("Random delay distribution pattern.")
+        .defaultValue(RandomDelayMode.Balanced)
+        .build()
+    );
+
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
         .description("Sends rotation packets to the server when mining.")
@@ -368,13 +375,18 @@ public class Deleter extends Module {
 
     private int tick = 0;
     
-    // Random delay array: 4x 0, 2x 1, 1x 2
-    private static final int[] RANDOM_DELAYS = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
     private final Random random = new Random();
     
     // Continuous mode variables
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
+    
+    // Static random delay arrays to avoid creating new arrays each time
+    private static final int[] DELAY_NONE = {0};
+    private static final int[] DELAY_FAST = {0, 0, 1};
+    private static final int[] DELAY_BALANCED = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
+    private static final int[] DELAY_SLOW = {0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6};
+    private static final int[] DELAY_VARIABLE = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
     public Deleter() {
         super(Categories.World, "deleter", "Mines all nearby blocks with this type");
@@ -464,7 +476,8 @@ public class Deleter extends Module {
 
         if (!blocks.isEmpty()) {
             // Add random delay to the base delay
-            int randomDelay = RANDOM_DELAYS[random.nextInt(RANDOM_DELAYS.length)];
+            int[] randomDelays = getRandomDelayArray();
+            int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
             int totalDelay = delay.get() + randomDelay;
             
             if (tick < totalDelay && !blocks.getFirst().mining) {
@@ -803,6 +816,26 @@ public class Deleter extends Module {
     }
 
     /**
+     * Get the random delay array based on current mode setting
+     */
+    private int[] getRandomDelayArray() {
+        switch (randomDelayMode.get()) {
+            case None:
+                return DELAY_NONE;
+            case Fast:
+                return DELAY_FAST;
+            case Balanced:
+                return DELAY_BALANCED;
+            case Slow:
+                return DELAY_SLOW;
+            case Variable:
+                return DELAY_VARIABLE;
+            default:
+                return DELAY_BALANCED; // Default to Balanced
+        }
+    }
+
+    /**
      * Scan for whitelist blocks around the given position
      */
     private void scanBlocks(BlockPos centerPos) {
@@ -898,5 +931,13 @@ public class Deleter extends Module {
     public enum HeightReferenceMode {
         Player,
         World
+    }
+
+    public enum RandomDelayMode {
+        None,      // No random delay: [0]
+        Fast,      // Fast mining: [0, 0, 0, 0, 0, 1]  
+        Balanced,  // Balanced: [0, 0, 0, 0, 1, 1, 1, 2, 2, 3] (current default)
+        Slow,      // Slow mining: [1, 1, 1, 2, 2, 3, 3, 4]
+        Variable   // High variation: [0, 0, 1, 2, 3, 4, 5]
     }
 }
