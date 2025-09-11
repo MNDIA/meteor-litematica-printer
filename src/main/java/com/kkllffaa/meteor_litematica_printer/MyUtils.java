@@ -838,7 +838,7 @@ public class MyUtils {
         Slow,      
         Variable   
     }
-    public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, int excludeDir, SettingColor sideColorToUse, SettingColor lineColorToUse) {
+    public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, SettingColor sideColorToUse, SettingColor lineColorToUse) {
             VoxelShape shape = mc.world.getBlockState(blockPos).getOutlineShape(mc.world, blockPos);
 
             double x1 = blockPos.getX();
@@ -856,7 +856,7 @@ public class MyUtils {
                 y2 = blockPos.getY() + shape.getMax(Direction.Axis.Y);
                 z2 = blockPos.getZ() + shape.getMax(Direction.Axis.Z);
             }
-            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode, excludeDir);
+            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode, 0);
     }
 	public static double getDistanceToPlayerEyes(BlockPos pos) {
         return Utils.distance(

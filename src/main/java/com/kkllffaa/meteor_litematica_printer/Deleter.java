@@ -91,6 +91,7 @@ public class Deleter extends Module {
     private final Setting<List<Block>> blackListBlocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("blackListBlocks")
         .description("Which blocks to ignore.")
+        .defaultValue(Blocks.TORCH, Blocks.BARREL, Blocks.BEDROCK)
         .visible(blackList::get)
         .build()
     );
@@ -322,7 +323,7 @@ public class Deleter extends Module {
     private final Setting<Integer> minHeight = sgProtection.add(new IntSetting.Builder()
         .name("min-height")
         .description("Minimum height for mining blocks (relative to reference).")
-        .defaultValue(-5)
+        .defaultValue(0)
         .min(-64)
         .max(320)
         .sliderRange(-20, 20)
@@ -333,7 +334,7 @@ public class Deleter extends Module {
     private final Setting<Integer> maxHeight = sgProtection.add(new IntSetting.Builder()
         .name("max-height")
         .description("Maximum height for mining blocks (relative to reference).")
-        .defaultValue(5)
+        .defaultValue(1)
         .min(-64)
         .max(320)
         .sliderRange(-20, 20)
@@ -351,7 +352,7 @@ public class Deleter extends Module {
     private final Setting<Integer> widthLeft = sgProtection.add(new IntSetting.Builder()
         .name("width-left")
         .description("Number of blocks to the left of player's facing direction (negative values = right side).")
-        .defaultValue(-1)
+        .defaultValue(0)
         .min(-10)
         .max(10)
         .sliderRange(-5, 5)
@@ -362,7 +363,7 @@ public class Deleter extends Module {
     private final Setting<Integer> widthRight = sgProtection.add(new IntSetting.Builder()
         .name("width-right")
         .description("Number of blocks to the right of player's facing direction (negative values = left side).")
-        .defaultValue(2)
+        .defaultValue(0)
         .min(-10)
         .max(10)
         .sliderRange(-5, 5)
@@ -475,7 +476,7 @@ public class Deleter extends Module {
     private final Setting<List<Block>> lightSources = sgLighting.add(new BlockListSetting.Builder()
         .name("light-sources")
         .description("List of blocks to use as light sources.")
-        .defaultValue(Blocks.TORCH, Blocks.SEA_LANTERN)
+        .defaultValue(Blocks.TORCH)
         .visible(autoLighting::get)
         .build()
     );
@@ -532,9 +533,6 @@ public class Deleter extends Module {
     private final Setting<List<Block>> lightingBlocks = sgLighting.add(new BlockListSetting.Builder()
         .name("lighting-blocks")
         .description("Blocks to place light sources on (whitelist) or avoid (blacklist).")
-        .defaultValue(Blocks.STONE, Blocks.COBBLESTONE, Blocks.DIRT, Blocks.GRASS_BLOCK, Blocks.NETHERRACK, 
-                     Blocks.END_STONE, Blocks.DEEPSLATE, Blocks.COBBLED_DEEPSLATE, Blocks.ANDESITE, 
-                     Blocks.GRANITE, Blocks.DIORITE, Blocks.SANDSTONE, Blocks.RED_SANDSTONE)
         .visible(autoLighting::get)
         .build()
     );
@@ -710,7 +708,7 @@ public class Deleter extends Module {
         // 渲染回弹砖块
         if (renderReboundCache.get()) {
             for (BlockPos pos : minedBlockCache2) {
-                MyUtils.renderPos(event, pos, shapeMode.get(), 115, REBOUND_CACHE_SIDE_COLOR, REBOUND_CACHE_LINE_COLOR);
+                MyUtils.renderPos(event, pos, shapeMode.get(), REBOUND_CACHE_SIDE_COLOR, REBOUND_CACHE_LINE_COLOR);
             }
         }
         // Render light source positions
@@ -721,7 +719,7 @@ public class Deleter extends Module {
             int intensity = Math.max(50, 255 - (lightLevel * 15)); // Darker = more intense yellow
 
             SettingColor yellowLine = new SettingColor(255, 255, 0, intensity);
-                MyUtils.renderPos(event, pos, ShapeMode.Lines, 116, yellowLine, yellowLine);
+                MyUtils.renderPos(event, pos, ShapeMode.Lines, yellowLine, yellowLine);
             }
         }
     }
@@ -810,7 +808,7 @@ public class Deleter extends Module {
             // Use different colors for timed out blocks
             SettingColor sideColorToUse = timedOut ? new SettingColor(255, 165, 0, 10) : sideColor.get(); // Orange for timed out
             SettingColor lineColorToUse = timedOut ? new SettingColor(255, 165, 0, 255) : lineColor.get(); // Orange for timed out
-            MyUtils.renderPos(event, blockPos, shapeMode.get(), 114, sideColorToUse, lineColorToUse);
+            MyUtils.renderPos(event, blockPos, shapeMode.get(), sideColorToUse, lineColorToUse);
         }
     }
 
