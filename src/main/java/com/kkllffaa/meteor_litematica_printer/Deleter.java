@@ -39,6 +39,20 @@ public class Deleter extends Module {
     private final SettingGroup sgProtection = settings.createGroup("Mining Protection");
     private final SettingGroup sgCache = settings.createGroup("Cache");
 
+    private final Set<Vec3i> upperNeighbours = Set.of(
+        new Vec3i(0, 1, 0)
+    );
+
+    private final Set<Vec3i> sideNeighbours = Set.of(
+        new Vec3i(0, 0, 1),
+        new Vec3i(1, 0, 0), new Vec3i(-1, 0, 0),
+        new Vec3i(0, 0, -1)
+    );
+
+    private final Set<Vec3i> lowerNeighbours = Set.of(
+        new Vec3i(0, -1, 0)
+    );
+
     private final Set<Vec3i> blockNeighbours = Set.of(
         new Vec3i(1, -1, 1), new Vec3i(0, -1, 1), new Vec3i(-1, -1, 1),
         new Vec3i(1, -1, 0), new Vec3i(0, -1, 0), new Vec3i(-1, -1, 0),
@@ -203,15 +217,31 @@ public class Deleter extends Module {
 
     private final Setting<Boolean> customProtection = sgProtection.add(new BoolSetting.Builder()
         .name("custom-protection")
-        .description("Prevent mining blocks that are adjacent to blocks from the protection list.")
+        .description("Prevent mining blocks that are adjacent to blocks from the protection lists.")
         .defaultValue(false)
         .build()
     );
 
-    private final Setting<List<Block>> protectedBlocks = sgProtection.add(new BlockListSetting.Builder()
-        .name("protected-blocks")
-        .description("Blocks to avoid mining near. Mining will be prevented if target block is adjacent to any of these blocks.")
-        .defaultValue(Blocks.CHEST, Blocks.BARREL, Blocks.SHULKER_BOX, Blocks.SPAWNER, Blocks.BEDROCK)
+    private final Setting<List<Block>> protectedBlocksUpper = sgProtection.add(new BlockListSetting.Builder()
+        .name("protected-blocks-upper")
+        .description("Blocks to avoid mining near (upper direction). Mining will be prevented if target block has any of these blocks above it.")
+        .defaultValue(Blocks.LAVA, Blocks.WATER, Blocks.SAND, Blocks.GRAVEL, Blocks.RED_SAND, Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL)
+        .visible(customProtection::get)
+        .build()
+    );
+
+    private final Setting<List<Block>> protectedBlocksSide = sgProtection.add(new BlockListSetting.Builder()
+        .name("protected-blocks-side")
+        .description("Blocks to avoid mining near (side directions). Mining will be prevented if target block has any of these blocks around its sides.")
+        .defaultValue(Blocks.LAVA, Blocks.WATER)
+        .visible(customProtection::get)
+        .build()
+    );
+
+    private final Setting<List<Block>> protectedBlocksLower = sgProtection.add(new BlockListSetting.Builder()
+        .name("protected-blocks-lower")
+        .description("Blocks to avoid mining near (lower direction). Mining will be prevented if target block has any of these blocks below it.")
+        .defaultValue(Blocks.LAVA, Blocks.WATER)
         .visible(customProtection::get)
         .build()
     );
@@ -746,19 +776,64 @@ public class Deleter extends Module {
             }
         }
         
-        // Check all neighboring positions
-        for (Vec3i neighbourOffset : blockNeighbours) {
-            BlockPos neighbour = pos.add(neighbourOffset);
-            BlockState neighbourState = mc.world.getBlockState(neighbour);
-            
-            // Check fluid protection
-            if (fluidProtection.get() && !neighbourState.getFluidState().isEmpty()) {
-                return true;
+        // Check fluid protection for all neighbors
+        if (fluidProtection.get()) {
+            for (Vec3i neighbourOffset : upperNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (!neighbourState.getFluidState().isEmpty()) {
+                    return true;
+                }
+            }
+            for (Vec3i neighbourOffset : sideNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (!neighbourState.getFluidState().isEmpty()) {
+                    return true;
+                }
+            }
+            for (Vec3i neighbourOffset : lowerNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (!neighbourState.getFluidState().isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        
+        // Check custom block protection by direction
+        if (customProtection.get()) {
+            // Check upper protection
+            for (Vec3i neighbourOffset : upperNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (protectedBlocksUpper.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
             }
             
-            // Check custom block protection
-            if (customProtection.get() && protectedBlocks.get().contains(neighbourState.getBlock())) {
-                return true;
+            // Check side protection
+            for (Vec3i neighbourOffset : sideNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (protectedBlocksSide.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+            
+            // Check lower protection
+            for (Vec3i neighbourOffset : lowerNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (protectedBlocksLower.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
             }
         }
         
