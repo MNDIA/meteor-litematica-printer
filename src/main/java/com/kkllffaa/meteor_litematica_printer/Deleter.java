@@ -174,18 +174,11 @@ public class Deleter extends Module {
         .build()
     );
 
-    private final Setting<Boolean> enableReboundCache = sgCache.add(new BoolSetting.Builder()
-        .name("enable-rebound-cache")
-        .description("Enable separate cache for rebounding blocks that appear within 0.5s of mining.")
-        .defaultValue(true)
-        .build()
-    );
-
     private final Setting<Boolean> renderReboundCache = sgCache.add(new BoolSetting.Builder()
         .name("render-rebound-cache")
         .description("Render green outlines for blocks in rebound cache.")
         .defaultValue(true)
-        .visible(enableReboundCache::get)
+        .visible(enableCache::get)
         .build()
     );
 
@@ -302,16 +295,14 @@ public class Deleter extends Module {
     
     // Mining cache to prevent rebounding block issues
     private final LinkedHashSet<BlockPos> minedBlockCache = new LinkedHashSet<>();
+    // 二级缓存
+    private final LinkedHashSet<BlockPos> minedBlockCache2 = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
-    
-    // Rebound cache for blocks that reappear after mining
-    private final LinkedHashSet<ReboundBlock> reboundCache = new LinkedHashSet<>();
-    private int reboundCacheCleanupTimer = 0;
 
     private int tick = 0;
     
     // Random delay array: 4x 0, 2x 1, 1x 2
-    private static final int[] RANDOM_DELAYS = {0, 0, 0, 0, 1, 1, 2};
+    private static final int[] RANDOM_DELAYS = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
     private final Random random = new Random();
     
     // Continuous mode variables
@@ -328,9 +319,8 @@ public class Deleter extends Module {
         blocks.clear();
         foundBlockPositions.clear();
         minedBlockCache.clear();
+        minedBlockCache2.clear();
         cacheCleanupTickTimer = 0;
-        reboundCache.clear();
-        reboundCacheCleanupTimer = 0;
         lastPlayerPos = null;
         continuousScanTimer = 0;
     }
@@ -363,10 +353,6 @@ public class Deleter extends Module {
         if (isPositionCached(event.blockPos))
             return;
 
-        // Check if this position is in rebound cache
-        if (isPositionInReboundCache(event.blockPos))
-            return;
-
         // Check if this position is protected (adjacent to fluids or protected blocks)
         if (isProtectedPosition(event.blockPos))
             return;
@@ -390,31 +376,24 @@ public class Deleter extends Module {
         // Cache cleanup timer - clears cache periodically to prevent stale entries
         if (enableCache.get()) {
             cacheCleanupTickTimer++;
-            
             if (cacheCleanupTickTimer >= cacheCleanupInterval.get() * 20) {
+                
+                // 一级缓存中不是空气的砖放入二级缓存
+                for (BlockPos pos : minedBlockCache) {
+                    BlockState state = mc.world.getBlockState(pos);
+                    if (!state.isAir()) {
+                        minedBlockCache2.add(pos);
+                    }
+                }
                 minedBlockCache.clear();
+                // 清理二级缓存中已变为空气的砖
+                minedBlockCache2.removeIf(pos -> mc.world.getBlockState(pos).isAir());
                 cacheCleanupTickTimer = 0;
             }
         }
 
-        // Rebound cache cleanup - every 10 ticks (0.5 seconds)
-        if (enableReboundCache.get()) {
-            reboundCacheCleanupTimer++;
-            
-            if (reboundCacheCleanupTimer >= 10) {
-                // Check for blocks that have been successfully mined (no longer exist)
-                reboundCache.removeIf(reboundBlock -> {
-                    BlockPos pos = reboundBlock.pos;
-                    BlockState state = mc.world.getBlockState(pos);
-                    return state.isAir();
-                });
-                
-                reboundCacheCleanupTimer = 0;
-            }
-        }
-
         // Continuous mode logic - scan for blocks around player
-        if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
+        if (continuousMode.get()) {
             handleContinuousMode();
         }
 
@@ -437,11 +416,10 @@ public class Deleter extends Module {
         if (render.get()) {
             for (MyBlock block : blocks) block.render(event);
         }
-        
-        // Render rebound cache blocks with green outlines
-        if (enableReboundCache.get() && renderReboundCache.get()) {
-            for (ReboundBlock reboundBlock : reboundCache) {
-                renderReboundBlock(event, reboundBlock.pos);
+        // 渲染回弹砖块
+        if (renderReboundCache.get()) {
+            for (BlockPos pos : minedBlockCache2) {
+                renderReboundBlock(event, pos);
             }
         }
     }
@@ -554,43 +532,14 @@ public class Deleter extends Module {
         }
     }
 
-    private static class ReboundBlock {
-        public final BlockPos pos;
-        
-        public ReboundBlock(BlockPos pos) {
-            this.pos = pos;
-        }
-        
-        
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null || getClass() != obj.getClass()) return false;
-            ReboundBlock that = (ReboundBlock) obj;
-            return pos.equals(that.pos);
-        }
-        
-        @Override
-        public int hashCode() {
-            return pos.hashCode();
-        }
-    }
-
     /**
      * Check if a position is in the mined block cache
      */
     private boolean isPositionCached(BlockPos pos) {
-        return enableCache.get() && minedBlockCache.contains(pos);
+        return enableCache.get() && (minedBlockCache.contains(pos) || minedBlockCache2.contains(pos));
     }
 
-    /**
-     * Check if a position is in the rebound cache
-     */
-    private boolean isPositionInReboundCache(BlockPos pos) {
-        if (!enableReboundCache.get()) return false;
-        
-        return reboundCache.stream().anyMatch(reboundBlock -> reboundBlock.pos.equals(pos));
-    }
+
 
     /**
      * Add position to mined cache and manage cache size
@@ -608,13 +557,7 @@ public class Deleter extends Module {
                 iterator.remove();
             }
         }
-        
-        // Add to rebound cache if enabled
-        if (enableReboundCache.get()) {
-            reboundCache.add(new ReboundBlock(pos));
-        }
     }
-
 
     /**
      * Render a rebound block with green outline
@@ -728,9 +671,6 @@ public class Deleter extends Module {
             // Check if this neighbor block was recently mined (cache check for rebounding blocks)
             if (isPositionCached(neighbour)) continue;
             
-            // Check if this neighbor is in rebound cache
-            if (isPositionInReboundCache(neighbour)) continue;
-            
             // Check if this neighbor position is protected (adjacent to fluids or protected blocks)
             if (isProtectedPosition(neighbour)) continue;
             
@@ -759,14 +699,14 @@ public class Deleter extends Module {
         if (playerMoved || timeForScan) {
             lastPlayerPos = currentPlayerPos.toImmutable();
             continuousScanTimer = 0;
-            scanForWhitelistBlocks(currentPlayerPos);
+            scanBlocks(currentPlayerPos);
         }
     }
 
     /**
      * Scan for whitelist blocks around the given position
      */
-    private void scanForWhitelistBlocks(BlockPos centerPos) {
+    private void scanBlocks(BlockPos centerPos) {
         int radius = scanRadius.get();
         
         for (int x = -radius; x <= radius; x++) {
@@ -784,17 +724,15 @@ public class Deleter extends Module {
                     BlockState state = mc.world.getBlockState(scanPos);
                     
                     // Check if it's a whitelist block
-                    if (!selectedBlocks.get().contains(state.getBlock())) {
+                    if (mode.get() == ListMode.Whitelist && !selectedBlocks.get().contains(state.getBlock())) {
+                        continue;
+                    }
+                    if (mode.get() == ListMode.Blacklist && selectedBlocks.get().contains(state.getBlock())) {
                         continue;
                     }
                     
                     // Check if already being mined or in cache
                     if (isMiningBlock(scanPos) || isPositionCached(scanPos)) {
-                        continue;
-                    }
-                    
-                    // Check if in rebound cache
-                    if (isPositionInReboundCache(scanPos)) {
                         continue;
                     }
                     
@@ -816,8 +754,7 @@ public class Deleter extends Module {
     @Override
     public String getInfoString() {
         long timedOutBlocks = minedBlockCache.size(); // Approximate count of cached (including timed out) blocks
-        long reboundBlocks = reboundCache.size(); // Count of rebound blocks
-        
+
         StringBuilder info = new StringBuilder();
         
         if (continuousMode.get() && mode.get() == ListMode.Whitelist) {
@@ -840,9 +777,6 @@ public class Deleter extends Module {
         if (fluidProtection.get() || customProtection.get()) {
             protections.append("P");
         }
-        if (enableReboundCache.get()) {
-            protections.append("R");
-        }
         
         if (protections.length() > 0) {
             info.append(" [").append(protections).append("]");
@@ -850,10 +784,6 @@ public class Deleter extends Module {
         
         if (timeoutProtection.get() && timedOutBlocks > 0) {
             info.append(" | Cached: ").append(timedOutBlocks);
-        }
-        
-        if (enableReboundCache.get() && reboundBlocks > 0) {
-            info.append(" | Rebound: ").append(reboundBlocks);
         }
         
         return info.toString();
