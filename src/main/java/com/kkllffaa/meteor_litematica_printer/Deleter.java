@@ -7,6 +7,8 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
@@ -17,9 +19,11 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.Item;
+import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.shape.VoxelShape;
 
@@ -635,8 +639,6 @@ public class Deleter extends Module {
         return enableCache.get() && (minedBlockCache.contains(pos) || minedBlockCache2.contains(pos));
     }
 
-
-
     /**
      * Add position to mined cache and manage cache size
      */
@@ -950,6 +952,37 @@ public class Deleter extends Module {
         }
     }
 
+    public boolean breakBlock(BlockPos blockPos, boolean swing) {
+        if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
+
+        // Creating new instance of block pos because minecraft assigns the parameter to a field, and we don't want it to change when it has been stored in a field somewhere
+        BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
+
+        InstantRebreak ir = Modules.get().get(InstantRebreak.class);
+        if (ir != null && ir.isActive() && ir.blockPos.equals(pos) && ir.shouldMine()) {
+            ir.sendPacket();
+            return true;
+        }
+
+        if (mc.interactionManager.isBreakingBlock())
+            mc.interactionManager.updateBlockBreakingProgress(pos, getDirection(blockPos));
+        else mc.interactionManager.attackBlock(pos,getDirection(blockPos));
+
+        if (swing) mc.player.swingHand(Hand.MAIN_HAND);
+        else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+
+        return true;
+    }
+    // Finds the best block direction to get when interacting with the block.
+    public Direction getDirection(BlockPos pos) {
+        Vec3d eyesPos = new Vec3d(mc.player.getX(), mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ());
+        if ((double) pos.getY() > eyesPos.y) {
+            if (mc.world.getBlockState(pos.add(0, -1, 0)).isReplaceable()) return Direction.DOWN;
+            else return mc.player.getHorizontalFacing().getOpposite();
+        }
+        if (!mc.world.getBlockState(pos.add(0, 1, 0)).isReplaceable()) return mc.player.getHorizontalFacing().getOpposite();
+        return Direction.UP;
+    }
     @Override
     public String getInfoString() {
         long timedOutBlocks = minedBlockCache.size(); // Approximate count of cached (including timed out) blocks
