@@ -120,6 +120,14 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Integer> maxBlocksPerTick = sgGeneral.add(new IntSetting.Builder()
+        .name("max-blocks-per-tick")
+        .description("Maximum blocks to try to mine per tick. Useful when insta mining.")
+        .defaultValue(1)
+        .min(1)
+        .build()
+    );
+
     private final Setting<RandomDelayMode> randomDelayMode = sgGeneral.add(new EnumSetting.Builder<RandomDelayMode>()
         .name("random-delay-mode")
         .description("Random delay distribution pattern.")
@@ -551,11 +559,21 @@ public class Deleter extends Module {
                 return;
             }
             tick = 0;
-            MyBlock block = blocks.getFirst();
-            // Add successfully mined block to cache
-            addToMinedCache(block.blockPos);
-            block.mine();
-
+            
+            // Mine up to maxBlocksPerTick blocks per tick
+            int count = 0;
+            for (MyBlock block : blocks) {
+                if (count >= maxBlocksPerTick.get()) break;
+                
+                // Add successfully mined block to cache
+                addToMinedCache(block.blockPos);
+                block.mine();
+                
+                count++;
+                
+                // If block is not being insta-mined, only process one block per tick
+                if (!BlockUtils.canInstaBreak(block.blockPos)) break;
+            }
         }
     }
 
