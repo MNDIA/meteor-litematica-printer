@@ -289,6 +289,73 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> regionProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("region-protection")
+        .description("Only mine blocks within a defined 3D region (world coordinates).")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Integer> region1X = sgProtection.add(new IntSetting.Builder()
+        .name("region-x1")
+        .description("First corner X coordinate of the mining region.")
+        .defaultValue(0)
+        .min(-30000000)
+        .max(30000000)
+        .visible(regionProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> region1Y = sgProtection.add(new IntSetting.Builder()
+        .name("region-y1")
+        .description("First corner Y coordinate of the mining region.")
+        .defaultValue(0)
+        .min(-64)
+        .max(320)
+        .visible(regionProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> region1Z = sgProtection.add(new IntSetting.Builder()
+        .name("region-z1")
+        .description("First corner Z coordinate of the mining region.")
+        .defaultValue(0)
+        .min(-30000000)
+        .max(30000000)
+        .visible(regionProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> region2X = sgProtection.add(new IntSetting.Builder()
+        .name("region-x2")
+        .description("Second corner X coordinate of the mining region.")
+        .defaultValue(10)
+        .min(-30000000)
+        .max(30000000)
+        .visible(regionProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> region2Y = sgProtection.add(new IntSetting.Builder()
+        .name("region-y2")
+        .description("Second corner Y coordinate of the mining region.")
+        .defaultValue(10)
+        .min(-64)
+        .max(320)
+        .visible(regionProtection::get)
+        .build()
+    );
+
+    private final Setting<Integer> region2Z = sgProtection.add(new IntSetting.Builder()
+        .name("region-z2")
+        .description("Second corner Z coordinate of the mining region.")
+        .defaultValue(10)
+        .min(-30000000)
+        .max(30000000)
+        .visible(regionProtection::get)
+        .build()
+    );
+
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
@@ -475,6 +542,13 @@ public class Deleter extends Module {
                 }
             }
 
+            // Check region protection for actively mining blocks
+            if (regionProtection.get()) {
+                if (!isWithinRegion(blockPos)) {
+                    return true;
+                }
+            }
+
             // Check for mining timeout
             if (timeoutProtection.get() && mining && miningStartTime > 0) {
                 long currentTime = System.currentTimeMillis();
@@ -590,7 +664,7 @@ public class Deleter extends Module {
 
     /**
      * Check if a block position should be protected from mining
-     * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, or outside height range
+     * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, outside height range, or outside region
      */
     private boolean isProtectedPosition(BlockPos pos) {
         // Check distance protection
@@ -604,6 +678,13 @@ public class Deleter extends Module {
         // Check height protection
         if (heightProtection.get()) {
             if (!isWithinHeightRange(pos)) {
+                return true;
+            }
+        }
+        
+        // Check region protection
+        if (regionProtection.get()) {
+            if (!isWithinRegion(pos)) {
                 return true;
             }
         }
@@ -659,6 +740,24 @@ public class Deleter extends Module {
         int relativeHeight = blockY - referenceY;
         
         return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get();
+    }
+
+    /**
+     * Check if a block position is within the defined region (world coordinates)
+     */
+    private boolean isWithinRegion(BlockPos pos) {
+        // Calculate min and max coordinates from the two corner points
+        int minX = Math.min(region1X.get(), region2X.get());
+        int maxX = Math.max(region1X.get(), region2X.get());
+        int minY = Math.min(region1Y.get(), region2Y.get());
+        int maxY = Math.max(region1Y.get(), region2Y.get());
+        int minZ = Math.min(region1Z.get(), region2Z.get());
+        int maxZ = Math.max(region1Z.get(), region2Z.get());
+        
+        // Check if the position is within the region bounds
+        return pos.getX() >= minX && pos.getX() <= maxX &&
+               pos.getY() >= minY && pos.getY() <= maxY &&
+               pos.getZ() >= minZ && pos.getZ() <= maxZ;
     }
 
     private void mineNearbyBlocks(Item item, BlockPos pos, Direction dir, int depth) {
@@ -770,6 +869,9 @@ public class Deleter extends Module {
         }
         if (heightProtection.get()) {
             protections.append("H");
+        }
+        if (regionProtection.get()) {
+            protections.append("R");
         }
         if (timeoutProtection.get()) {
             protections.append("T");
