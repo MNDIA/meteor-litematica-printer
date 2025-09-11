@@ -1,6 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer;
 
 import meteordevelopment.meteorclient.addons.MeteorAddon;
+import meteordevelopment.meteorclient.commands.Commands;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.item.ItemStack;
@@ -20,6 +21,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());
 		Modules.get().add(new Swarm());
+		Commands.add(new SwarmCommand());
 	}
 
     @Override
