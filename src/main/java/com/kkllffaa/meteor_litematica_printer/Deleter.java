@@ -560,26 +560,8 @@ public class Deleter extends Module {
                 return true;
             }
 
-            // Check distance protection for actively mining blocks
-            if (distanceProtection.get()) {
-                double distance = getDistanceToPlayer(blockPos);
-                if (distance < minDistance.get() || distance > maxDistance.get()) {
-                    return true;
-                }
-            }
-
-            // Check height protection for actively mining blocks
-            if (heightProtection.get()) {
-                if (!isWithinHeightRange(blockPos)) {
-                    return true;
-                }
-            }
-
-            // Check region protection for actively mining blocks
-            if (regionProtection.get()) {
-                if (!isWithinRegion(blockPos)) {
-                    return true;
-                }
+            if (isProtectedPosition(blockPos)) {
+                return true;
             }
 
             // Check for mining timeout
