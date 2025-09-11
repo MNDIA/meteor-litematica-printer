@@ -19,6 +19,7 @@ public class Addon extends MeteorAddon {
 		// Modules
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());
+		Modules.get().add(new Swarm());
 	}
 
     @Override

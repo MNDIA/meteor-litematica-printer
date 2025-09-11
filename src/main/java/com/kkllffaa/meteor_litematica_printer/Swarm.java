@@ -82,7 +82,7 @@ public class Swarm extends Module {
     private int commandTicks = -1;
 
     public Swarm() {
-        super(Addon.CATEGORY, "swarm", "Allows you to control multiple instances of Meteor from one central host.");
+        super(Categories.Misc, "swarm", "Allows you to control multiple instances of Meteor from one central host.");
     }
 
     @Override
