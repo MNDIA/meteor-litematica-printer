@@ -392,6 +392,13 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<DirectionMode> directionMode = sgGeneral.add(new EnumSetting.Builder<DirectionMode>()
+        .name("direction-mode")
+        .description("Method to determine which face of the block to mine.")
+        .defaultValue(DirectionMode.RayCast)
+        .build()
+    );
+
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
@@ -973,15 +980,44 @@ public class Deleter extends Module {
 
         return true;
     }
-    // Finds the best block direction to get when interacting with the block.
+    // Finds the best block direction using ray casting from player eye to block center
     public Direction getDirection(BlockPos pos) {
-        Vec3d eyesPos = new Vec3d(mc.player.getX(), mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ());
-        if ((double) pos.getY() > eyesPos.y) {
-            if (mc.world.getBlockState(pos.add(0, -1, 0)).isReplaceable()) return Direction.DOWN;
-            else return mc.player.getHorizontalFacing().getOpposite();
+        if (directionMode.get() == DirectionMode.Original) {
+            return BlockUtils.getDirection(pos);
         }
-        if (!mc.world.getBlockState(pos.add(0, 1, 0)).isReplaceable()) return mc.player.getHorizontalFacing().getOpposite();
-        return Direction.UP;
+        // Get player eye position
+        Vec3d eyePos = new Vec3d(
+            mc.player.getX(), 
+            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
+            mc.player.getZ()
+        );
+        
+        // Get block center position
+        Vec3d blockCenter = new Vec3d(
+            pos.getX() + 0.5, 
+            pos.getY() + 0.5, 
+            pos.getZ() + 0.5
+        );
+        
+        // Calculate direction vector from eye to block center
+        Vec3d direction = blockCenter.subtract(eyePos);
+        
+        // Get absolute values of direction components
+        double absX = Math.abs(direction.x);
+        double absY = Math.abs(direction.y);
+        double absZ = Math.abs(direction.z);
+        
+        // Find which component is largest - this determines which face the ray hits
+        if (absX >= absY && absX >= absZ) {
+            // Ray hits either EAST or WEST face
+            return direction.x > 0 ? Direction.WEST : Direction.EAST;
+        } else if (absY >= absX && absY >= absZ) {
+            // Ray hits either UP or DOWN face
+            return direction.y > 0 ? Direction.DOWN : Direction.UP;
+        } else {
+            // Ray hits either SOUTH or NORTH face
+            return direction.z > 0 ? Direction.NORTH : Direction.SOUTH;
+        }
     }
     @Override
     public String getInfoString() {
@@ -1046,5 +1082,10 @@ public class Deleter extends Module {
         Balanced,  // Balanced: [0, 0, 0, 0, 1, 1, 1, 2, 2, 3] (current default)
         Slow,      // Slow mining: [1, 1, 1, 2, 2, 3, 3, 4]
         Variable   // High variation: [0, 0, 1, 2, 3, 4, 5]
+    }
+
+    public enum DirectionMode {
+        Original,  // Use BlockUtils.getDirection method
+        RayCast    // Use ray casting from player eye to block center
     }
 }
