@@ -383,7 +383,7 @@ public class Deleter extends Module {
 
     private final Setting<Boolean> groundProtection = sgProtection.add(new BoolSetting.Builder()
         .name("ground-protection")
-        .description("Slow down mining when player is not on ground (airborne).")
+        .description("Stop mining when player is not on ground (airborne).")
         .defaultValue(false)
         .build()
     );
