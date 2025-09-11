@@ -363,6 +363,24 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> directionalProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("directional-protection")
+        .description("Only mine blocks in the direction the player is facing (based on yaw angle).")
+        .defaultValue(false)
+        .build()
+    );
+
+    private final Setting<Integer> directionalAngle = sgProtection.add(new IntSetting.Builder()
+        .name("directional-angle")
+        .description("Angle range in degrees from player's yaw direction (total range = 2 * this value).")
+        .defaultValue(90)
+        .min(30)
+        .max(180)
+        .sliderRange(30, 180)
+        .visible(directionalProtection::get)
+        .build()
+    );
+
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
@@ -679,7 +697,7 @@ public class Deleter extends Module {
 
     /**
      * Check if a block position should be protected from mining
-     * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, outside height range, or outside region
+     * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, outside height range, outside region, or outside directional range
      */
     private boolean isProtectedPosition(BlockPos pos) {
         // Check distance protection
@@ -700,6 +718,13 @@ public class Deleter extends Module {
         // Check region protection
         if (regionProtection.get()) {
             if (!isWithinRegion(pos)) {
+                return true;
+            }
+        }
+        
+        // Check directional protection
+        if (directionalProtection.get()) {
+            if (!isWithinDirectionalRange(pos)) {
                 return true;
             }
         }
@@ -773,6 +798,32 @@ public class Deleter extends Module {
         return pos.getX() >= minX && pos.getX() <= maxX &&
                pos.getY() >= minY && pos.getY() <= maxY &&
                pos.getZ() >= minZ && pos.getZ() <= maxZ;
+    }
+
+    /**
+     * Check if a block position is within the directional range based on player's yaw
+     */
+    private boolean isWithinDirectionalRange(BlockPos pos) {
+        // Calculate the direction vector from player to block
+        double deltaYMath = pos.getX() + 0.5 - mc.player.getX();
+        double deltaXMath = pos.getZ() + 0.5 - mc.player.getZ();
+        
+        // Calculate the angle to the block in degrees (-180 to 180)
+        double angleToBlock = -Math.toDegrees(Math.atan2(deltaYMath, deltaXMath));
+        
+        // Get player's yaw and normalize it to -180 to 180
+        float playerYaw = mc.player.getYaw() % 360;
+        if (playerYaw > 180) playerYaw -= 360;
+        if (playerYaw < -180) playerYaw += 360;
+        
+        // Calculate the angle difference
+        double angleDifference = Math.abs(angleToBlock - playerYaw);
+        if (angleDifference > 180) {
+            angleDifference = 360 - angleDifference;
+        }
+        
+        // Check if the block is within the allowed angle range
+        return angleDifference <= directionalAngle.get();
     }
 
     private void mineNearbyBlocks(Item item, BlockPos pos, Direction dir, int depth) {
@@ -904,6 +955,9 @@ public class Deleter extends Module {
         }
         if (regionProtection.get()) {
             protections.append("R");
+        }
+        if (directionalProtection.get()) {
+            protections.append("Dir");
         }
         if (timeoutProtection.get()) {
             protections.append("T");
