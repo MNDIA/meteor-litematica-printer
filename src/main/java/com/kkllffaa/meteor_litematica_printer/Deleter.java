@@ -726,7 +726,6 @@ public class Deleter extends Module {
 
     private class MyBlock {
         public BlockPos blockPos;
-        public Direction direction;
         public Block originalBlock;
         public boolean mining;
         public long miningStartTime;
@@ -734,7 +733,6 @@ public class Deleter extends Module {
 
         public void set(StartBreakingBlockEvent event) {
             this.blockPos = event.blockPos;
-            this.direction = event.direction;
             this.originalBlock = mc.world.getBlockState(blockPos).getBlock();
             this.mining = false;
             this.miningStartTime = 0;
@@ -743,7 +741,6 @@ public class Deleter extends Module {
 
         public void set(BlockPos pos, Direction dir) {
             this.blockPos = pos;
-            this.direction = dir;
             this.originalBlock = mc.world.getBlockState(pos).getBlock();
             this.mining = false;
             this.miningStartTime = 0;
@@ -757,8 +754,8 @@ public class Deleter extends Module {
                 addToMinedCache(blockPos);
                 return true;
             }
-            
-            if( isOutOfDistance()||
+
+            if( isOutOfDistance(blockPos)||
                 !isListBlock(currentState)||
                 isProtectedPosition(blockPos)
             ){
@@ -779,16 +776,6 @@ public class Deleter extends Module {
             }
             
             return false;
-        }
-
-        public boolean isOutOfDistance() {
-             double handDistance =  distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
-
-            return Utils.distance(mc.player.getX() - 0.5, mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()),
-                mc.player.getZ() - 0.5, blockPos.getX() + direction.getOffsetX(),
-                blockPos.getY() + direction.getOffsetY(), blockPos.getZ() + direction.getOffsetZ())
-                > handDistance;
-
         }
         public void mine() {
             if (!mining) {
@@ -831,6 +818,11 @@ public class Deleter extends Module {
         }
     }
 
+    
+    private boolean isOutOfDistance(BlockPos Pos) {
+        double handDistance =  distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
+        return MyUtils.getDistanceToPlayerEyes(Pos) > handDistance;
+    }
     private void scanBlocks(BlockPos centerPos) {
         int radius = scanRadius.get();
         
@@ -840,11 +832,8 @@ public class Deleter extends Module {
                     BlockPos scanPos = centerPos.add(x, y, z);
                     BlockState state = mc.world.getBlockState(scanPos);
 
-                    double handDistance =  distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
-                    if (MyUtils.getDistanceToPlayerEyes(scanPos) > handDistance) {
-                        continue;
-                    }
                     if (
+                        isOutOfDistance(scanPos) ||
                         isPositionCached(scanPos) ||
                         isAirOrFluid(state) ||
                         !isListBlock(state) ||

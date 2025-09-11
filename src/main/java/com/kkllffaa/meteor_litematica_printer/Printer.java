@@ -6,6 +6,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Supplier;
 
+import com.kkllffaa.meteor_litematica_printer.MyUtils.DirectionMode;
+
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import fi.dy.masa.litematica.world.WorldSchematic;
@@ -98,31 +100,46 @@ public class Printer extends Module {
 			.build()
 	);
 
+	
 	private final Setting<Boolean> swing = sgGeneral.add(new BoolSetting.Builder()
-			.name("swing")
-			.description("Swing hand when placing.")
-			.defaultValue(false)
+	.name("swing")
+	.description("Swing hand when placing.")
+	.defaultValue(false)
+	.build()
+	);
+	
+    private final Setting<Boolean> returnHand = sgGeneral.add(new BoolSetting.Builder()
+	.name("return-slot")
+	.description("Return to old slot.")
+	.defaultValue(false)
+	.build()
+    );
+	
+    private final Setting<Boolean> precisePlacement = sgClickFace.add(new BoolSetting.Builder()
+		.name("precise-placement")
+		.description("Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)")
+		.defaultValue(true)
+		.build()
+    );
+	
+	private final Setting<DirectionMode> directionMode = sgClickFace.add(new EnumSetting.Builder<DirectionMode>()
+			.name("direction-mode")
+			.description("How to determine the direction for block placement.")
+			.defaultValue(DirectionMode.PlayerPosition)
+			.visible(precisePlacement::get)
 			.build()
 	);
-
-    private final Setting<Boolean> returnHand = sgGeneral.add(new BoolSetting.Builder()
-			.name("return-slot")
-			.description("Return to old slot.")
+	private final Setting<Boolean> onlyPlaceOnLookFace = sgClickFace.add(new BoolSetting.Builder()
+			.name("only-place-on-look-face")
+			.description("Only place blocks on the face you are looking at.")
 			.defaultValue(false)
+			.visible(precisePlacement::get)
 			.build()
-    );
-
-    private final Setting<Boolean> precisePlacement = sgClickFace.add(new BoolSetting.Builder()
-			.name("precise-placement")
-			.description("Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)")
-			.defaultValue(true)
-			.build()
-    );
-
+	);
 	// Click Face Reverse Protection - similar to directional protection but for face placement
 	private final Setting<List<Block>> faceReverse = sgClickFace.add(new BlockListSetting.Builder()
-			.name("face-reverse")
-			.description("Blocks that need reversed face placement (click on opposite face). Uses required face as reference like directional protection uses player direction.")
+		.name("face-reverse")
+		.description("Blocks that need reversed face placement (click on opposite face). Uses required face as reference like directional protection uses player direction.")
 			.visible(precisePlacement::get)
 			.build()
 	);
@@ -542,7 +559,7 @@ public class Printer extends Module {
 		if (!mc.world.getBlockState(pos).isReplaceable()) return false;
 
         if (precisePlacement.get()) {
-            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), faceReverse.get());
+            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), directionMode.get(), onlyPlaceOnLookFace.get(), faceReverse.get());
         } else {
     		// Legacy mode - disabled advanced and rotate features
     		Direction wantedSide = null; // disabled: dir(required)
