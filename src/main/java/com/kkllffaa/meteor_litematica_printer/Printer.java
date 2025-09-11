@@ -111,21 +111,6 @@ public class Printer extends Module {
 			.build()
     );
 
-    private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
-			.name("rotate")
-			.description("Rotate to the blocks being placed.")
-			.defaultValue(false)
-			.build()
-    );
-
-    private final Setting<Boolean> clientSide = sgGeneral.add(new BoolSetting.Builder()
-			.name("Client side Rotation")
-			.description("Rotate to the blocks being placed on client side.")
-			.defaultValue(false)
-			.visible(rotate::get)
-			.build()
-    );
-
     private final Setting<Boolean> precisePlacement = sgClickFace.add(new BoolSetting.Builder()
 			.name("precise-placement")
 			.description("Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)")
