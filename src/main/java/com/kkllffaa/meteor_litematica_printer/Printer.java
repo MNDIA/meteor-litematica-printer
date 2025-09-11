@@ -31,6 +31,7 @@ import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.BlockHalf;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -181,7 +182,35 @@ public class Printer extends Module {
 	// Blocks that face the same direction as player (Forward)
 	private final Setting<List<Block>> facingForward = sgDirectional.add(new BlockListSetting.Builder()
 			.name("facing-forward")
-			.description("Blocks that should face the same direction as player (e.g., Observer, Piston).")
+			.description("Blocks that should face the same direction as player.")
+			.defaultValue(
+				// 侦测器、钟、拉杆
+				Blocks.OBSERVER, Blocks.BELL, Blocks.LEVER,
+				// 全部铁轨
+				Blocks.RAIL, Blocks.POWERED_RAIL, Blocks.DETECTOR_RAIL, Blocks.ACTIVATOR_RAIL,
+				// 全部楼梯
+				Blocks.OAK_STAIRS, Blocks.SPRUCE_STAIRS, Blocks.BIRCH_STAIRS, Blocks.JUNGLE_STAIRS, 
+				Blocks.ACACIA_STAIRS, Blocks.DARK_OAK_STAIRS, Blocks.STONE_STAIRS, Blocks.COBBLESTONE_STAIRS,
+				Blocks.BRICK_STAIRS, Blocks.STONE_BRICK_STAIRS, Blocks.NETHER_BRICK_STAIRS, Blocks.SANDSTONE_STAIRS,
+				Blocks.QUARTZ_STAIRS, Blocks.RED_SANDSTONE_STAIRS, Blocks.PURPUR_STAIRS, Blocks.PRISMARINE_STAIRS,
+				Blocks.PRISMARINE_BRICK_STAIRS, Blocks.DARK_PRISMARINE_STAIRS, Blocks.GRANITE_STAIRS, 
+				Blocks.DIORITE_STAIRS, Blocks.ANDESITE_STAIRS, Blocks.POLISHED_GRANITE_STAIRS,
+				Blocks.POLISHED_DIORITE_STAIRS, Blocks.POLISHED_ANDESITE_STAIRS, Blocks.MOSSY_STONE_BRICK_STAIRS,
+				Blocks.MOSSY_COBBLESTONE_STAIRS, Blocks.SMOOTH_SANDSTONE_STAIRS, Blocks.SMOOTH_RED_SANDSTONE_STAIRS,
+				Blocks.SMOOTH_QUARTZ_STAIRS, Blocks.END_STONE_BRICK_STAIRS, Blocks.BLACKSTONE_STAIRS,
+				Blocks.POLISHED_BLACKSTONE_STAIRS, Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, Blocks.CRIMSON_STAIRS,
+				Blocks.WARPED_STAIRS, Blocks.MANGROVE_STAIRS, Blocks.BAMBOO_STAIRS, Blocks.BAMBOO_MOSAIC_STAIRS,
+				Blocks.CHERRY_STAIRS, Blocks.COBBLED_DEEPSLATE_STAIRS, Blocks.POLISHED_DEEPSLATE_STAIRS,
+				Blocks.DEEPSLATE_BRICK_STAIRS, Blocks.DEEPSLATE_TILE_STAIRS,
+				// 全部栅栏门
+				Blocks.OAK_FENCE_GATE, Blocks.SPRUCE_FENCE_GATE, Blocks.BIRCH_FENCE_GATE, Blocks.JUNGLE_FENCE_GATE,
+				Blocks.ACACIA_FENCE_GATE, Blocks.DARK_OAK_FENCE_GATE, Blocks.CRIMSON_FENCE_GATE, Blocks.WARPED_FENCE_GATE,
+				Blocks.MANGROVE_FENCE_GATE, Blocks.BAMBOO_FENCE_GATE, Blocks.CHERRY_FENCE_GATE,
+				// 全部床
+				Blocks.WHITE_BED, Blocks.ORANGE_BED, Blocks.MAGENTA_BED, Blocks.LIGHT_BLUE_BED, Blocks.YELLOW_BED,
+				Blocks.LIME_BED, Blocks.PINK_BED, Blocks.GRAY_BED, Blocks.LIGHT_GRAY_BED, Blocks.CYAN_BED,
+				Blocks.PURPLE_BED, Blocks.BLUE_BED, Blocks.BROWN_BED, Blocks.GREEN_BED, Blocks.RED_BED, Blocks.BLACK_BED
+			)
 			.visible(directionProtection::get)
 			.build()
 	);
@@ -189,7 +218,38 @@ public class Printer extends Module {
 	// Blocks that face away from player (Backward)
 	private final Setting<List<Block>> facingBackward = sgDirectional.add(new BlockListSetting.Builder()
 			.name("facing-backward")
-			.description("Blocks that should face away from player (e.g., Furnace, Chest).")
+			.description("Blocks that should face away from player.")
+			.defaultValue(
+				// 全部活塞
+				Blocks.PISTON, Blocks.STICKY_PISTON,
+				// 全部箱子
+				Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST,
+				// 全部铁轨 (重复)
+				Blocks.RAIL, Blocks.POWERED_RAIL, Blocks.DETECTOR_RAIL, Blocks.ACTIVATOR_RAIL,
+				// 桶、切石机
+				Blocks.BARREL, Blocks.STONECUTTER,
+				// 蜂箱、蜂巢
+				Blocks.BEE_NEST, Blocks.BEEHIVE,
+				// 发射器、投掷器
+				Blocks.DISPENSER, Blocks.DROPPER,
+				// 中继器、比较器
+				Blocks.REPEATER, Blocks.COMPARATOR,
+				// 失水恶魂 (Soul Soil)
+				Blocks.SOUL_SOIL,
+				// 雕刻南瓜、发光南瓜
+				Blocks.CARVED_PUMPKIN, Blocks.JACK_O_LANTERN,
+				// 讲台
+				Blocks.LECTERN,
+				// 全部炉子
+				Blocks.FURNACE, Blocks.BLAST_FURNACE, Blocks.SMOKER,
+				// 雕文书架
+				Blocks.CHISELED_BOOKSHELF,
+				// 全部活板门
+				Blocks.OAK_TRAPDOOR, Blocks.SPRUCE_TRAPDOOR, Blocks.BIRCH_TRAPDOOR, Blocks.JUNGLE_TRAPDOOR,
+				Blocks.ACACIA_TRAPDOOR, Blocks.DARK_OAK_TRAPDOOR, Blocks.IRON_TRAPDOOR, Blocks.CRIMSON_TRAPDOOR,
+				Blocks.WARPED_TRAPDOOR, Blocks.MANGROVE_TRAPDOOR, Blocks.BAMBOO_TRAPDOOR, Blocks.CHERRY_TRAPDOOR,
+				
+			)
 			.visible(directionProtection::get)
 			.build()
 	);
@@ -198,6 +258,9 @@ public class Printer extends Module {
 	private final Setting<List<Block>> facingLeft = sgDirectional.add(new BlockListSetting.Builder()
 			.name("facing-left")
 			.description("Blocks that should face to the left of player.")
+			.defaultValue(
+				Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL
+			)
 			.visible(directionProtection::get)
 			.build()
 	);
@@ -229,7 +292,28 @@ public class Printer extends Module {
 	// Blocks that need state interaction (repeaters, comparators, note blocks, etc.)
 	private final Setting<List<Block>> stateBlocks = sgBlockState.add(new BlockListSetting.Builder()
 			.name("state-blocks")
-			.description("Blocks that need interaction to adjust their state (repeaters, comparators, note blocks, levers, trapdoors, doors, fence gates, etc.).")
+			.description("Blocks that need interaction to adjust their state.")
+			.defaultValue(
+				// 中继器、比较器
+				Blocks.REPEATER, Blocks.COMPARATOR,
+				// 音符盒
+				Blocks.NOTE_BLOCK,
+				// 拉杆
+				Blocks.LEVER,
+				Blocks.DAYLIGHT_DETECTOR,
+				// 全部活板门
+				Blocks.OAK_TRAPDOOR, Blocks.SPRUCE_TRAPDOOR, Blocks.BIRCH_TRAPDOOR, Blocks.JUNGLE_TRAPDOOR,
+				Blocks.ACACIA_TRAPDOOR, Blocks.DARK_OAK_TRAPDOOR, Blocks.IRON_TRAPDOOR, Blocks.CRIMSON_TRAPDOOR,
+				Blocks.WARPED_TRAPDOOR, Blocks.MANGROVE_TRAPDOOR, Blocks.BAMBOO_TRAPDOOR, Blocks.CHERRY_TRAPDOOR,
+				// 全部门
+				Blocks.OAK_DOOR, Blocks.SPRUCE_DOOR, Blocks.BIRCH_DOOR, Blocks.JUNGLE_DOOR,
+				Blocks.ACACIA_DOOR, Blocks.DARK_OAK_DOOR, Blocks.IRON_DOOR, Blocks.CRIMSON_DOOR,
+				Blocks.WARPED_DOOR, Blocks.MANGROVE_DOOR, Blocks.BAMBOO_DOOR, Blocks.CHERRY_DOOR,
+				// 全部栅栏门
+				Blocks.OAK_FENCE_GATE, Blocks.SPRUCE_FENCE_GATE, Blocks.BIRCH_FENCE_GATE, Blocks.JUNGLE_FENCE_GATE,
+				Blocks.ACACIA_FENCE_GATE, Blocks.DARK_OAK_FENCE_GATE, Blocks.CRIMSON_FENCE_GATE, Blocks.WARPED_FENCE_GATE,
+				Blocks.MANGROVE_FENCE_GATE, Blocks.BAMBOO_FENCE_GATE, Blocks.CHERRY_FENCE_GATE
+			)
 			.build()
 	);
 
