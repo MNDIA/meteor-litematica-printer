@@ -125,6 +125,7 @@ public class Deleter extends Module {
         .description("Maximum blocks to try to mine per tick. Useful when insta mining.")
         .defaultValue(1)
         .min(1)
+        .max(1024)
         .build()
     );
 
