@@ -381,6 +381,13 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> groundProtection = sgProtection.add(new BoolSetting.Builder()
+        .name("ground-protection")
+        .description("Slow down mining when player is not on ground (airborne).")
+        .defaultValue(false)
+        .build()
+    );
+
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
     private final List<BlockPos> foundBlockPositions = new ArrayList<>();
@@ -682,6 +689,11 @@ public class Deleter extends Module {
      * Returns true if the block is adjacent to fluids, protected blocks, outside distance range, outside height range, outside region, or outside directional range
      */
     private boolean isProtectedPosition(BlockPos pos) {
+        // Check ground protection
+         if (groundProtection.get() && !mc.player.isOnGround()) {
+            return true;
+        }
+
         // Check distance protection
         if (distanceProtection.get()) {
             double distance = getDistanceToPlayer(pos);
@@ -969,6 +981,9 @@ public class Deleter extends Module {
         }
         if (fluidProtection.get() || customProtection.get()) {
             protections.append("P");
+        }
+        if (groundProtection.get()) {
+            protections.append("G");
         }
         
         if (protections.length() > 0) {
