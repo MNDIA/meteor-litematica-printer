@@ -804,26 +804,49 @@ public class Deleter extends Module {
      * Check if a block position is within the directional range based on player's yaw
      */
     private boolean isWithinDirectionalRange(BlockPos pos) {
-        // Calculate the direction vector from player to block
-        double deltaYMath = pos.getX() + 0.5 - mc.player.getX();
-        double deltaXMath = pos.getZ() + 0.5 - mc.player.getZ();
-        
-        // Calculate the angle to the block in degrees (-180 to 180)
-        double angleToBlock = -Math.toDegrees(Math.atan2(deltaYMath, deltaXMath));
+        // Get player position and yaw
+        double playerX = mc.player.getX();
+        double playerZ = mc.player.getZ();
         
         // Get player's yaw and normalize it to -180 to 180
         float playerYaw = mc.player.getYaw() % 360;
         if (playerYaw > 180) playerYaw -= 360;
         if (playerYaw < -180) playerYaw += 360;
         
-        // Calculate the angle difference
-        double angleDifference = Math.abs(angleToBlock - playerYaw);
-        if (angleDifference > 180) {
-            angleDifference = 360 - angleDifference;
+        // Define the four corners of the block (on the horizontal plane)
+        double[][] corners = {
+            {pos.getX(), pos.getZ()},           // Bottom-left
+            {pos.getX() + 1, pos.getZ()},      // Bottom-right  
+            {pos.getX(), pos.getZ() + 1},      // Top-left
+            {pos.getX() + 1, pos.getZ() + 1}   // Top-right
+        };
+        
+        // Check if all corners are within the directional range
+        for (double[] corner : corners) {
+            // Calculate the direction vector from player to corner
+            double deltaYMath = corner[0] - playerX;
+            double deltaXMath = corner[1] - playerZ;
+            
+            // Skip if corner is at player position (avoid division by zero)
+            if (deltaYMath == 0 && deltaXMath == 0) continue;
+            
+            // Calculate the angle to the corner in degrees (-180 to 180)
+            double angleToCorner = -Math.toDegrees(Math.atan2(deltaYMath, deltaXMath));
+            
+            // Calculate the angle difference
+            double angleDifference = Math.abs(angleToCorner - playerYaw);
+            if (angleDifference > 180) {
+                angleDifference = 360 - angleDifference;
+            }
+            
+            // If any corner is outside the allowed range, reject the block
+            if (angleDifference > directionalAngle.get()) {
+                return false;
+            }
         }
         
-        // Check if the block is within the allowed angle range
-        return angleDifference <= directionalAngle.get();
+        // All corners are within range
+        return true;
     }
 
     private void mineNearbyBlocks(Item item, BlockPos pos, Direction dir, int depth) {
