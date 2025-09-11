@@ -430,8 +430,6 @@ public class Deleter extends Module {
             MyBlock block = blockPool.get();
             block.set(event);
             blocks.add(block);
-            // Add the initial block to cache
-            addToMinedCache(event.blockPos);
             mineNearbyBlocks(block.originalBlock.asItem(),event.blockPos,event.direction,depth.get());
         }
     }
@@ -474,7 +472,11 @@ public class Deleter extends Module {
                 return;
             }
             tick = 0;
-            blocks.getFirst().mine();
+            MyBlock block = blocks.getFirst();
+            // Add successfully mined block to cache
+            addToMinedCache(block.blockPos);
+            block.mine();
+
         }
     }
 
@@ -777,8 +779,6 @@ public class Deleter extends Module {
                 MyBlock block = blockPool.get();
                 block.set(neighbour,dir);
                 blocks.add(block);
-                // Add the neighbor to cache when adding it to mining queue
-                addToMinedCache(neighbour);
                 mineNearbyBlocks(item, neighbour, dir, depth-1);
             }
         }
@@ -844,7 +844,6 @@ public class Deleter extends Module {
                     MyBlock block = blockPool.get();
                     block.set(scanPos, Direction.UP); // Default direction for continuous mode
                     blocks.add(block);
-                    addToMinedCache(scanPos);
                 }
             }
         }
