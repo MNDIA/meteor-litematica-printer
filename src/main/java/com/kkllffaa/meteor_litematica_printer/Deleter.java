@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import com.kkllffaa.meteor_litematica_printer.MyUtils.DirectionMode;
+
 public class Deleter extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgRender = settings.createGroup("Render");
@@ -1290,7 +1292,7 @@ public class Deleter extends Module {
         
         // Place the light source using MyUtils placement system
         BlockState targetState = lightSource.getDefaultState();
-        boolean placed = MyUtils.precisePlaceByFace(pos, targetState, false, true, null);
+        boolean placed = MyUtils.precisePlaceByFace(pos, targetState, false, swingHand.get(), DirectionMode.PlayerPosition,true,null);
         
         if (placed) {
             placedLightSources.add(pos);

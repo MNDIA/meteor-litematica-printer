@@ -356,7 +356,7 @@ public class Printer extends Module {
 			.build()
 	);
 
-	// TODO: Add blacklist option
+
     private final Setting<List<Block>> whitelist = sgWhitelist.add(new BlockListSetting.Builder()
 			.name("whitelist")
 			.description("Blocks to place.")
@@ -398,10 +398,6 @@ public class Printer extends Module {
     private final LinkedHashSet<BlockPos> positionCache = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
 
-
-	// TODO: Add an option for smooth rotation. Make it look legit.
-	// Might use liquidbounce RotationUtils to make it happen.
-	// https://github.com/CCBlueX/LiquidBounce/blob/nextgen/src/main/kotlin/net/ccbluex/liquidbounce/utils/aiming/RotationsUtil.kt#L257
 
 	public Printer() {
 		super(Addon.CATEGORY, "litematica-printer", "Automatically prints open schematics");

@@ -616,6 +616,11 @@ public class MyUtils {
 			requiredFace = requiredFace.getOpposite();
 		}
 
+		// Check if player is looking at the required face when onlyPlaceOnLookFace is enabled
+		if (onlyPlaceOnLookFace && !isPlayerLookingAtFace(blockPos, requiredFace)) {
+			return false; // Player is not looking at the required face
+		}
+
 		BlockPos neighbor;
 		Vec3d hitPos;
 
@@ -868,6 +873,139 @@ public class MyUtils {
             pos.getZ() + 0.5
         );
     }
+
+	/**
+	 * Check if player is looking at a specific face of a block
+	 * Calculates the yaw and pitch range of the face's four corners from player's eye position
+	 * Returns true if player's current yaw and pitch are within the calculated ranges
+	 */
+	public static boolean isPlayerLookingAtFace(BlockPos blockPos, Direction face) {
+		if (mc.player == null) return false;
+
+		// Get player eye position
+		Vec3d eyePos = new Vec3d(
+			mc.player.getX(),
+			mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()),
+			mc.player.getZ()
+		);
+
+		// Get the four corner points of the specified face
+		Vec3d[] faceCorners = getFaceCorners(blockPos, face);
+
+		// Calculate yaw and pitch ranges for the face
+		float minYaw = Float.MAX_VALUE;
+		float maxYaw = Float.MIN_VALUE;
+		float minPitch = Float.MAX_VALUE;
+		float maxPitch = Float.MIN_VALUE;
+
+		for (Vec3d corner : faceCorners) {
+			// Calculate direction vector from eye to corner
+			Vec3d direction = corner.subtract(eyePos);
+			
+			// Calculate yaw and pitch for this corner
+			float yaw = (float) Math.toDegrees(Math.atan2(-direction.x, direction.z));
+			float pitch = (float) Math.toDegrees(-Math.atan2(direction.y, Math.sqrt(direction.x * direction.x + direction.z * direction.z)));
+
+			// Normalize yaw to [-180, 180]
+			while (yaw > 180.0F) yaw -= 360.0F;
+			while (yaw < -180.0F) yaw += 360.0F;
+
+			// Update ranges
+			minYaw = Math.min(minYaw, yaw);
+			maxYaw = Math.max(maxYaw, yaw);
+			minPitch = Math.min(minPitch, pitch);
+			maxPitch = Math.max(maxPitch, pitch);
+		}
+
+		// Handle yaw wrapping around ±180 degrees
+		if (maxYaw - minYaw > 180.0F) {
+			// The face spans across the ±180 boundary
+			float temp = minYaw;
+			minYaw = maxYaw;
+			maxYaw = temp + 360.0F;
+		}
+
+		// Get player's current yaw and pitch
+		float playerYaw = mc.player.getYaw();
+		float playerPitch = mc.player.getPitch();
+
+		// Normalize player yaw to [-180, 180]
+		while (playerYaw > 180.0F) playerYaw -= 360.0F;
+		while (playerYaw < -180.0F) playerYaw += 360.0F;
+
+		// Check if player yaw is in range (considering wrapping)
+		boolean yawInRange;
+		if (minYaw <= maxYaw) {
+			// Normal case: no wrapping
+			yawInRange = playerYaw >= minYaw && playerYaw <= maxYaw;
+		} else {
+			// Wrapped case: adjust player yaw if needed
+			float adjustedPlayerYaw = playerYaw < 0 ? playerYaw + 360.0F : playerYaw;
+			yawInRange = adjustedPlayerYaw >= minYaw || adjustedPlayerYaw <= maxYaw;
+		}
+
+		// Check if player pitch is in range
+		boolean pitchInRange = playerPitch >= minPitch && playerPitch <= maxPitch;
+
+		return yawInRange && pitchInRange;
+	}
+
+	/**
+	 * Get the four corner points of a block face
+	 */
+	private static Vec3d[] getFaceCorners(BlockPos blockPos, Direction face) {
+		double x = blockPos.getX();
+		double y = blockPos.getY();
+		double z = blockPos.getZ();
+
+		switch (face) {
+			case UP:
+				return new Vec3d[]{
+					new Vec3d(x, y + 1, z),
+					new Vec3d(x + 1, y + 1, z),
+					new Vec3d(x + 1, y + 1, z + 1),
+					new Vec3d(x, y + 1, z + 1)
+				};
+			case DOWN:
+				return new Vec3d[]{
+					new Vec3d(x, y, z),
+					new Vec3d(x + 1, y, z),
+					new Vec3d(x + 1, y, z + 1),
+					new Vec3d(x, y, z + 1)
+				};
+			case NORTH:
+				return new Vec3d[]{
+					new Vec3d(x, y, z),
+					new Vec3d(x + 1, y, z),
+					new Vec3d(x + 1, y + 1, z),
+					new Vec3d(x, y + 1, z)
+				};
+			case SOUTH:
+				return new Vec3d[]{
+					new Vec3d(x, y, z + 1),
+					new Vec3d(x + 1, y, z + 1),
+					new Vec3d(x + 1, y + 1, z + 1),
+					new Vec3d(x, y + 1, z + 1)
+				};
+			case WEST:
+				return new Vec3d[]{
+					new Vec3d(x, y, z),
+					new Vec3d(x, y, z + 1),
+					new Vec3d(x, y + 1, z + 1),
+					new Vec3d(x, y + 1, z)
+				};
+			case EAST:
+				return new Vec3d[]{
+					new Vec3d(x + 1, y, z),
+					new Vec3d(x + 1, y, z + 1),
+					new Vec3d(x + 1, y + 1, z + 1),
+					new Vec3d(x + 1, y + 1, z)
+				};
+			default:
+				throw new IllegalArgumentException("Invalid face direction: " + face);
+		}
+	}
+
 	    /**
      * Get the light level at a specific position
      */
