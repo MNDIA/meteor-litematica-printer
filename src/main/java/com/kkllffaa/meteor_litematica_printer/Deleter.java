@@ -602,7 +602,7 @@ public class Deleter extends Module {
         }
 
         private void updateBlockBreakingProgress() {
-            BlockUtils.breakBlock(blockPos, swingHand.get());
+            breakBlock(blockPos, swingHand.get());
         }
 
         public void render(Render3DEvent event) {
