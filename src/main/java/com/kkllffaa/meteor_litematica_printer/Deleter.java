@@ -680,12 +680,6 @@ public class Deleter extends Module {
     
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        // Continuous mode logic - scan for blocks around player
-        if (continuousMode.get()) {
-            handleContinuousMode();
-        }
-        blocks.removeIf(MyBlock::shouldRemove);
-
         // Cache cleanup timer - clears cache periodically to prevent stale entries
         if (enableCache.get()) {
             cacheCleanupTickTimer++;
@@ -704,6 +698,12 @@ public class Deleter extends Module {
                 cacheCleanupTickTimer = 0;
             }
         }
+        // Continuous mode logic - scan for blocks around player
+        if (continuousMode.get()) {
+            handleContinuousMode();
+        }
+        blocks.removeIf(MyBlock::shouldRemove);
+
 
         // Handle automatic lighting
         handleAutoLighting();
@@ -784,13 +784,13 @@ public class Deleter extends Module {
         }
 
         public boolean shouldRemove() {
+            if (isPositionCached(lastPlayerPos)) {
+                return true;
+            }
             BlockState currentState = mc.world.getBlockState(blockPos);
             // Check if block changed to something else or out of range
             if (currentState.getBlock() != originalBlock){
                 addToMinedCache(blockPos);
-                return true;
-            }
-            if (isPositionCached(lastPlayerPos)) {
                 return true;
             }
 
