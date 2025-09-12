@@ -6,6 +6,8 @@ import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
+import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.EventPriority;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.Attachment;
 import net.minecraft.block.enums.BlockFace;
@@ -31,6 +33,7 @@ import net.minecraft.world.RaycastContext.ShapeType;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
+import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 
 
@@ -789,7 +792,20 @@ public class MyUtils {
         PlayerRotation,  // Use BlockUtils.getDirection method
         PlayerPosition    // Use ray casting from player eye to block center
     }
+	@EventHandler(priority = EventPriority.HIGHEST + 100)
+    private static void onTickPre(TickEvent.Pre event) {
+        breakingThisTick = false;
+    }
 
+    @EventHandler(priority = EventPriority.LOWEST - 100)
+    private static void onTickPost(TickEvent.Post event) {
+        if (!breakingThisTick && breaking) {
+            breaking = false;
+            if (mc.interactionManager != null) mc.interactionManager.cancelBlockBreaking();
+        }
+    }
+    public static boolean breaking;
+    private static boolean breakingThisTick;
 	public static boolean breakBlock(BlockPos blockPos, boolean swing, DirectionMode directionMode) {
         if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
 
@@ -808,6 +824,9 @@ public class MyUtils {
 
         if (swing) mc.player.swingHand(Hand.MAIN_HAND);
         else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+
+		breaking = true;
+        breakingThisTick = true;
 
         return true;
     }
