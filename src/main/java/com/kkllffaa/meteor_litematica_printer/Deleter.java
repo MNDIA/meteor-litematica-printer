@@ -1247,11 +1247,6 @@ public class Deleter extends Module {
             if (lightingBlocks.get().contains(belowBlock)) return false;
         }
         
-        
-        // Check if the position is within range
-        double distance = MyUtils.getDistanceToPlayerEyes(pos);
-        if (distance > lightingScanRadius.get()) return false;
-        
         // Check if light level is below threshold
         int lightLevel = MyUtils.getLightLevel(pos);
         return lightLevel < lightLevelThreshold.get();
@@ -1364,8 +1359,9 @@ public class Deleter extends Module {
         Block lightSource = getBestLightSource();
         if (lightSource == null) return;
         
-        // Try to place a light source at the best position
-        placeLightSource(bestLightPosition, lightSource);
+        if (placeLightSource(bestLightPosition, lightSource)){
+            bestLightPosition = null;
+        }
         
     }
 
