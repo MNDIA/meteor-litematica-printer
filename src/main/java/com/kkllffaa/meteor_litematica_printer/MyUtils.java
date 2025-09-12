@@ -800,11 +800,12 @@ public class MyUtils {
 
     @EventHandler(priority = EventPriority.LOWEST - 100)
     private static void onTickPost(TickEvent.Post event) {
-        if (!breakingThisTick && BlockUtils.breaking) {
-            BlockUtils.breaking = false;
+        if (!breakingThisTick && breaking) {
+            breaking = false;
             if (mc.interactionManager != null) mc.interactionManager.cancelBlockBreaking();
         }
     }
+	private static boolean breaking;
     private static boolean breakingThisTick;
 	public static boolean breakBlock(BlockPos blockPos, boolean swing, DirectionMode directionMode) {
         if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
@@ -818,14 +819,14 @@ public class MyUtils {
             return true;
         }
 
-        if (BlockUtils.breaking)
+        if (breaking)
             mc.interactionManager.updateBlockBreakingProgress(pos, getBlockClickFace(blockPos, directionMode));
         else mc.interactionManager.attackBlock(pos,getBlockClickFace(blockPos, directionMode));
 
         if (swing) mc.player.swingHand(Hand.MAIN_HAND);
         else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
 
-		BlockUtils.breaking = true;
+		breaking = true;
         breakingThisTick = true;
 
         return true;
