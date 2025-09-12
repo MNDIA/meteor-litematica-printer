@@ -729,9 +729,11 @@ public class Deleter extends Module {
                 count++;
                 
                 // If block is not being insta-mined, only process one block per tick
-                if (!BlockUtils.canInstaBreak(block.blockPos)) break;
-                else{
+                if (BlockUtils.canInstaBreak(block.blockPos)){
                     addToMinedCache(block.blockPos);
+                } 
+                else{
+                    break;
                 }
             }
         }
@@ -818,7 +820,6 @@ public class Deleter extends Module {
             if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
             else updateBlockBreakingProgress();
             if (!mining) {
-                mc.player.swingHand(Hand.MAIN_HAND);
                 mining = true;
                 miningStartTime = System.currentTimeMillis(); // Record mining start time
             }
