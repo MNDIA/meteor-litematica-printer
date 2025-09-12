@@ -792,6 +792,7 @@ public class MyUtils {
         PlayerRotation,  // Use BlockUtils.getDirection method
         PlayerPosition    // Use ray casting from player eye to block center
     }
+
 	@EventHandler(priority = EventPriority.HIGHEST + 100)
     private static void onTickPre(TickEvent.Pre event) {
         breakingThisTick = false;
@@ -817,7 +818,7 @@ public class MyUtils {
             return true;
         }
 
-        if (mc.interactionManager.isBreakingBlock())
+        if (BlockUtils.breaking)
             mc.interactionManager.updateBlockBreakingProgress(pos, getBlockClickFace(blockPos, directionMode));
         else mc.interactionManager.attackBlock(pos,getBlockClickFace(blockPos, directionMode));
 
