@@ -609,7 +609,7 @@ public class MyUtils {
 		// Get the required face for this block state
 		Direction requiredFace = getPrecisePlacementFace(targetState);
 		if (requiredFace == null) {
-			requiredFace = getBlockClickFace(blockPos, directionMode);
+			requiredFace = getBlockClickFace(blockPos, directionMode).getOpposite();
 		}
 		
 		// Apply face reversal if block is in the reverse list
