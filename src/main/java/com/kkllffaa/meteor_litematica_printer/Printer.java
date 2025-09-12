@@ -124,7 +124,7 @@ public class Printer extends Module {
 	
 	private final Setting<DirectionMode> directionMode = sgClickFace.add(new EnumSetting.Builder<DirectionMode>()
 			.name("direction-mode")
-			.description("How to determine the direction for block placement.")
+			.description("How to determine the direction for default block placement.")
 			.defaultValue(DirectionMode.PlayerPosition)
 			.visible(precisePlacement::get)
 			.build()
@@ -557,36 +557,8 @@ public class Printer extends Module {
         if (precisePlacement.get()) {
             return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), directionMode.get(), onlyPlaceOnLookFace.get(), faceReverse.get());
         } else {
-    		// Legacy mode - disabled advanced and rotate features
-    		Direction wantedSide = null; // disabled: dir(required)
-        	SlabType wantedSlabType = null; // disabled: required.contains(Properties.SLAB_TYPE) ? required.get(Properties.SLAB_TYPE) : null;
-        	BlockHalf wantedBlockHalf = null; // disabled: required.contains(Properties.BLOCK_HALF) ? required.get(Properties.BLOCK_HALF) : null;
-        	Direction wantedHorizontalOrientation = null; // disabled: required.contains(Properties.HORIZONTAL_FACING) ? required.get(Properties.HORIZONTAL_FACING) : null;
-        	Axis wantedAxies = null; // disabled: required.contains(Properties.AXIS) ? required.get(Properties.AXIS) : null;
-        	Direction wantedHopperOrientation = null; // disabled: required.contains(Properties.HOPPER_FACING) ? required.get(Properties.HOPPER_FACING) : null;
-        	
-        	Direction placeSide = placeThroughWall.get() ?
-        						MyUtils.getPlaceSide(
-        								pos,
-        								required,
-        								wantedSlabType, 
-        								wantedBlockHalf,
-        								wantedHorizontalOrientation != null ? wantedHorizontalOrientation : wantedHopperOrientation,
-        								wantedAxies,
-        								wantedSide)
-        						: MyUtils.getVisiblePlaceSide(
-        								pos,
-        								required,
-        								wantedSlabType, 
-        								wantedBlockHalf,
-        								wantedHorizontalOrientation != null ? wantedHorizontalOrientation : wantedHopperOrientation,
-        								wantedAxies,
-        								printing_range.get(),
-        								wantedSide
-    							);
-
-            return MyUtils.place(pos, placeSide, wantedSlabType, wantedBlockHalf, wantedHorizontalOrientation != null ? wantedHorizontalOrientation : wantedHopperOrientation, wantedAxies, airPlace.get(), swing.get(), false, false, printing_range.get());
-        }
+            return MyUtils.placeByFace(pos, required, airPlace.get(), swing.get(), directionMode.get(), onlyPlaceOnLookFace.get(), faceReverse.get());
+		}
 	}
 
 	private boolean switchItem(Item item, BlockState state, Supplier<Boolean> action) {
