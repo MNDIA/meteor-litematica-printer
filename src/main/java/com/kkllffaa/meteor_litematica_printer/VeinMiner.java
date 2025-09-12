@@ -1,4 +1,9 @@
-package com.kkllffaa.meteor_litematica_printer;
+/*
+ * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client).
+ * Copyright (c) Meteor Development.
+ */
+
+package meteordevelopment.meteorclient.systems.modules.world;
 
 import meteordevelopment.meteorclient.events.entity.player.StartBreakingBlockEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
@@ -26,6 +31,8 @@ import net.minecraft.util.shape.VoxelShape;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import com.kkllffaa.meteor_litematica_printer.MyUtils.DirectionMode;
 
 public class VeinMiner extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -174,24 +181,12 @@ public class VeinMiner extends Module {
         blocks.removeIf(MyBlock::shouldRemove);
 
         if (!blocks.isEmpty()) {
-
             if (tick < delay.get() && !blocks.getFirst().mining) {
                 tick++;
                 return;
             }
             tick = 0;
-            
-            // Mine up to maxBlocksPerTick blocks per tick
-            int count = 0;
-            for (MyBlock block : blocks) {
-                if (count >= 1) break;
-                block.mine();
-                
-                count++;
-                
-                // If block is not being insta-mined, only process one block per tick
-                if (!BlockUtils.canInstaBreak(block.blockPos)) break;
-            }
+            blocks.getFirst().mine();
         }
     }
 
@@ -236,7 +231,7 @@ public class VeinMiner extends Module {
         }
 
         private void updateBlockBreakingProgress() {
-            BlockUtils.breakBlock(blockPos, swingHand.get());
+            MyUtils.breakBlock(blockPos, swingHand.get(),DirectionMode.PlayerPosition);
         }
 
         public void render(Render3DEvent event) {
