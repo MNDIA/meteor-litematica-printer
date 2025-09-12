@@ -758,6 +758,9 @@ public class Deleter extends Module {
                 addToMinedCache(blockPos);
                 return true;
             }
+            if (isPositionCached(lastPlayerPos)) {
+                return true;
+            }
 
             if( isOutOfDistance(blockPos)||
                 !isListBlock(currentState)||
