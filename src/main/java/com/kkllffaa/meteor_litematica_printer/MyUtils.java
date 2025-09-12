@@ -1,7 +1,5 @@
 package com.kkllffaa.meteor_litematica_printer;
 
-import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
@@ -807,27 +805,21 @@ public class MyUtils {
     }
 	private static boolean breaking;
     private static boolean breakingThisTick;
-	public static boolean breakBlock(BlockPos blockPos, boolean swing, DirectionMode directionMode) {
+	public static boolean breakBlock(BlockPos blockPos, boolean swing, DirectionMode directionMode, boolean isBreaking) {
         if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
 
         // Creating new instance of block pos because minecraft assigns the parameter to a field, and we don't want it to change when it has been stored in a field somewhere
         BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
 
-        InstantRebreak ir = Modules.get().get(InstantRebreak.class);
-        if (ir != null && ir.isActive() && ir.blockPos.equals(pos) && ir.shouldMine()) {
-            ir.sendPacket();
-            return true;
-        }
-
-        if (breaking)
-            mc.interactionManager.updateBlockBreakingProgress(pos, getBlockClickFace(blockPos, directionMode));
+        if (isBreaking){
+			mc.interactionManager.updateBlockBreakingProgress(pos, getBlockClickFace(blockPos, directionMode));
+		}
         else mc.interactionManager.attackBlock(pos,getBlockClickFace(blockPos, directionMode));
-
+		
         if (swing) mc.player.swingHand(Hand.MAIN_HAND);
         else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-
 		breaking = true;
-        breakingThisTick = true;
+		breakingThisTick = true;
 
         return true;
     }

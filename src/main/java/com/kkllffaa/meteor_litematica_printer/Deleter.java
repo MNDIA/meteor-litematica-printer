@@ -697,6 +697,9 @@ public class Deleter extends Module {
                 
                 // If block is not being insta-mined, only process one block per tick
                 if (!BlockUtils.canInstaBreak(block.blockPos)) break;
+                else{
+                    addToMinedCache(block.blockPos);
+                }
             }
         }
     }
@@ -779,17 +782,17 @@ public class Deleter extends Module {
             return false;
         }
         public void mine() {
+            if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
+            else updateBlockBreakingProgress();
             if (!mining) {
                 mc.player.swingHand(Hand.MAIN_HAND);
                 mining = true;
                 miningStartTime = System.currentTimeMillis(); // Record mining start time
             }
-            if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
-            else updateBlockBreakingProgress();
         }
 
         private void updateBlockBreakingProgress() {
-            MyUtils.breakBlock(blockPos, swingHand.get(), directionMode.get());
+            MyUtils.breakBlock(blockPos, swingHand.get(), directionMode.get(),mining);
         }
 
         public void render(Render3DEvent event) {
