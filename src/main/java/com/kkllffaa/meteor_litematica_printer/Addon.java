@@ -21,7 +21,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());
 		Modules.get().add(new Swarm());
-		Modules.get().add(new VeinMiner());
+		
 		Commands.add(new SwarmCommand());
 	}
 
