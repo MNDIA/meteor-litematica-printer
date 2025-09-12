@@ -515,12 +515,46 @@ public class Deleter extends Module {
         .visible(autoLighting::get)
         .build()
     );
+    private final Setting<Boolean> onlyOnLookBlockFace = sgLighting.add(new BoolSetting.Builder()
+        .name("only-on-look-block-face")
+        .description("Only place light sources on the face of the block the player is looking at.")
+        .defaultValue(false)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Boolean> airPlace = sgLighting.add(new BoolSetting.Builder()
+        .name("air-place")
+        .description("Allow placing light sources in air.")
+        .defaultValue(false)
+        .visible(autoLighting::get)
+        .build()
+    );
 
     private final Setting<Boolean> renderLightPositions = sgLighting.add(new BoolSetting.Builder()
         .name("render-light-positions")
         .description("Render positions where light sources will be placed.")
         .defaultValue(true)
         .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Boolean> earlyTermination = sgLighting.add(new BoolSetting.Builder()
+        .name("early-termination")
+        .description("Stop searching when a completely dark position (light level 0) is found close to the player.")
+        .defaultValue(true)
+        .visible(autoLighting::get)
+        .build()
+    );
+
+    private final Setting<Double> earlyTerminationDistance = sgLighting.add(new DoubleSetting.Builder()
+        .name("early-termination-distance")
+        .description("Maximum distance for early termination when a dark position is found.")
+        .defaultValue(3.0)
+        .min(1.0)
+        .max(8.0)
+        .sliderRange(1.0, 8.0)
+        .visible(() -> autoLighting.get() && earlyTermination.get())
         .build()
     );
 
@@ -552,9 +586,9 @@ public class Deleter extends Module {
     private static final SettingColor REBOUND_CACHE_SIDE_COLOR = new SettingColor(0, 255, 0, 10);
     private static final SettingColor REBOUND_CACHE_LINE_COLOR = new SettingColor(0, 255, 0, 255);
 
-    // Light source placement
-    private final List<BlockPos> potentialLightPositions = new ArrayList<>();
-    private final LinkedHashSet<BlockPos> placedLightSources = new LinkedHashSet<>();
+    // Light source placement - optimized to only store the single best position
+    // This reduces memory usage and improves performance compared to storing all potential positions
+    private BlockPos bestLightPosition = null;
     private int lightingTickTimer = 0;
 
     private int tick = 0;
@@ -581,8 +615,7 @@ public class Deleter extends Module {
         cacheCleanupTickTimer = 0;
         lastPlayerPos = null;
         continuousScanTimer = 0;
-        potentialLightPositions.clear();
-        placedLightSources.clear();
+        bestLightPosition = null;
         lightingTickTimer = 0;
     }
 
@@ -715,16 +748,13 @@ public class Deleter extends Module {
                 MyUtils.renderPos(event, pos, shapeMode.get(), REBOUND_CACHE_SIDE_COLOR, REBOUND_CACHE_LINE_COLOR);
             }
         }
-        // Render light source positions
-        if (autoLighting.get() && renderLightPositions.get()) {
-            for (BlockPos pos : potentialLightPositions) {
-                
-            int lightLevel = MyUtils.getLightLevel(pos);
+        // Render the best light source position
+        if (autoLighting.get() && renderLightPositions.get() && bestLightPosition != null) {
+            int lightLevel = MyUtils.getLightLevel(bestLightPosition);
             int intensity = Math.max(50, 255 - (lightLevel * 15)); // Darker = more intense yellow
 
             SettingColor yellowLine = new SettingColor(255, 255, 0, intensity);
-                MyUtils.renderPos(event, pos, ShapeMode.Lines, yellowLine, yellowLine);
-            }
+            MyUtils.renderPos(event, bestLightPosition, ShapeMode.Lines, yellowLine, yellowLine);
         }
     }
 
@@ -1217,8 +1247,6 @@ public class Deleter extends Module {
             if (lightingBlocks.get().contains(belowBlock)) return false;
         }
         
-        // Don't place where we already have a light source
-        if (placedLightSources.contains(pos)) return false;
         
         // Check if the position is within range
         double distance = MyUtils.getDistanceToPlayerEyes(pos);
@@ -1245,14 +1273,19 @@ public class Deleter extends Module {
     }
 
     /**
-     * Scan for positions where light sources should be placed
+     * Scan for the best position where a light source should be placed
+     * Optimized to only keep track of the single best position during scanning
      */
     private void scanForLightPositions() {
         if (!autoLighting.get() || mc.player == null || mc.world == null) return;
         
-        potentialLightPositions.clear();
+        bestLightPosition = null;
         BlockPos playerPos = mc.player.getBlockPos();
         int radius = lightingScanRadius.get();
+        
+        // Variables to track the best position found so far
+        int bestLightLevel = Integer.MAX_VALUE;
+        double bestDistance = Double.MAX_VALUE;
         
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
@@ -1260,26 +1293,35 @@ public class Deleter extends Module {
                     BlockPos checkPos = playerPos.add(x, y, z);
                     
                     if (isSuitableForLightSource(checkPos)) {
-                        potentialLightPositions.add(checkPos.toImmutable());
+                        int lightLevel = MyUtils.getLightLevel(checkPos);
+                        double distance = MyUtils.getDistanceToPlayerEyes(checkPos);
+                        
+                        // Check if this position is better than the current best
+                        boolean isBetter = false;
+                        
+                        if (lightLevel < bestLightLevel) {
+                            // Darker position is always better
+                            isBetter = true;
+                        } else if (lightLevel == bestLightLevel && distance < bestDistance) {
+                            // Same light level but closer distance
+                            isBetter = true;
+                        }
+                        
+                        if (isBetter) {
+                            bestLightPosition = checkPos.toImmutable();
+                            bestLightLevel = lightLevel;
+                            bestDistance = distance;
+                            
+                            // Early termination: if enabled and we found a completely dark position (light level 0)
+                            // and it's within the specified distance, we can stop searching
+                            if (earlyTermination.get() && lightLevel == 0 && distance <= earlyTerminationDistance.get()) {
+                                return;
+                            }
+                        }
                     }
                 }
             }
         }
-        
-        // Sort by light level (darkest first) then by distance to player
-        potentialLightPositions.sort((pos1, pos2) -> {
-            int light1 = MyUtils.getLightLevel(pos1);
-            int light2 = MyUtils.getLightLevel(pos2);
-
-            if (light1 != light2) {
-                return Integer.compare(light1, light2); // Darker positions first
-            }
-            
-            // If same light level, prefer closer positions
-            double dist1 = MyUtils.getDistanceToPlayerEyes(pos1);
-            double dist2 = MyUtils.getDistanceToPlayerEyes(pos2);
-            return Double.compare(dist1, dist2);
-        });
     }
 
     /**
@@ -1297,14 +1339,9 @@ public class Deleter extends Module {
         
         // Place the light source using MyUtils placement system
         BlockState targetState = lightSource.getDefaultState();
-        boolean placed = MyUtils.precisePlaceByFace(pos, targetState, false, swingHand.get(), DirectionMode.PlayerPosition,true,null);
-        
-        if (placed) {
-            placedLightSources.add(pos);
-            return true;
-        }
-        
-        return false;
+
+        return MyUtils.precisePlaceByFace(pos, targetState, airPlace.get(), swingHand.get(), DirectionMode.PlayerPosition, onlyOnLookBlockFace.get(), null);
+
     }
 
     /**
@@ -1318,20 +1355,18 @@ public class Deleter extends Module {
         
         lightingTickTimer = 0;
         
-        // Scan for positions that need lighting
+        // Scan for the best position that needs lighting
         scanForLightPositions();
         
-        if (potentialLightPositions.isEmpty()) return;
+        if (bestLightPosition == null) return;
         
         // Get the best light source available
         Block lightSource = getBestLightSource();
         if (lightSource == null) return;
         
-        // Try to place a light source at the darkest position
-        BlockPos targetPos = potentialLightPositions.get(0);
-        if (placeLightSource(targetPos, lightSource)) {
-            // Successfully placed light source
-        }
+        // Try to place a light source at the best position
+        placeLightSource(bestLightPosition, lightSource);
+        
     }
 
 
