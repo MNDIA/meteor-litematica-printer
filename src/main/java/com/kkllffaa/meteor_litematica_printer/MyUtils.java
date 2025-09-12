@@ -808,7 +808,6 @@ public class MyUtils {
 
         if (swing) mc.player.swingHand(Hand.MAIN_HAND);
         else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-		BlockUtils.breaking = true;
 
         return true;
     }
