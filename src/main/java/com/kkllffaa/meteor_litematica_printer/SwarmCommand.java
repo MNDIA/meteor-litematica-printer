@@ -33,7 +33,8 @@ import java.util.Random;
 
 public class SwarmCommand extends Command {
 
-    private final static SimpleCommandExceptionType SWARM_NOT_ACTIVE = new SimpleCommandExceptionType(Text.literal("The swarm module must be active to use this command."));
+    private final static SimpleCommandExceptionType SWARM_NOT_ACTIVE = new SimpleCommandExceptionType(
+            Text.literal("The swarm module must be active to use this command."));
     private @Nullable ObjectIntPair<String> pendingConnection;
 
     public SwarmCommand() {
@@ -43,11 +44,11 @@ public class SwarmCommand extends Command {
     @Override
     public void build(LiteralArgumentBuilder<CommandSource> builder) {
         builder.then(literal("disconnect").executes(context -> {
-            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get().get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 swarm.close();
-            }
-            else {
+            } else {
                 throw SWARM_NOT_ACTIVE.create();
             }
 
@@ -65,22 +66,21 @@ public class SwarmCommand extends Command {
 
                                     info("Are you sure you want to connect to '%s:%s'?", ip, port);
                                     info(Text.literal("Click here to confirm").setStyle(Style.EMPTY
-                                        .withFormatting(Formatting.UNDERLINE, Formatting.GREEN)
-                                        .withClickEvent(new MeteorClickEvent(".swarm join confirm"))
-                                    ));
+                                            .withFormatting(Formatting.UNDERLINE, Formatting.GREEN)
+                                            .withClickEvent(new MeteorClickEvent(".swarm join confirm"))));
 
                                     return SINGLE_SUCCESS;
-                                })
-                        )
-                )
+                                })))
                 .then(literal("confirm").executes(ctx -> {
                     if (pendingConnection == null) {
                         error("No pending swarm connections.");
                         return SINGLE_SUCCESS;
                     }
 
-                    Swarm swarm = Modules.get().get(Swarm.class);
-                    if (!swarm.isActive()) swarm.toggle();
+                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+                    if (!swarm.isActive())
+                        swarm.toggle();
 
                     swarm.close();
                     swarm.mode.set(Swarm.Mode.Worker);
@@ -97,30 +97,29 @@ public class SwarmCommand extends Command {
                     }
 
                     return SINGLE_SUCCESS;
-                }))
-        );
+                })));
 
         builder.then(literal("connections").executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     if (swarm.host.getConnectionCount() > 0) {
-                        ChatUtils.info("--- Swarm Connections (highlight)(%s/%s)(default) ---", swarm.host.getConnectionCount(), swarm.host.getConnections().length);
+                        ChatUtils.info("--- Swarm Connections (highlight)(%s/%s)(default) ---",
+                                swarm.host.getConnectionCount(), swarm.host.getConnections().length);
 
                         for (int i = 0; i < swarm.host.getConnections().length; i++) {
                             SwarmConnection connection = swarm.host.getConnections()[i];
-                            if (connection != null) ChatUtils.info("(highlight)Worker %s(default): %s.", i, connection.getConnection());
+                            if (connection != null)
+                                ChatUtils.info("(highlight)Worker %s(default): %s.", i, connection.getConnection());
                         }
-                    }
-                    else {
+                    } else {
                         warning("No active connections");
                     }
-                }
-                else if (swarm.isWorker()) {
+                } else if (swarm.isWorker()) {
                     info("Connected to (highlight)%s", swarm.worker.getConnection());
                 }
-            }
-            else {
+            } else {
                 throw SWARM_NOT_ACTIVE.create();
             }
 
@@ -128,16 +127,15 @@ public class SwarmCommand extends Command {
         }));
 
         builder.then(literal("follow").executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput() + " " + mc.player.getName().getString());
-                }
-                else if (swarm.isWorker()) {
+                } else if (swarm.isWorker()) {
                     error("The follow host command must be used by the host.");
                 }
-            }
-            else {
+            } else {
                 throw SWARM_NOT_ACTIVE.create();
             }
 
@@ -145,142 +143,145 @@ public class SwarmCommand extends Command {
         }).then(argument("player", PlayerArgumentType.create()).executes(context -> {
             PlayerEntity playerEntity = PlayerArgumentType.get(context);
 
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput());
-                }
-                else if (swarm.isWorker() && playerEntity != null) {
-                    PathManagers.get().follow(entity -> entity.getName().getString().equalsIgnoreCase(playerEntity.getName().getString()));
-                }
-            }
-            else {
-                throw SWARM_NOT_ACTIVE.create();
-            }
-            return SINGLE_SUCCESS;
-        }))
-        );
-
-        builder.then(literal("goto")
-                .then(argument("x", IntegerArgumentType.integer())
-                        .then(argument("z", IntegerArgumentType.integer()).executes(context -> {
-                            Swarm swarm = Modules.get().get(Swarm.class);
-                            if (swarm.isActive()) {
-                                if (swarm.isHost()) {
-                                    swarm.host.sendMessage(context.getInput());
-                                }
-                                else if (swarm.isWorker()) {
-                                    int x = IntegerArgumentType.getInteger(context, "x");
-                                    int z = IntegerArgumentType.getInteger(context, "z");
-
-                                    PathManagers.get().moveTo(new BlockPos(x, 0, z), true);
-                                }
-                            }
-                            else {
-                                throw SWARM_NOT_ACTIVE.create();
-                            }
-                            return SINGLE_SUCCESS;
-                        }))
-                )
-        );
-
-        builder.then(literal("infinity-miner").executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
-            if (swarm.isActive()) {
-                if (swarm.isHost()) {
-                    swarm.host.sendMessage(context.getInput());
-                }
-                else if (swarm.isWorker()) {
-                    runInfinityMiner();
-                }
-            }
-            else {
-                throw SWARM_NOT_ACTIVE.create();
-            }
-            return SINGLE_SUCCESS;
-        })
-        .then(argument("target", BlockStateArgumentType.blockState(REGISTRY_ACCESS)).executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
-            if (swarm.isActive()) {
-                if (swarm.isHost()) {
-                    swarm.host.sendMessage(context.getInput());
-                }
-                else if (swarm.isWorker()) {
-                    Modules.get().get(InfinityMiner.class).targetBlocks.set(List.of(context.getArgument("target", BlockStateArgument.class).getBlockState().getBlock()));
-                    runInfinityMiner();
-                }
-            }
-            else {
-                throw SWARM_NOT_ACTIVE.create();
-            }
-            return SINGLE_SUCCESS;
-        })
-        .then(argument("repair", BlockStateArgumentType.blockState(REGISTRY_ACCESS)).executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
-            if (swarm.isActive()) {
-                if (swarm.isHost()) {
-                    swarm.host.sendMessage(context.getInput());
-                }
-                else if (swarm.isWorker()) {
-                    Modules.get().get(InfinityMiner.class).targetBlocks.set(List.of(context.getArgument("target", BlockStateArgument.class).getBlockState().getBlock()));
-                    Modules.get().get(InfinityMiner.class).repairBlocks.set(List.of(context.getArgument("repair", BlockStateArgument.class).getBlockState().getBlock()));
-                    runInfinityMiner();
-                }
-            }
-            else {
-                throw SWARM_NOT_ACTIVE.create();
-            }
-            return SINGLE_SUCCESS;
-        })))
-        .then(literal("logout").then(argument("logout", BoolArgumentType.bool()).executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
-            if (swarm.isActive()) {
-                if (swarm.isHost()) {
-                    swarm.host.sendMessage(context.getInput());
-                }
-                else if (swarm.isWorker()) {
-                    Modules.get().get(InfinityMiner.class).logOut.set(BoolArgumentType.getBool(context, "logout"));
-                }
-            }
-            else {
-                throw SWARM_NOT_ACTIVE.create();
-            }
-            return SINGLE_SUCCESS;
-        })))
-        .then(literal("walkhome").then(argument("walkhome", BoolArgumentType.bool()).executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
-            if (swarm.isActive()) {
-                if (swarm.isHost()) {
-                    swarm.host.sendMessage(context.getInput());
-                } else if (swarm.isWorker()) {
-                    Modules.get().get(InfinityMiner.class).walkHome.set(BoolArgumentType.getBool(context, "walkhome"));
+                } else if (swarm.isWorker() && playerEntity != null) {
+                    PathManagers.get().follow(entity -> entity.getName().getString()
+                            .equalsIgnoreCase(playerEntity.getName().getString()));
                 }
             } else {
                 throw SWARM_NOT_ACTIVE.create();
             }
             return SINGLE_SUCCESS;
-        }))));
+        })));
 
-        builder.then(literal("mine")
-                .then(argument("block", BlockStateArgumentType.blockState(REGISTRY_ACCESS)).executes(context -> {
-                    Swarm swarm = Modules.get().get(Swarm.class);
+        builder.then(literal("goto")
+                .then(argument("x", IntegerArgumentType.integer())
+                        .then(argument("z", IntegerArgumentType.integer()).executes(context -> {
+                            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+                            if (swarm.isActive()) {
+                                if (swarm.isHost()) {
+                                    swarm.host.sendMessage(context.getInput());
+                                } else if (swarm.isWorker()) {
+                                    int x = IntegerArgumentType.getInteger(context, "x");
+                                    int z = IntegerArgumentType.getInteger(context, "z");
+
+                                    PathManagers.get().moveTo(new BlockPos(x, 0, z), true);
+                                }
+                            } else {
+                                throw SWARM_NOT_ACTIVE.create();
+                            }
+                            return SINGLE_SUCCESS;
+                        }))));
+
+        builder.then(literal("infinity-miner").executes(context -> {
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+            if (swarm.isActive()) {
+                if (swarm.isHost()) {
+                    swarm.host.sendMessage(context.getInput());
+                } else if (swarm.isWorker()) {
+                    runInfinityMiner();
+                }
+            } else {
+                throw SWARM_NOT_ACTIVE.create();
+            }
+            return SINGLE_SUCCESS;
+        })
+                .then(argument("target", BlockStateArgumentType.blockState(REGISTRY_ACCESS)).executes(context -> {
+                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
                     if (swarm.isActive()) {
                         if (swarm.isHost()) {
                             swarm.host.sendMessage(context.getInput());
                         } else if (swarm.isWorker()) {
-                            swarm.worker.target = context.getArgument("block", BlockStateArgument.class).getBlockState().getBlock();
+                            Modules.get().get(InfinityMiner.class).targetBlocks.set(List.of(context
+                                    .getArgument("target", BlockStateArgument.class).getBlockState().getBlock()));
+                            runInfinityMiner();
                         }
                     } else {
                         throw SWARM_NOT_ACTIVE.create();
                     }
                     return SINGLE_SUCCESS;
-                }))
-        );
+                })
+                        .then(argument("repair", BlockStateArgumentType.blockState(REGISTRY_ACCESS))
+                                .executes(context -> {
+                                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+                                    if (swarm.isActive()) {
+                                        if (swarm.isHost()) {
+                                            swarm.host.sendMessage(context.getInput());
+                                        } else if (swarm.isWorker()) {
+                                            Modules.get().get(InfinityMiner.class).targetBlocks
+                                                    .set(List.of(context.getArgument("target", BlockStateArgument.class)
+                                                            .getBlockState().getBlock()));
+                                            Modules.get().get(InfinityMiner.class).repairBlocks
+                                                    .set(List.of(context.getArgument("repair", BlockStateArgument.class)
+                                                            .getBlockState().getBlock()));
+                                            runInfinityMiner();
+                                        }
+                                    } else {
+                                        throw SWARM_NOT_ACTIVE.create();
+                                    }
+                                    return SINGLE_SUCCESS;
+                                })))
+                .then(literal("logout").then(argument("logout", BoolArgumentType.bool()).executes(context -> {
+                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+                    if (swarm.isActive()) {
+                        if (swarm.isHost()) {
+                            swarm.host.sendMessage(context.getInput());
+                        } else if (swarm.isWorker()) {
+                            Modules.get().get(InfinityMiner.class).logOut
+                                    .set(BoolArgumentType.getBool(context, "logout"));
+                        }
+                    } else {
+                        throw SWARM_NOT_ACTIVE.create();
+                    }
+                    return SINGLE_SUCCESS;
+                })))
+                .then(literal("walkhome").then(argument("walkhome", BoolArgumentType.bool()).executes(context -> {
+                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+                    if (swarm.isActive()) {
+                        if (swarm.isHost()) {
+                            swarm.host.sendMessage(context.getInput());
+                        } else if (swarm.isWorker()) {
+                            Modules.get().get(InfinityMiner.class).walkHome
+                                    .set(BoolArgumentType.getBool(context, "walkhome"));
+                        }
+                    } else {
+                        throw SWARM_NOT_ACTIVE.create();
+                    }
+                    return SINGLE_SUCCESS;
+                }))));
+
+        builder.then(literal("mine")
+                .then(argument("block", BlockStateArgumentType.blockState(REGISTRY_ACCESS)).executes(context -> {
+                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
+                    if (swarm.isActive()) {
+                        if (swarm.isHost()) {
+                            swarm.host.sendMessage(context.getInput());
+                        } else if (swarm.isWorker()) {
+                            swarm.worker.target = context.getArgument("block", BlockStateArgument.class).getBlockState()
+                                    .getBlock();
+                        }
+                    } else {
+                        throw SWARM_NOT_ACTIVE.create();
+                    }
+                    return SINGLE_SUCCESS;
+                })));
 
         builder.then(literal("toggle")
                 .then(argument("module", ModuleArgumentType.create())
                         .executes(context -> {
-                            Swarm swarm = Modules.get().get(Swarm.class);
+                            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
                             if (swarm.isActive()) {
                                 if (swarm.isHost()) {
                                     swarm.host.sendMessage(context.getInput());
@@ -294,39 +295,42 @@ public class SwarmCommand extends Command {
                             return SINGLE_SUCCESS;
                         }).then(literal("on")
                                 .executes(context -> {
-                                    Swarm swarm = Modules.get().get(Swarm.class);
+                                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
                                     if (swarm.isActive()) {
                                         if (swarm.isHost()) {
                                             swarm.host.sendMessage(context.getInput());
                                         } else if (swarm.isWorker()) {
                                             Module m = ModuleArgumentType.get(context);
-                                            if (!m.isActive()) m.toggle();
+                                            if (!m.isActive())
+                                                m.toggle();
                                         }
                                     } else {
                                         throw SWARM_NOT_ACTIVE.create();
                                     }
                                     return SINGLE_SUCCESS;
-                                })).then(literal("off")
+                                }))
+                        .then(literal("off")
                                 .executes(context -> {
-                                    Swarm swarm = Modules.get().get(Swarm.class);
+                                    com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                                            .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
                                     if (swarm.isActive()) {
                                         if (swarm.isHost()) {
                                             swarm.host.sendMessage(context.getInput());
                                         } else if (swarm.isWorker()) {
                                             Module m = ModuleArgumentType.get(context);
-                                            if (m.isActive()) m.toggle();
+                                            if (m.isActive())
+                                                m.toggle();
                                         }
                                     } else {
                                         throw SWARM_NOT_ACTIVE.create();
                                     }
                                     return SINGLE_SUCCESS;
-                                })
-                        )
-                )
-        );
+                                }))));
 
         builder.then(literal("scatter").executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput());
@@ -338,7 +342,8 @@ public class SwarmCommand extends Command {
             }
             return SINGLE_SUCCESS;
         }).then(argument("radius", IntegerArgumentType.integer()).executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput());
@@ -352,7 +357,8 @@ public class SwarmCommand extends Command {
         })));
 
         builder.then(literal("stop").executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput());
@@ -366,7 +372,8 @@ public class SwarmCommand extends Command {
         }));
 
         builder.then(literal("exec").then(argument("command", StringArgumentType.greedyString()).executes(context -> {
-            Swarm swarm = Modules.get().get(Swarm.class);
+            com.kkllffaa.meteor_litematica_printer.Swarm swarm = Modules.get()
+                    .get(com.kkllffaa.meteor_litematica_printer.Swarm.class);
             if (swarm.isActive()) {
                 if (swarm.isHost()) {
                     swarm.host.sendMessage(context.getInput());
@@ -382,9 +389,11 @@ public class SwarmCommand extends Command {
 
     private void runInfinityMiner() {
         InfinityMiner infinityMiner = Modules.get().get(InfinityMiner.class);
-        if (infinityMiner.isActive()) infinityMiner.toggle();
-//        infinityMiner.smartModuleToggle.set(true);
-        if (!infinityMiner.isActive()) infinityMiner.toggle();
+        if (infinityMiner.isActive())
+            infinityMiner.toggle();
+        // infinityMiner.smartModuleToggle.set(true);
+        if (!infinityMiner.isActive())
+            infinityMiner.toggle();
     }
 
     private void scatter(int radius) {
