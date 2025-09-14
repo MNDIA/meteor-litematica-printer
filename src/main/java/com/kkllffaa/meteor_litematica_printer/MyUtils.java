@@ -254,7 +254,6 @@ public class MyUtils {
 		throw new IllegalArgumentException("Unexpected direction: " + playerDirection);
 	}
 
-
 	public static @Nullable Direction getATagFaceOf(@NotNull BlockState state) {
 		if (state.contains(Properties.FACING))
 			return state.get(Properties.FACING);

@@ -390,6 +390,8 @@ public class PlaceSettings extends Module {
 			.name("precise-facing-backward")
 			.description("Blocks for precise placement facing backward.")
 			.defaultValue(
+				// 漏斗
+				Blocks.HOPPER,
 				//双头棍子
 				Blocks.HAY_BLOCK, Blocks.CHAIN,
 				// 原木
