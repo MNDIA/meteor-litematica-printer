@@ -55,7 +55,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_X;
 
 public class Finder extends Module {
     public Finder() {
-        super(Categories.World, "Finder", "Bypasses anti-xray.");
+        super(Addon.CATEGORY, "Finder", "Bypasses anti-xray.");
 		RainbowColors.register(this::onTickRainbow);
     }
     private final SettingGroup sgGeneral = settings.getDefaultGroup();

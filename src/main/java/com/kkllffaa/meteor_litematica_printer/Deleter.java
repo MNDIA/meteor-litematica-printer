@@ -90,7 +90,21 @@ public class Deleter extends Module {
     private final Setting<List<Block>> blackListBlocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("blackListBlocks")
         .description("Which blocks to ignore.")
-        .defaultValue(Blocks.TORCH, Blocks.BARREL, Blocks.BEDROCK)
+        .defaultValue(
+            // Falling blocks
+            Blocks.SAND, Blocks.GRAVEL, Blocks.RED_SAND,
+            Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL,
+            Blocks.WHITE_CONCRETE_POWDER, Blocks.ORANGE_CONCRETE_POWDER, Blocks.MAGENTA_CONCRETE_POWDER,
+            Blocks.LIGHT_BLUE_CONCRETE_POWDER, Blocks.YELLOW_CONCRETE_POWDER, Blocks.LIME_CONCRETE_POWDER,
+            Blocks.PINK_CONCRETE_POWDER, Blocks.GRAY_CONCRETE_POWDER, Blocks.LIGHT_GRAY_CONCRETE_POWDER,
+            Blocks.CYAN_CONCRETE_POWDER, Blocks.PURPLE_CONCRETE_POWDER, Blocks.BLUE_CONCRETE_POWDER,
+            Blocks.BROWN_CONCRETE_POWDER, Blocks.GREEN_CONCRETE_POWDER, Blocks.RED_CONCRETE_POWDER,
+            Blocks.BLACK_CONCRETE_POWDER,
+            // Leaves
+            Blocks.OAK_LEAVES, Blocks.SPRUCE_LEAVES, Blocks.BIRCH_LEAVES, Blocks.JUNGLE_LEAVES,
+            Blocks.ACACIA_LEAVES, Blocks.DARK_OAK_LEAVES, Blocks.MANGROVE_LEAVES,
+            Blocks.AZALEA_LEAVES, Blocks.FLOWERING_AZALEA_LEAVES
+        )
         .visible(blackList::get)
         .build()
     );
@@ -105,7 +119,7 @@ public class Deleter extends Module {
     private final Setting<Integer> scanRadius = sgGeneral.add(new IntSetting.Builder()
         .name("scan-radius")
         .description("Radius to scan for blocks in continuous mode.")
-        .defaultValue(5)
+        .defaultValue(10)
         .min(1)
         .max(10)
         .sliderRange(1, 10)
@@ -116,7 +130,7 @@ public class Deleter extends Module {
     private final Setting<Integer> depth = sgGeneral.add(new IntSetting.Builder()
         .name("depth")
         .description("Amount of iterations used to scan for similar blocks.")
-        .defaultValue(3)
+        .defaultValue(15)
         .min(1)
         .sliderRange(1, 15)
         .build()
@@ -140,7 +154,7 @@ public class Deleter extends Module {
     private final Setting<Integer> maxBlocksPerTick = sgGeneral.add(new IntSetting.Builder()
         .name("max-blocks-per-tick")
         .description("Maximum blocks to try to mine per tick. Useful when insta mining.")
-        .defaultValue(1)
+        .defaultValue(10)
         .min(1)
         .max(1024)
         .build()
@@ -161,7 +175,7 @@ public class Deleter extends Module {
     private final Setting<Boolean> swingHand = sgRender.add(new BoolSetting.Builder()
         .name("swing-hand")
         .description("Swing hand client-side.")
-        .defaultValue(true)
+        .defaultValue(false)
         .build()
     );
 
@@ -204,7 +218,7 @@ public class Deleter extends Module {
     private final Setting<Integer> cacheSize = sgCache.add(new IntSetting.Builder()
         .name("cache-size")
         .description("Number of recently mined positions to cache.")
-        .defaultValue(50)
+        .defaultValue(200)
         .min(10).sliderMin(10)
         .max(200).sliderMax(200)
         .visible(enableCache::get)
@@ -214,7 +228,7 @@ public class Deleter extends Module {
     private final Setting<Integer> cacheCleanupInterval = sgCache.add(new IntSetting.Builder()
         .name("cache-cleanup-interval")
         .description("Time in seconds between cache cleanups to prevent stale entries.")
-        .defaultValue(5)
+        .defaultValue(1)
         .min(1).sliderMin(1)
         .max(15).sliderMax(15)
         .visible(enableCache::get)
@@ -240,14 +254,26 @@ public class Deleter extends Module {
     private final Setting<Boolean> customProtection = sgProtection.add(new BoolSetting.Builder()
         .name("custom-protection")
         .description("Prevent mining blocks that are adjacent to blocks from the protection lists.")
-        .defaultValue(false)
+        .defaultValue(true)
         .build()
     );
 
     private final Setting<List<Block>> protectedBlocksUpper = sgProtection.add(new BlockListSetting.Builder()
         .name("protected-blocks-upper")
         .description("Blocks to avoid mining near (upper direction). Mining will be prevented if target block has any of these blocks above it.")
-        .defaultValue(Blocks.LAVA, Blocks.WATER, Blocks.SAND, Blocks.GRAVEL, Blocks.RED_SAND, Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL)
+        .defaultValue(Blocks.LAVA, Blocks.WATER, 
+        
+            Blocks.SAND, Blocks.GRAVEL, Blocks.RED_SAND,
+            Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL,
+            Blocks.WHITE_CONCRETE_POWDER, Blocks.ORANGE_CONCRETE_POWDER, Blocks.MAGENTA_CONCRETE_POWDER,
+            Blocks.LIGHT_BLUE_CONCRETE_POWDER, Blocks.YELLOW_CONCRETE_POWDER, Blocks.LIME_CONCRETE_POWDER,
+            Blocks.PINK_CONCRETE_POWDER, Blocks.GRAY_CONCRETE_POWDER, Blocks.LIGHT_GRAY_CONCRETE_POWDER,
+            Blocks.CYAN_CONCRETE_POWDER, Blocks.PURPLE_CONCRETE_POWDER, Blocks.BLUE_CONCRETE_POWDER,
+            Blocks.BROWN_CONCRETE_POWDER, Blocks.GREEN_CONCRETE_POWDER, Blocks.RED_CONCRETE_POWDER,
+            Blocks.BLACK_CONCRETE_POWDER
+        
+        
+        )
         .visible(customProtection::get)
         .build()
     );
@@ -278,7 +304,7 @@ public class Deleter extends Module {
     private final Setting<Double> miningTimeout = sgProtection.add(new DoubleSetting.Builder()
         .name("mining-timeout")
         .description("Maximum time in seconds to spend mining a single block before skipping it.")
-        .defaultValue(5.0)
+        .defaultValue(2.0)
         .min(0.5)
         .max(30.0)
         .sliderRange(0.5, 15.0)
@@ -468,7 +494,7 @@ public class Deleter extends Module {
     private final Setting<Boolean> autoLighting = sgLighting.add(new BoolSetting.Builder()
         .name("auto-lighting")
         .description("Automatically place light sources on dark blocks to prevent mob spawning.")
-        .defaultValue(false)
+        .defaultValue(true)
         .build()
     );
 
@@ -483,7 +509,7 @@ public class Deleter extends Module {
     private final Setting<Integer> lightLevelThreshold = sgLighting.add(new IntSetting.Builder()
         .name("light-level-threshold")
         .description("Place light sources on blocks with light level below this value.")
-        .defaultValue(8)
+        .defaultValue(3)
         .min(0)
         .max(15)
         .sliderRange(0, 15)
@@ -494,7 +520,7 @@ public class Deleter extends Module {
     private final Setting<Integer> lightingScanRadius = sgLighting.add(new IntSetting.Builder()
         .name("lighting-scan-radius")
         .description("Radius to scan for dark blocks around player position.")
-        .defaultValue(8)
+        .defaultValue(6)
         .min(1)
         .max(16)
         .sliderRange(1, 16)
@@ -546,7 +572,7 @@ public class Deleter extends Module {
     private final Setting<ListMode> lightingMode = sgLighting.add(new EnumSetting.Builder<ListMode>()
         .name("lighting-mode")
         .description("Mode for selecting suitable blocks for light source placement.")
-        .defaultValue(ListMode.Whitelist)
+        .defaultValue(ListMode.Blacklist)
         .visible(autoLighting::get)
         .build()
     );
@@ -554,6 +580,7 @@ public class Deleter extends Module {
     private final Setting<List<Block>> lightingBlocks = sgLighting.add(new BlockListSetting.Builder()
         .name("lighting-blocks")
         .description("Blocks to place light sources on (whitelist) or avoid (blacklist).")
+        .defaultValue()
         .visible(autoLighting::get)
         .build()
     );
@@ -587,7 +614,7 @@ public class Deleter extends Module {
 
 
     public Deleter() {
-        super(Categories.World, "deleter", "Mines all nearby blocks with this type");
+        super(Addon.CATEGORY, "deleter", "Mines all nearby blocks with this type");
     }
 
     @Override
