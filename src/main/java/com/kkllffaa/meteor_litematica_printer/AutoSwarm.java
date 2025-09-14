@@ -1,0 +1,121 @@
+package com.kkllffaa.meteor_litematica_printer;
+
+import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
+import meteordevelopment.meteorclient.events.game.GameLeftEvent;
+import meteordevelopment.meteorclient.events.world.TickEvent;
+import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.misc.swarm.Swarm;
+import meteordevelopment.meteorclient.systems.modules.misc.swarm.Swarm.Mode;
+import meteordevelopment.meteorclient.systems.modules.misc.swarm.SwarmHost;
+import meteordevelopment.meteorclient.systems.modules.misc.swarm.SwarmWorker;
+import meteordevelopment.orbit.EventHandler;
+
+public class AutoSwarm extends Module {
+    private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+    private final Setting<Boolean> autoRestart = sgGeneral.add(new BoolSetting.Builder()
+        .name("auto-restart")
+        .description("Automatically restart swarm when disconnected.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Integer> checkCycle = sgGeneral.add(new IntSetting.Builder()
+        .name("check-cycle")
+        .description("Delay in seconds between checkings")
+        .defaultValue(2)
+        .range(1, 60)
+        .build()
+    );
+
+    private final Setting<Integer> checkDelayAfterWorldChanged = sgGeneral.add(new IntSetting.Builder()
+        .name("check-delay-after-world-changed")
+        .description("Delay in seconds between checkings after world change")
+        .defaultValue(1)
+        .range(1, 60)
+        .build()
+    );
+
+    public final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
+        .name("mode")
+        .description("What type of client to run.")
+        .defaultValue(Mode.Host)
+        .build()
+    );
+
+    private final Setting<String> ipAddress = sgGeneral.add(new StringSetting.Builder()
+        .name("ip")
+        .description("The IP address of the host server.")
+        .defaultValue("localhost")
+        .visible(() -> mode.get() == Mode.Worker)
+        .build()
+    );
+
+    private final Setting<Integer> serverPort = sgGeneral.add(new IntSetting.Builder()
+        .name("port")
+        .description("The port used for connections.")
+        .defaultValue(6969)
+        .range(1, 65535)
+        .noSlider()
+        .build()
+    );
+
+    private long lastCheckTime = 0;
+    private long lastWorldChangeTime = 0;
+
+    public AutoSwarm() {
+        super(Addon.CATEGORY, "auto-swarm", "Automatically manages swarm instances.");
+    }
+
+    @EventHandler
+    private void onTick(TickEvent.Post event) {
+        if (autoRestart.get()) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastCheckTime > checkCycle.get() * 1000L ) {
+
+                lastCheckTime = currentTime;
+
+                if (currentTime - lastWorldChangeTime < checkDelayAfterWorldChanged.get() * 1000L)
+                    return;
+                CheckSwarm();
+
+            }
+        }
+    }
+
+    @EventHandler
+    private void onGameLeft(GameLeftEvent event) {
+        lastWorldChangeTime = System.currentTimeMillis();
+    }
+
+    @EventHandler
+    private void onGameJoin(GameJoinedEvent event) {
+        lastWorldChangeTime = System.currentTimeMillis();
+    }
+
+    private void CheckSwarm() {
+        Swarm swarm = Modules.get().get(Swarm.class);
+        if (swarm != null) {
+            boolean isActive = swarm.isActive();
+            boolean isHost = swarm.isHost();
+            boolean isWorker = swarm.isWorker();
+
+            if (isActive && (isHost || isWorker)) {
+                // Swarm is active and in a valid mode, do nothing
+            } else {
+                if (!isActive) {
+                    swarm.toggle();
+                }
+                if (!isHost && !isWorker) {
+                    swarm.close();
+                    if (mode.get() == Mode.Host)
+                        swarm.host = new SwarmHost(serverPort.get());
+                    else
+                        swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
+                }
+            }
+        }
+    }
+}
