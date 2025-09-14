@@ -7,7 +7,7 @@ import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;
 import meteordevelopment.meteorclient.events.meteor.KeyEvent;
 import meteordevelopment.meteorclient.events.meteor.MouseButtonEvent;
-import meteordevelopment.meteorclient.systems.modules.Categories;
+
 import meteordevelopment.meteorclient.systems.modules.render.blockesp.ESPBlock;
 import meteordevelopment.meteorclient.systems.modules.render.blockesp.ESPBlockData;
 import meteordevelopment.meteorclient.systems.modules.render.blockesp.ESPChunk;
@@ -37,7 +37,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
+
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
@@ -912,14 +912,8 @@ public class Finder extends Module {
 
 		if (sucess) {
 			currentScanBlock = blockpos;
-			PlayerActionC2SPacket packet_one = getPacket(blockpos, packet_first);
-			if (packet_one != null && conn != null) {
-				conn.sendPacket(packet_one);
-			}
-			PlayerActionC2SPacket packet_tw = getPacket(blockpos, packet_two);
-			if (packet_tw != null && conn != null) {
-				conn.sendPacket(packet_tw);
-			}
+			sendAction(blockpos, packet_first);
+			sendAction(blockpos, packet_two);
 			addNeedRescan(blockpos, rescanerDelay.get());
 		}
 		else {
@@ -931,24 +925,25 @@ public class Finder extends Module {
         return sucess;
     }
 
-	private PlayerActionC2SPacket getPacket(BlockPos blockpos, Setting<PacketMode> setting) {
+	private boolean sendAction(BlockPos blockpos, Setting<PacketMode> setting) {
         Direction direction = MyUtils.getASafetyFaceOrNull(blockpos, SafetyFaceMode.PlayerPosition);
-        if (direction == null) {
-            return null;
+        if (direction == null || mc.interactionManager == null) {
+            return false;
         }
-		if (setting.get() == PacketMode.Abort) {
-			PlayerActionC2SPacket abort = new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK, new BlockPos(blockpos), direction, 0);
-			return abort;
+		
+		// Use InteractionManager methods which handle sequence correctly
+		if (setting.get() == PacketMode.Start) {
+			return mc.interactionManager.attackBlock(blockpos, direction);
 		}
-		else if (setting.get() == PacketMode.Start) {
-			PlayerActionC2SPacket start = new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, new BlockPos(blockpos), direction, 0);
-			return start;
+		else if (setting.get() == PacketMode.Abort) {
+			mc.interactionManager.cancelBlockBreaking();
+			return true;
 		}
 		else if (setting.get() == PacketMode.Stop) {
-			PlayerActionC2SPacket stop = new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.STOP_DESTROY_BLOCK, new BlockPos(blockpos), direction, 0);
-			return stop;
+			// For stop action, we can use updateBlockBreakingProgress with the current position
+			return mc.interactionManager.updateBlockBreakingProgress(blockpos, direction);
 		}
-		return null;
+		return false;
 	}
 
 	long timescan = 0;
