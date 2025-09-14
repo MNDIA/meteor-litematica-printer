@@ -109,7 +109,7 @@ public class AutoSwarm extends Module {
                 swarm.close();
                 swarm.mode.set(Mode.Host);
                 swarm.host = new SwarmHost(serverPort.get());
-            } else if (mode.get() == Mode.Worker && !isWorker) {
+            } else if (mode.get() == Mode.Worker && (!isWorker || !swarm.worker.isAlive())) {
                 swarm.close();
                 swarm.mode.set(Mode.Worker);
                 swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
