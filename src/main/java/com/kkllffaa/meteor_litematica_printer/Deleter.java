@@ -164,6 +164,14 @@ public class Deleter extends Module {
         .defaultValue(MyUtils.SafetyFaceMode.PlayerPosition)
         .build()
     );
+
+    private final Setting<Boolean> OnlyAttack = sgGeneral.add(new BoolSetting.Builder()
+        .name("only-attack")
+        .description("Only sends attack packets without updating block breaking progress.")
+        .defaultValue(false)
+        .build()
+    );
+
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
         .description("Sends rotation packets to the server when mining.")
@@ -736,6 +744,9 @@ public class Deleter extends Module {
             for (MyBlock block : blocks) {
                 if (count >= maxBlocksPerTick.get()) break;
                 block.mine();
+                if (OnlyAttack.get()){
+                    addToMinedCache(block.blockPos);
+                }
                 
                 count++;
                 
@@ -836,6 +847,9 @@ public class Deleter extends Module {
         }
 
         private void updateBlockBreakingProgress() {
+            if(OnlyAttack.get()){
+                MyUtils.breakBlockONLYAttack(blockPos, swingHand.get(), directionMode.get()); 
+            }
             MyUtils.breakBlock(blockPos, swingHand.get(), directionMode.get(),mining);
         }
 
