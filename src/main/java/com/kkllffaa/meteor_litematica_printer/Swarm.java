@@ -45,7 +45,7 @@ public class Swarm extends Module {
     public SwarmWorker worker;
 
     public Swarm() {
-        super(Categories.Misc, "swarm", "Allows you to control multiple instances of Meteor from one central host.");
+        super(Addon.CATEGORY, "printer-swarm", "Allows you to control multiple instances of Meteor from one central host.");
     }
 
     @Override

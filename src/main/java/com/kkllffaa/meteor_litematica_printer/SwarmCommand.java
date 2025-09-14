@@ -38,7 +38,7 @@ public class SwarmCommand extends Command {
     private @Nullable ObjectIntPair<String> pendingConnection;
 
     public SwarmCommand() {
-        super("swarm", "Sends commands to connected swarm workers.");
+        super("printer-swarm", "Sends commands to connected printer swarm workers.");
     }
 
     @Override
@@ -67,7 +67,7 @@ public class SwarmCommand extends Command {
                                     info("Are you sure you want to connect to '%s:%s'?", ip, port);
                                     info(Text.literal("Click here to confirm").setStyle(Style.EMPTY
                                             .withFormatting(Formatting.UNDERLINE, Formatting.GREEN)
-                                            .withClickEvent(new MeteorClickEvent(".swarm join confirm"))));
+                                            .withClickEvent(new MeteorClickEvent(".printer-swarm join confirm"))));
 
                                     return SINGLE_SUCCESS;
                                 })))
