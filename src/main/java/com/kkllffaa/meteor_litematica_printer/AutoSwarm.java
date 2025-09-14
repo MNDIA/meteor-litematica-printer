@@ -99,16 +99,16 @@ public class AutoSwarm extends Module {
                 if (!isActive) {
                     swarm.toggle();
                 }
-                if (!isHost && !isWorker) {
+
+                if (mode.get() == Mode.Host && !isHost) {
+
                     swarm.close();
-                    if (mode.get() == Mode.Host){
-                        swarm.mode.set(Mode.Host);
-                        swarm.host = new SwarmHost(serverPort.get());
-                    }
-                    else{
-                        swarm.mode.set(Mode.Worker);
-                        swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
-                    }
+                    swarm.mode.set(Mode.Host);
+                    swarm.host = new SwarmHost(serverPort.get());
+                } else if (mode.get() == Mode.Worker && !isWorker) {
+                    swarm.close();
+                    swarm.mode.set(Mode.Worker);
+                    swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
                 }
             }
         }
