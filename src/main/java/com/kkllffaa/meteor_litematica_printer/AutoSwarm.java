@@ -61,7 +61,17 @@ public class AutoSwarm extends Module {
     public AutoSwarm() {
         super(Addon.CATEGORY, "auto-swarm", "Automatically manages swarm instances.");
     }
-
+    @Override
+    public void onDeactivate() {
+         Swarm swarm = Modules.get().get(Swarm.class);
+        if (swarm != null) {
+            if (swarm.isActive()) {
+                swarm.toggle();
+            }else{
+                swarm.close();
+            }
+        }
+    }
     @EventHandler
     private void onTick(TickEvent.Post event) {
             long currentTime = System.currentTimeMillis();
