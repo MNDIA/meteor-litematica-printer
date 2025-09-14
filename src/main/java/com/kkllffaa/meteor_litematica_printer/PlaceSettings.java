@@ -829,17 +829,32 @@ public class PlaceSettings extends Module {
 				neighbourBlock instanceof SlabBlock //不会重叠的半砖
 				&&
 				(
-					self.getBlock() != neighbour.getBlock()
+					self.getBlock() != neighbour.getBlock()//类型不同不融合
+					||
+					neighbour.get(SlabBlock.TYPE) == SlabType.DOUBLE//邻居双层不融合
 					||
 					(
-						self.getBlock() == neighbour.getBlock() &&
-						!(
+						self.getBlock() == neighbour.getBlock() //同类型半砖
+						&&
+						(
+							!(//不能从上向下放到半砖底 会融合
 							neighbour.get(SlabBlock.TYPE) == SlabType.BOTTOM &&
 							neighbourFace == Direction.UP
-						)&&
-						!(
+							)&&
+							!(//不能从下向上放到半砖顶 会融合
 							neighbour.get(SlabBlock.TYPE) == SlabType.TOP &&
 							neighbourFace == Direction.DOWN
+							)
+							&&
+							!(
+								//两半砖顶底不同时 从侧面放置 会融合
+								neighbourFace != Direction.UP && neighbourFace != Direction.DOWN //侧面放置
+								&&
+								!(
+									//顶底相同
+									neighbour.get(SlabBlock.TYPE) == self.get(SlabBlock.TYPE)
+								)
+							)
 						)
 					)
 				)
