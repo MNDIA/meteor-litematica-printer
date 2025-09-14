@@ -5,7 +5,6 @@ import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 
 import meteordevelopment.meteorclient.utils.Utils;
@@ -741,7 +740,6 @@ public class Deleter extends Module {
                 count++;
                 
                 if (BlockUtils.canInstaBreak(block.blockPos)){
-                    addToMinedCache(block.blockPos);
                 } 
                 else{
                     // If block is not being insta-mined, only process one block per tick
