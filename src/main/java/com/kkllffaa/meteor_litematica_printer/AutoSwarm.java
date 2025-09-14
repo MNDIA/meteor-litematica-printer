@@ -16,44 +16,39 @@ public class AutoSwarm extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
     private final Setting<Integer> checkCycle = sgGeneral.add(new IntSetting.Builder()
-        .name("check-cycle")
-        .description("Delay in seconds between checkings")
-        .defaultValue(2)
-        .range(1, 60)
-        .build()
-    );
+            .name("check-cycle")
+            .description("Delay in seconds between checkings")
+            .defaultValue(2)
+            .range(1, 60)
+            .build());
 
     private final Setting<Integer> checkDelayAfterWorldChanged = sgGeneral.add(new IntSetting.Builder()
-        .name("check-delay-after-world-changed")
-        .description("Delay in seconds between checkings after world change")
-        .defaultValue(1)
-        .range(1, 60)
-        .build()
-    );
+            .name("check-delay-after-world-changed")
+            .description("Delay in seconds between checkings after world change")
+            .defaultValue(1)
+            .range(1, 60)
+            .build());
 
     public final Setting<Mode> mode = sgGeneral.add(new EnumSetting.Builder<Mode>()
-        .name("mode")
-        .description("What type of client to run.")
-        .defaultValue(Mode.Host)
-        .build()
-    );
+            .name("mode")
+            .description("What type of client to run.")
+            .defaultValue(Mode.Host)
+            .build());
 
     private final Setting<String> ipAddress = sgGeneral.add(new StringSetting.Builder()
-        .name("ip")
-        .description("The IP address of the host server.")
-        .defaultValue("localhost")
-        .visible(() -> mode.get() == Mode.Worker)
-        .build()
-    );
+            .name("ip")
+            .description("The IP address of the host server.")
+            .defaultValue("localhost")
+            .visible(() -> mode.get() == Mode.Worker)
+            .build());
 
     private final Setting<Integer> serverPort = sgGeneral.add(new IntSetting.Builder()
-        .name("port")
-        .description("The port used for connections.")
-        .defaultValue(6969)
-        .range(1, 65535)
-        .noSlider()
-        .build()
-    );
+            .name("port")
+            .description("The port used for connections.")
+            .defaultValue(6969)
+            .range(1, 65535)
+            .noSlider()
+            .build());
 
     private long lastCheckTime = 0;
     private long lastWorldChangeTime = 0;
@@ -61,29 +56,31 @@ public class AutoSwarm extends Module {
     public AutoSwarm() {
         super(Addon.CATEGORY, "auto-swarm", "Automatically manages swarm instances.");
     }
+
     @Override
     public void onDeactivate() {
-         Swarm swarm = Modules.get().get(Swarm.class);
+        Swarm swarm = Modules.get().get(Swarm.class);
         if (swarm != null) {
             if (swarm.isActive()) {
                 swarm.toggle();
-            }else{
+            } else {
                 swarm.close();
             }
         }
     }
+
     @EventHandler
     private void onTick(TickEvent.Post event) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastCheckTime > checkCycle.get() * 1000L ) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCheckTime > checkCycle.get() * 1000L) {
 
-                lastCheckTime = currentTime;
+            lastCheckTime = currentTime;
 
-                if (currentTime - lastWorldChangeTime > checkDelayAfterWorldChanged.get() * 1000L){
+            if (currentTime - lastWorldChangeTime > checkDelayAfterWorldChanged.get() * 1000L) {
 
-                    CheckSwarm();
-                }
+                CheckSwarm();
             }
+        }
     }
 
     @EventHandler
@@ -103,22 +100,21 @@ public class AutoSwarm extends Module {
             boolean isHost = swarm.isHost();
             boolean isWorker = swarm.isWorker();
 
+            if (!isActive) {
+                swarm.toggle();
+            }
 
-                if (!isActive) {
-                    swarm.toggle();
-                }
+            if (mode.get() == Mode.Host && !isHost) {
 
-                if (mode.get() == Mode.Host && !isHost) {
+                swarm.close();
+                swarm.mode.set(Mode.Host);
+                swarm.host = new SwarmHost(serverPort.get());
+            } else if (mode.get() == Mode.Worker && !isWorker) {
+                swarm.close();
+                swarm.mode.set(Mode.Worker);
+                swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
+            }
 
-                    swarm.close();
-                    swarm.mode.set(Mode.Host);
-                    swarm.host = new SwarmHost(serverPort.get());
-                } else if (mode.get() == Mode.Worker && !isWorker) {
-                    swarm.close();
-                    swarm.mode.set(Mode.Worker);
-                    swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
-                }
-            
         }
     }
 }
