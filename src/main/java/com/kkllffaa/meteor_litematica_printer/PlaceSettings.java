@@ -625,7 +625,9 @@ public class PlaceSettings extends Module {
 				}
 			}
 
-			
+			if (airPlace.get()) {
+				disableDirectionProtection = false;
+			}
 			if (directionProtection.get() && !disableDirectionProtection
 					&& !isPlaceAllowedFromPlayerDirection(required)) {
 				continue;
