@@ -623,6 +623,9 @@ public class PlaceSettings extends Module {
 					break;
 				}
 			}
+			if (airPlace.get() && !canPlaceAgainst(required, pos.offset(face.getOpposite()), face)) {
+				disableDirectionProtection = false;
+			}
 			
 			if (directionProtection.get() && !disableDirectionProtection
 					&& !isPlaceAllowedFromPlayerDirection(required)) {
