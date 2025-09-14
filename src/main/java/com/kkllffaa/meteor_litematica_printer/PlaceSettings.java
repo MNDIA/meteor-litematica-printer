@@ -102,6 +102,12 @@ public class PlaceSettings extends Module {
 			.defaultValue(true)
 			.build());
 
+	private final Setting<List<Block>> airplaceBlacklist = sgGeneral.add(new BlockListSetting.Builder()
+			.name("airplace-blacklist")
+			.description("Blocks that cannot be placed in airplace.")
+			.defaultValue(Blocks.GRINDSTONE)
+			.visible(airPlace::get)
+			.build());
 	private final Setting<Boolean> placeThroughWall = sgGeneral.add(new BoolSetting.Builder()
 			.name("Place Through Wall")
 			.description("Allow the bot to place through walls.")
@@ -178,6 +184,8 @@ public class PlaceSettings extends Module {
 			.defaultValue(
 					// 侦测器、钟
 					Blocks.OBSERVER, Blocks.BELL,
+					// 砂轮
+					Blocks.GRINDSTONE,
 					// 拉杆
 					Blocks.LEVER,
 
@@ -640,7 +648,7 @@ public class PlaceSettings extends Module {
 			// 确定要点一个邻居面不会导致状态错误的话，计算邻居和点击位置(面中心+侧方半砖偏移)
 			BlockPos neighbour;
 
-			if (airPlace.get()) {
+			if (airPlace.get() && !airplaceBlacklist.get().contains(block)) {
 				neighbour = pos;
 			} else {
 				Direction OppositeFace = face.getOpposite();
