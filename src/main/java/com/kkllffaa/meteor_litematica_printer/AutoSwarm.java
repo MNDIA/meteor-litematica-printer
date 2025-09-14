@@ -15,13 +15,6 @@ import meteordevelopment.orbit.EventHandler;
 public class AutoSwarm extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    private final Setting<Boolean> autoRestart = sgGeneral.add(new BoolSetting.Builder()
-        .name("auto-restart")
-        .description("Automatically restart swarm when disconnected.")
-        .defaultValue(true)
-        .build()
-    );
-
     private final Setting<Integer> checkCycle = sgGeneral.add(new IntSetting.Builder()
         .name("check-cycle")
         .description("Delay in seconds between checkings")
@@ -71,18 +64,16 @@ public class AutoSwarm extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (autoRestart.get()) {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastCheckTime > checkCycle.get() * 1000L ) {
 
                 lastCheckTime = currentTime;
 
-                if (currentTime - lastWorldChangeTime < checkDelayAfterWorldChanged.get() * 1000L)
-                    return;
-                CheckSwarm();
+                if (currentTime - lastWorldChangeTime > checkDelayAfterWorldChanged.get() * 1000L){
 
+                    CheckSwarm();
+                }
             }
-        }
     }
 
     @EventHandler
@@ -110,10 +101,14 @@ public class AutoSwarm extends Module {
                 }
                 if (!isHost && !isWorker) {
                     swarm.close();
-                    if (mode.get() == Mode.Host)
+                    if (mode.get() == Mode.Host){
+                        swarm.mode.set(Mode.Host);
                         swarm.host = new SwarmHost(serverPort.get());
-                    else
+                    }
+                    else{
+                        swarm.mode.set(Mode.Worker);
                         swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
+                    }
                 }
             }
         }
