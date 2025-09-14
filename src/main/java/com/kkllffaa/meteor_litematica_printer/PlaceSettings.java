@@ -317,6 +317,12 @@ public class PlaceSettings extends Module {
 					"Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)")
 			.defaultValue(true)
 			.build());
+	private final Setting<Boolean> freeFaceForDefaultTorch = sgClickFace.add(new BoolSetting.Builder()
+			.name("free-face-of-default-torch")
+			.description("Allow placing default torches without precise placement.")
+			.defaultValue(false)
+			.visible(precisePlacement::get)
+			.build());
 
 	// Precise Placement Face Lists
 	private final Setting<List<Block>> preciseForward = sgClickFace.add(new BlockListSetting.Builder()
@@ -480,9 +486,11 @@ public class PlaceSettings extends Module {
 			Vec3d tempHitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
 			boolean disableDirectionProtection = false;
 			boolean disableFaceProtection = false;
-
+			if (block instanceof TorchBlock && !freeFaceForDefaultTorch.get() && face != Direction.UP) {
+				continue;// 直立式火把只能放在邻居上面
+			}
 			//根据特殊状态过滤面，设置pos偏移，对不同的面选择性禁用两种保护
-			if (block instanceof TrapdoorBlock) {//活板门有取半，既有点击面向又有玩家方向，要根据面不同禁用不同保护，
+			else if (block instanceof TrapdoorBlock) {//活板门有取半，既有点击面向又有玩家方向，要根据面不同禁用不同保护，
 				switch (required.get(Properties.BLOCK_HALF)) {
 					case TOP:// 上半活板门
 						switch (face) {
@@ -678,7 +686,6 @@ public class PlaceSettings extends Module {
 		}
 		return false;
 	}
-
 	private boolean isPlaceAllowedFromFace(BlockState blockState, Direction chosenFace) {
 		Direction requiredDirection = getATagFaceOf(blockState);
 		if (requiredDirection == null) {
