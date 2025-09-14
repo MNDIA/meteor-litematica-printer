@@ -18,7 +18,10 @@ public class Addon extends MeteorAddon {
 		LOG.info("Initializing litematica printer");
 
 		// Modules
+		Modules.get().add(MyUtils.settingsModule);
+		Modules.get().add(MyUtils.interactSettingsModule);
 		Modules.get().add(new Printer());
+		
 		Modules.get().add(new Deleter());
 		Modules.get().add(new Swarm());
 		

@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import com.kkllffaa.meteor_litematica_printer.MyUtils.DirectionMode;
-
 public class Deleter extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgRender = settings.createGroup("Render");
@@ -147,10 +145,10 @@ public class Deleter extends Module {
         .max(1024)
         .build()
     );
-    private final Setting<MyUtils.DirectionMode> directionMode = sgGeneral.add(new EnumSetting.Builder<MyUtils.DirectionMode>()
+    private final Setting<MyUtils.SafetyFaceMode> directionMode = sgGeneral.add(new EnumSetting.Builder<MyUtils.SafetyFaceMode>()
         .name("direction-mode")
         .description("Method to determine which face of the block to mine.")
-        .defaultValue(MyUtils.DirectionMode.PlayerPosition)
+        .defaultValue(MyUtils.SafetyFaceMode.PlayerPosition)
         .build()
     );
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
@@ -514,21 +512,9 @@ public class Deleter extends Module {
         .visible(autoLighting::get)
         .build()
     );
-    private final Setting<Boolean> onlyOnLookBlockFace = sgLighting.add(new BoolSetting.Builder()
-        .name("only-on-look-block-face")
-        .description("Only place light sources on the face of the block the player is looking at.")
-        .defaultValue(false)
-        .visible(autoLighting::get)
-        .build()
-    );
 
-    private final Setting<Boolean> airPlace = sgLighting.add(new BoolSetting.Builder()
-        .name("air-place")
-        .description("Allow placing light sources in air.")
-        .defaultValue(false)
-        .visible(autoLighting::get)
-        .build()
-    );
+
+
 
     private final Setting<Boolean> renderLightPositions = sgLighting.add(new BoolSetting.Builder()
         .name("render-light-positions")
@@ -679,6 +665,7 @@ public class Deleter extends Module {
     
     @EventHandler
     private void onTick(TickEvent.Pre event) {
+        blocks.removeIf(MyBlock::shouldRemove);
         // Cache cleanup timer - clears cache periodically to prevent stale entries
         if (enableCache.get()) {
             cacheCleanupTickTimer++;
@@ -701,7 +688,6 @@ public class Deleter extends Module {
         if (continuousMode.get()) {
             handleContinuousMode();
         }
-        blocks.removeIf(MyBlock::shouldRemove);
 
 
         // Handle automatic lighting
@@ -727,11 +713,11 @@ public class Deleter extends Module {
                 
                 count++;
                 
-                // If block is not being insta-mined, only process one block per tick
                 if (BlockUtils.canInstaBreak(block.blockPos)){
                     addToMinedCache(block.blockPos);
                 } 
                 else{
+                    // If block is not being insta-mined, only process one block per tick
                     break;
                 }
             }
@@ -1319,25 +1305,6 @@ public class Deleter extends Module {
         }
     }
 
-    /**
-     * Place a light source at the specified position
-     */
-    private boolean placeLightSource(BlockPos pos, Block lightSource) {
-        if (mc.player == null || mc.world == null) return false;
-        
-        // Find the light source in inventory
-        FindItemResult result = InvUtils.findInHotbar(lightSource.asItem());
-        if (!result.found()) return false;
-        
-        // Switch to the light source item
-        InvUtils.swap(result.slot(), false);
-        
-        // Place the light source using MyUtils placement system
-        BlockState targetState = lightSource.getDefaultState();
-
-        return MyUtils.precisePlaceByFace(pos, targetState, airPlace.get(), swingHand.get(), DirectionMode.PlayerPosition, onlyOnLookBlockFace.get(), null);
-
-    }
 
     /**
      * Handle automatic light source placement
@@ -1357,12 +1324,14 @@ public class Deleter extends Module {
         
         // Get the best light source available
         Block lightSource = getBestLightSource();
-        if (lightSource == null) return;
-        
-        if (placeLightSource(bestLightPosition, lightSource)){
+        if (lightSource == null)
+            return;
+        BlockState liteState = lightSource.getDefaultState();
+        if (MyUtils.switchItem(lightSource.asItem(), liteState, false,
+                () -> MyUtils.placeBlock(liteState, bestLightPosition))) {
             bestLightPosition = null;
         }
-        
+
     }
 
 

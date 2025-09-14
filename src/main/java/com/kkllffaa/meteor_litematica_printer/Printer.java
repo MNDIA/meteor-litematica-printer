@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.function.Supplier;
-
-import com.kkllffaa.meteor_litematica_printer.MyUtils.DirectionMode;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
@@ -24,41 +21,25 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
-import meteordevelopment.meteorclient.utils.player.FindItemResult;
-import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockIterator;
-import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.enums.BedPart;
-import net.minecraft.block.enums.BlockHalf;
-import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.block.enums.SlabType;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
-import net.minecraft.state.property.Properties;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Direction.Axis;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
 public class Printer extends Module {
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgWhitelist = settings.createGroup("Whitelist");
-	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
-	private final SettingGroup sgClickFace = settings.createGroup("Click Face");
-	private final SettingGroup sgBlockState = settings.createGroup("Interaction");
-	private final SettingGroup sgCache = settings.createGroup("Cache");
     private final SettingGroup sgRendering = settings.createGroup("Rendering");
 
+	private final SettingGroup sgCache = settings.createGroup("Cache");
 	private final Setting<Integer> printing_range = sgGeneral.add(new IntSetting.Builder()
 			.name("printing-range")
 			.description("The block place range.")
@@ -86,251 +67,17 @@ public class Printer extends Module {
 			.build()
 	);
 
-	private final Setting<Boolean> airPlace = sgGeneral.add(new BoolSetting.Builder()
-			.name("air-place")
-			.description("Allow the bot to place in the air.")
-			.defaultValue(true)
-			.build()
-	);
-
-	private final Setting<Boolean> placeThroughWall = sgGeneral.add(new BoolSetting.Builder()
-			.name("Place Through Wall")
-			.description("Allow the bot to place through walls.")
-			.defaultValue(true)
-			.build()
-	);
-
-	
-	private final Setting<Boolean> swing = sgGeneral.add(new BoolSetting.Builder()
-	.name("swing")
-	.description("Swing hand when placing.")
-	.defaultValue(false)
-	.build()
-	);
-	
     private final Setting<Boolean> returnHand = sgGeneral.add(new BoolSetting.Builder()
-	.name("return-slot")
-	.description("Return to old slot.")
-	.defaultValue(false)
-	.build()
-    );
-	
-    private final Setting<Boolean> precisePlacement = sgClickFace.add(new BoolSetting.Builder()
-		.name("precise-placement")
-		.description("Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)")
-		.defaultValue(true)
-		.build()
-    );
-	
-	private final Setting<DirectionMode> directionMode = sgClickFace.add(new EnumSetting.Builder<DirectionMode>()
-			.name("direction-mode")
-			.description("How to determine the direction for default block placement.")
-			.defaultValue(DirectionMode.PlayerPosition)
-			.visible(precisePlacement::get)
-			.build()
-	);
-	private final Setting<Boolean> onlyPlaceOnLookFace = sgClickFace.add(new BoolSetting.Builder()
-			.name("only-place-on-look-face")
-			.description("Only place blocks on the face you are looking at.")
+			.name("return-slot")
+			.description("Return to old slot.")
 			.defaultValue(false)
-			.visible(precisePlacement::get)
 			.build()
-	);
-	// Click Face Reverse Protection - similar to directional protection but for face placement
-	private final Setting<List<Block>> faceReverse = sgClickFace.add(new BlockListSetting.Builder()
-		.name("face-reverse")
-		.description("Blocks that need reversed face placement (click on opposite face). Uses required face as reference like directional protection uses player direction.")
-			.visible(precisePlacement::get)
-			.build()
-	);
+    );
 
 	private final Setting<Boolean> dirtgrass = sgGeneral.add(new BoolSetting.Builder()
 			.name("dirt-as-grass")
 			.description("Use dirt instead of grass.")
 			.defaultValue(false)
-			.build()
-	);
-
-	private final Setting<Boolean> enableCache = sgCache.add(new BoolSetting.Builder()
-			.name("enable-cache")
-			.description("Enable position cache to prevent placing at the same position multiple times.")
-			.defaultValue(true)
-			.build()
-	);
-
-	private final Setting<Integer> cacheSize = sgCache.add(new IntSetting.Builder()
-			.name("cache-size")
-			.description("Number of recent positions to cache.")
-			.defaultValue(50)
-			.min(10).sliderMin(10)
-			.max(200).sliderMax(200)
-			.visible(enableCache::get)
-			.build()
-	);
-
-	private final Setting<Integer> cacheCleanupInterval = sgCache.add(new IntSetting.Builder()
-			.name("cache-cleanup-interval")
-			.description("Time in seconds between cache cleanups to prevent stale entries.")
-			.defaultValue(3)
-			.min(1).sliderMin(1)
-			.max(10).sliderMax(10)
-			.visible(enableCache::get)
-			.build()
-	);
-
-	// Directional Protection Settings
-	private final Setting<Boolean> directionProtection = sgDirectional.add(new BoolSetting.Builder()
-			.name("direction-protection")
-			.description("Only place directional blocks when player is facing the correct direction.")
-			.defaultValue(true)
-			.build()
-	);
-
-	private final Setting<Integer> angleRange = sgDirectional.add(new IntSetting.Builder()
-			.name("angle-range")
-			.description("Angle range for direction detection (degrees).")
-			.defaultValue(25)
-			.min(1).sliderMin(1)
-			.max(45).sliderMax(45)
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that face the same direction as player (Forward)
-	private final Setting<List<Block>> facingForward = sgDirectional.add(new BlockListSetting.Builder()
-			.name("facing-forward")
-			.description("Blocks that should face the same direction as player.")
-			.defaultValue(
-				// 侦测器、钟、拉杆
-				Blocks.OBSERVER, Blocks.BELL, Blocks.LEVER,
-				// 全部铁轨
-				Blocks.RAIL, Blocks.POWERED_RAIL, Blocks.DETECTOR_RAIL, Blocks.ACTIVATOR_RAIL,
-				// 全部楼梯
-				Blocks.OAK_STAIRS, Blocks.SPRUCE_STAIRS, Blocks.BIRCH_STAIRS, Blocks.JUNGLE_STAIRS, 
-				Blocks.ACACIA_STAIRS, Blocks.DARK_OAK_STAIRS, Blocks.STONE_STAIRS, Blocks.COBBLESTONE_STAIRS,
-				Blocks.BRICK_STAIRS, Blocks.STONE_BRICK_STAIRS, Blocks.NETHER_BRICK_STAIRS, Blocks.SANDSTONE_STAIRS,
-				Blocks.QUARTZ_STAIRS, Blocks.RED_SANDSTONE_STAIRS, Blocks.PURPUR_STAIRS, Blocks.PRISMARINE_STAIRS,
-				Blocks.PRISMARINE_BRICK_STAIRS, Blocks.DARK_PRISMARINE_STAIRS, Blocks.GRANITE_STAIRS, 
-				Blocks.DIORITE_STAIRS, Blocks.ANDESITE_STAIRS, Blocks.POLISHED_GRANITE_STAIRS,
-				Blocks.POLISHED_DIORITE_STAIRS, Blocks.POLISHED_ANDESITE_STAIRS, Blocks.MOSSY_STONE_BRICK_STAIRS,
-				Blocks.MOSSY_COBBLESTONE_STAIRS, Blocks.SMOOTH_SANDSTONE_STAIRS, Blocks.SMOOTH_RED_SANDSTONE_STAIRS,
-				Blocks.SMOOTH_QUARTZ_STAIRS, Blocks.END_STONE_BRICK_STAIRS, Blocks.BLACKSTONE_STAIRS,
-				Blocks.POLISHED_BLACKSTONE_STAIRS, Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS, Blocks.CRIMSON_STAIRS,
-				Blocks.WARPED_STAIRS, Blocks.MANGROVE_STAIRS, Blocks.BAMBOO_STAIRS, Blocks.BAMBOO_MOSAIC_STAIRS,
-				Blocks.CHERRY_STAIRS, Blocks.COBBLED_DEEPSLATE_STAIRS, Blocks.POLISHED_DEEPSLATE_STAIRS,
-				Blocks.DEEPSLATE_BRICK_STAIRS, Blocks.DEEPSLATE_TILE_STAIRS,
-				// 全部栅栏门
-				Blocks.OAK_FENCE_GATE, Blocks.SPRUCE_FENCE_GATE, Blocks.BIRCH_FENCE_GATE, Blocks.JUNGLE_FENCE_GATE,
-				Blocks.ACACIA_FENCE_GATE, Blocks.DARK_OAK_FENCE_GATE, Blocks.CRIMSON_FENCE_GATE, Blocks.WARPED_FENCE_GATE,
-				Blocks.MANGROVE_FENCE_GATE, Blocks.BAMBOO_FENCE_GATE, Blocks.CHERRY_FENCE_GATE,
-				// 全部床
-				Blocks.WHITE_BED, Blocks.ORANGE_BED, Blocks.MAGENTA_BED, Blocks.LIGHT_BLUE_BED, Blocks.YELLOW_BED,
-				Blocks.LIME_BED, Blocks.PINK_BED, Blocks.GRAY_BED, Blocks.LIGHT_GRAY_BED, Blocks.CYAN_BED,
-				Blocks.PURPLE_BED, Blocks.BLUE_BED, Blocks.BROWN_BED, Blocks.GREEN_BED, Blocks.RED_BED, Blocks.BLACK_BED
-			)
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that face away from player (Backward)
-	private final Setting<List<Block>> facingBackward = sgDirectional.add(new BlockListSetting.Builder()
-			.name("facing-backward")
-			.description("Blocks that should face away from player.")
-			.defaultValue(
-				// 全部活塞
-				Blocks.PISTON, Blocks.STICKY_PISTON,
-				// 全部箱子
-				Blocks.CHEST, Blocks.TRAPPED_CHEST, Blocks.ENDER_CHEST,
-				// 全部铁轨 (重复)
-				Blocks.RAIL, Blocks.POWERED_RAIL, Blocks.DETECTOR_RAIL, Blocks.ACTIVATOR_RAIL,
-				// 桶、切石机
-				Blocks.BARREL, Blocks.STONECUTTER,
-				// 蜂箱、蜂巢
-				Blocks.BEE_NEST, Blocks.BEEHIVE,
-				// 发射器、投掷器
-				Blocks.DISPENSER, Blocks.DROPPER,
-				// 中继器、比较器
-				Blocks.REPEATER, Blocks.COMPARATOR,
-				// 失水恶魂 (Soul Soil)
-				Blocks.SOUL_SOIL,
-				// 雕刻南瓜、发光南瓜
-				Blocks.CARVED_PUMPKIN, Blocks.JACK_O_LANTERN,
-				// 讲台
-				Blocks.LECTERN,
-				// 全部炉子
-				Blocks.FURNACE, Blocks.BLAST_FURNACE, Blocks.SMOKER,
-				// 雕文书架
-				Blocks.CHISELED_BOOKSHELF,
-				// 全部活板门
-				Blocks.OAK_TRAPDOOR, Blocks.SPRUCE_TRAPDOOR, Blocks.BIRCH_TRAPDOOR, Blocks.JUNGLE_TRAPDOOR,
-				Blocks.ACACIA_TRAPDOOR, Blocks.DARK_OAK_TRAPDOOR, Blocks.IRON_TRAPDOOR, Blocks.CRIMSON_TRAPDOOR,
-				Blocks.WARPED_TRAPDOOR, Blocks.MANGROVE_TRAPDOOR, Blocks.BAMBOO_TRAPDOOR, Blocks.CHERRY_TRAPDOOR
-				
-			)
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that face to the left of player
-	private final Setting<List<Block>> facingLeft = sgDirectional.add(new BlockListSetting.Builder()
-			.name("facing-left")
-			.description("Blocks that should face to the left of player.")
-			.defaultValue(
-				Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL
-			)
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that face to the right of player
-	private final Setting<List<Block>> facingRight = sgDirectional.add(new BlockListSetting.Builder()
-			.name("facing-right")
-			.description("Blocks that should face to the right of player.")
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that face upward from player
-	private final Setting<List<Block>> facingUp = sgDirectional.add(new BlockListSetting.Builder()
-			.name("facing-up")
-			.description("Blocks that should face upward from player.")
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that face downward from player
-	private final Setting<List<Block>> facingDown = sgDirectional.add(new BlockListSetting.Builder()
-			.name("facing-down")
-			.description("Blocks that should face downward from player.")
-			.visible(directionProtection::get)
-			.build()
-	);
-
-	// Blocks that need state interaction (repeaters, comparators, note blocks, etc.)
-	private final Setting<List<Block>> stateBlocks = sgBlockState.add(new BlockListSetting.Builder()
-			.name("state-blocks")
-			.description("Blocks that need interaction to adjust their state.")
-			.defaultValue(
-				// 中继器、比较器
-				Blocks.REPEATER, Blocks.COMPARATOR,
-				// 音符盒
-				Blocks.NOTE_BLOCK,
-				// 拉杆
-				Blocks.LEVER,
-				Blocks.DAYLIGHT_DETECTOR,
-				// 全部活板门
-				Blocks.OAK_TRAPDOOR, Blocks.SPRUCE_TRAPDOOR, Blocks.BIRCH_TRAPDOOR, Blocks.JUNGLE_TRAPDOOR,
-				Blocks.ACACIA_TRAPDOOR, Blocks.DARK_OAK_TRAPDOOR, Blocks.IRON_TRAPDOOR, Blocks.CRIMSON_TRAPDOOR,
-				Blocks.WARPED_TRAPDOOR, Blocks.MANGROVE_TRAPDOOR, Blocks.BAMBOO_TRAPDOOR, Blocks.CHERRY_TRAPDOOR,
-				// 全部门
-				Blocks.OAK_DOOR, Blocks.SPRUCE_DOOR, Blocks.BIRCH_DOOR, Blocks.JUNGLE_DOOR,
-				Blocks.ACACIA_DOOR, Blocks.DARK_OAK_DOOR, Blocks.IRON_DOOR, Blocks.CRIMSON_DOOR,
-				Blocks.WARPED_DOOR, Blocks.MANGROVE_DOOR, Blocks.BAMBOO_DOOR, Blocks.CHERRY_DOOR,
-				// 全部栅栏门
-				Blocks.OAK_FENCE_GATE, Blocks.SPRUCE_FENCE_GATE, Blocks.BIRCH_FENCE_GATE, Blocks.JUNGLE_FENCE_GATE,
-				Blocks.ACACIA_FENCE_GATE, Blocks.DARK_OAK_FENCE_GATE, Blocks.CRIMSON_FENCE_GATE, Blocks.WARPED_FENCE_GATE,
-				Blocks.MANGROVE_FENCE_GATE, Blocks.BAMBOO_FENCE_GATE, Blocks.CHERRY_FENCE_GATE
-			)
 			.build()
 	);
 
@@ -355,7 +102,6 @@ public class Printer extends Module {
 			.defaultValue(false)
 			.build()
 	);
-
 
     private final Setting<List<Block>> whitelist = sgWhitelist.add(new BlockListSetting.Builder()
 			.name("whitelist")
@@ -389,20 +135,70 @@ public class Printer extends Module {
         .build()
     );
 
+
+
+
+
+
+	private final Setting<Boolean> enableCache = sgCache.add(new BoolSetting.Builder()
+			.name("enable-cache")
+			.description("Enable position cache to prevent placing at the same position multiple times.")
+			.defaultValue(true)
+			.build());
+
+	private final Setting<Integer> cacheSize = sgCache.add(new IntSetting.Builder()
+			.name("cache-size")
+			.description("Number of recent positions to cache.")
+			.defaultValue(50)
+			.min(10).sliderMin(10)
+			.max(200).sliderMax(200)
+			.visible(enableCache::get)
+			.build());
+
+	private final Setting<Integer> cacheCleanupInterval = sgCache.add(new IntSetting.Builder()
+			.name("cache-cleanup-interval")
+			.description("Time in seconds between cache cleanups to prevent stale entries.")
+			.defaultValue(2)
+			.min(1).sliderMin(1)
+			.max(10).sliderMax(10)
+			.visible(enableCache::get)
+			.build());
+
+
+
+
+
+
+
+
     private int timer;
-    private int usedSlot = -1;
     private final List<BlockPos> toSort = new ArrayList<>();
     private final List<Pair<Integer, BlockPos>> placed_fade = new ArrayList<>();
-    
+
     // Position cache to prevent repeated placement attempts
     private final LinkedHashSet<BlockPos> positionCache = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
 
-
 	public Printer() {
 		super(Addon.CATEGORY, "litematica-printer", "Automatically prints open schematics");
 	}
-
+	private boolean isPositionCached(BlockPos pos) {
+		return enableCache.get() && positionCache.contains(pos);
+	}
+	private void addToCache(BlockPos pos) {
+		if (!enableCache.get()) return;
+		
+		positionCache.add(pos);
+		
+		// Remove oldest entries if cache exceeds limit
+		while (positionCache.size() > cacheSize.get()) {
+			var iterator = positionCache.iterator();
+			if (iterator.hasNext()) {
+				iterator.next();
+				iterator.remove();
+			}
+		}
+	}
     @Override
     public void onActivate() {
         onDeactivate();
@@ -434,7 +230,6 @@ public class Printer extends Module {
 				cacheCleanupTickTimer = 0;
 			}
 		}
-
 		WorldSchematic worldSchematic = SchematicWorldHandler.getSchematicWorld();
 		if (worldSchematic == null) {
 			placed_fade.clear();
@@ -448,8 +243,8 @@ public class Printer extends Module {
 		if (timer >= printing_delay.get()) {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
-				if (
-						mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
+
+				if (mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
 						&& blockState.isReplaceable()
 						&& required.getFluidState().isEmpty()
 						&& !required.isAir()
@@ -457,49 +252,14 @@ public class Printer extends Module {
 						&& DataManager.getRenderLayerRange().isPositionWithinRange(pos)
 						&& !mc.player.getBoundingBox().intersects(Vec3d.of(pos), Vec3d.of(pos).add(1, 1, 1))
 						&& required.canPlaceAt(mc.world, pos)
-					) {
-					boolean isBlockInLineOfSight = MyUtils.isBlockInLineOfSight(pos, required);
-			    	// Advanced mode disabled - all orientation variables removed
-
-					// Simplified placement conditions - no advanced logic
-					if(
-						airPlace.get()
-						|| !airPlace.get() && (placeThroughWall.get() ? BlockUtils.getPlaceSide(pos) != null : isBlockInLineOfSight)
-					) {
-						if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
-							boolean shouldPlace = true;
-							// Multi-structure block protection: check bed parts and double-height blocks
-							if (shouldPlace) {
-								shouldPlace = isMultiStructurePlacementAllowed(required);
-							}
-							// Check if position is in cache (recently attempted)
-							if (isPositionCached(pos)) {
-								shouldPlace = false;
-							}
-							
-							// Direction protection: check if directional block's facing matches player direction
-							if (shouldPlace && directionProtection.get()) {
-								Direction requiredDirection = dir(required);
-								if (requiredDirection !=null ){
-									Direction playerDirection = MyUtils.getPlayerFacingDirection(angleRange.get());
-									if (playerDirection == null) {
-										shouldPlace = false;
-									} else {
-										shouldPlace = isDirectionalPlacementAllowed(required.getBlock(), requiredDirection, playerDirection);
-									}
-								}
-							}
-							
-							if (shouldPlace) {
-								toSort.add(new BlockPos(pos));
-							}
-						}
+						&& !(isPositionCached(pos))) {
+					if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
+						toSort.add(new BlockPos(pos));
 					}
 				}
 			});
 
 			BlockIterator.after(() -> {
-				//if (!tosort.isEmpty()) info(tosort.toString());
 
 				if (firstAlgorithm.get() != SortAlgorithm.None) {
 					if (firstAlgorithm.get().applySecondSorting) {
@@ -519,21 +279,17 @@ public class Printer extends Module {
 
 					if (dirtgrass.get() && item == Items.GRASS_BLOCK)
 						item = Items.DIRT;
-					if (switchItem(item, state, () -> place(state, pos))) {
+					if (MyUtils.switchItem(item, state, returnHand.get(),
+							() -> MyUtils.placeBlock(state, pos))) {
 						timer = 0;
 						placed++;
-						
-						// Add position to cache after successful placement
 						addToCache(pos);
 						
-						// 检查是否需要状态交互
-						if (stateBlocks.get().contains(state.getBlock())) {
-							mc.execute(() -> {
-								if (!MyUtils.batchInteractToTargetState(pos, state)) {
+						mc.execute(() -> {
+								if (!MyUtils.batchInteractToTargetState(state,pos)) {
 									warning("Failed to interact with block to set correct state at " + pos);
 								}
 							});
-						}
 						
 						if (renderBlocks.get()) {
 							placed_fade.add(new Pair<>(fadeTime.get(), new BlockPos(pos)));
@@ -549,281 +305,6 @@ public class Printer extends Module {
 		} else timer++;
 	}
 
-	public boolean place(BlockState required, BlockPos pos) {
-
-		if (mc.player == null || mc.world == null) return false;
-		if (!mc.world.getBlockState(pos).isReplaceable()) return false;
-
-        if (precisePlacement.get()) {
-            return MyUtils.precisePlaceByFace(pos, required, airPlace.get(), swing.get(), directionMode.get(), onlyPlaceOnLookFace.get(), faceReverse.get());
-        } else {
-            return MyUtils.placeByFace(pos, required, airPlace.get(), swing.get(), directionMode.get(), onlyPlaceOnLookFace.get(), faceReverse.get());
-		}
-	}
-
-	private boolean switchItem(Item item, BlockState state, Supplier<Boolean> action) {
-		if (mc.player == null) return false;
-
-		int selectedSlot = mc.player.getInventory().getSelectedSlot();
-		boolean isCreative = mc.player.getAbilities().creativeMode;
-		FindItemResult result = InvUtils.find(item);
-
-
-		// TODO: Check if ItemStack nbt has BlockStateTag == BlockState required when in creative
-		// TODO: Fix check nbt
-		// TODO: Fix not acquiring blocks in creative mode
-
-		if (
-			mc.player.getMainHandStack().getItem() == item
-		) {
-			if (action.get()) {
-				usedSlot = mc.player.getInventory().getSelectedSlot();
-				return true;
-			} else return false;
-
-		} else if (
-			usedSlot != -1 &&
-			mc.player.getInventory().getStack(usedSlot).getItem() == item
-		) {
-			InvUtils.swap(usedSlot, returnHand.get());
-			if (action.get()) {
-				return true;
-			} else {
-				InvUtils.swap(selectedSlot, returnHand.get());
-				return false;
-			}
-
-		} else if (
-			result.found()
-		) {
-			if (result.isHotbar()) {
-				InvUtils.swap(result.slot(), returnHand.get());
-
-				if (action.get()) {
-					usedSlot = mc.player.getInventory().getSelectedSlot();
-					return true;
-				} else {
-					InvUtils.swap(selectedSlot, returnHand.get());
-					return false;
-				}
-
-			} else if (result.isMain()) {
-				FindItemResult empty = InvUtils.findEmpty();
-
-				if (empty.found() && empty.isHotbar()) {
-					InvUtils.move().from(result.slot()).toHotbar(empty.slot());
-					InvUtils.swap(empty.slot(), returnHand.get());
-
-					if (action.get()) {
-						usedSlot = mc.player.getInventory().getSelectedSlot();
-						return true;
-					} else {
-						InvUtils.swap(selectedSlot, returnHand.get());
-						return false;
-					}
-
-				} else if (usedSlot != -1) {
-					InvUtils.move().from(result.slot()).toHotbar(usedSlot);
-					InvUtils.swap(usedSlot, returnHand.get());
-
-					if (action.get()) {
-						return true;
-					} else {
-						InvUtils.swap(selectedSlot, returnHand.get());
-						return false;
-					}
-
-				} else return false;
-			} else return false;
-		} else if (isCreative) {
-			int slot = 0;
-            FindItemResult fir = InvUtils.find(ItemStack::isEmpty, 0, 8);
-            if (fir.found()) {
-                slot = fir.slot();
-            }
-			mc.getNetworkHandler().sendPacket(new CreativeInventoryActionC2SPacket(36 + slot, item.getDefaultStack()));
-			InvUtils.swap(slot, returnHand.get());
-            return true;
-		} else return false;
-	}
-
-	private Direction dir(BlockState state) {
-		if (state.contains(Properties.FACING)) return state.get(Properties.FACING);
-		else if (state.contains(Properties.AXIS)) return Direction.from(state.get(Properties.AXIS), Direction.AxisDirection.POSITIVE);
-		else if (state.contains(Properties.HORIZONTAL_FACING)) return state.get(Properties.HORIZONTAL_FACING);
-		else if (state.contains(Properties.HORIZONTAL_AXIS)) return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
-		else if (state.contains(Properties.STRAIGHT_RAIL_SHAPE)) return railShapeToDirection(state.get(Properties.STRAIGHT_RAIL_SHAPE));
-		else return null; // Return null for blocks without directional properties
-	}
-
-	/**
-	 * Convert RailShape to Direction for directional placement logic
-	 */
-	private Direction railShapeToDirection(net.minecraft.block.enums.RailShape shape) {
-		switch (shape) {
-			case NORTH_SOUTH:
-				return Direction.SOUTH;
-			case EAST_WEST:
-				return Direction.EAST;
-			case ASCENDING_EAST:
-				return Direction.EAST;
-			case ASCENDING_WEST:
-				return Direction.EAST;
-			case ASCENDING_NORTH:
-				return Direction.SOUTH;
-			case ASCENDING_SOUTH:
-				return Direction.SOUTH;
-			default:
-				// For corner rails
-				return null;
-		}
-	}
-
-	/**
-	 * Check if directional block placement is allowed based on configuration
-	 */
-	private boolean[] inList = new boolean[6];
-	private boolean isDirectionalPlacementAllowed(Block block, Direction requiredDirection, Direction playerDirection) {
-		// Check each directional list to see if this block is configured
-		inList[0] = facingForward.get().contains(block);
-		inList[1] = facingBackward.get().contains(block);
-		inList[2] = facingLeft.get().contains(block);
-		inList[3] = facingRight.get().contains(block);
-		inList[4] = facingUp.get().contains(block);
-		inList[5] = facingDown.get().contains(block);
-		if (inList[0] || inList[1] || inList[2] || inList[3] || inList[4] || inList[5]) {
-			if (inList[0]) {
-				// Block should face same direction as player
-				if (requiredDirection.equals(playerDirection)) {
-					return true;
-				}
-			}
-			if (inList[1]) {
-				// Block should face away from player
-				if (requiredDirection.equals(playerDirection.getOpposite())) {
-					return true;
-				}
-			}
-			if (inList[2]) {
-				// Block should face to the left of player
-				Direction leftDirection = getLeftDirection(playerDirection);
-				if (leftDirection != null && requiredDirection.equals(leftDirection)) {
-					return true;
-				}
-			}
-			if (inList[3]) {
-				// Block should face to the right of player
-				Direction rightDirection = getRightDirection(playerDirection);
-				if (rightDirection != null && requiredDirection.equals(rightDirection)) {
-					return true;
-				}
-			}
-			if (inList[4]) {
-				// Block should face upward relative to player
-				Direction upDirection = getUpDirection(playerDirection);
-				if (upDirection != null && requiredDirection.equals(upDirection)) {
-					return true;
-				}
-			}
-			if (inList[5]) {
-				// Block should face downward relative to player
-				Direction downDirection = getDownDirection(playerDirection);
-				if (downDirection != null && requiredDirection.equals(downDirection)) {
-					return true;
-				}
-			}
-			return false;
-		} else {
-			// Block is not in any directional list, allow placement
-			return true;
-		}
-	}
-
-	/**
-	 * Get the direction to the left of the given direction
-	 */
-	private Direction getLeftDirection(Direction direction) {
-		switch (direction) {
-			case NORTH: return Direction.WEST;
-			case EAST: return Direction.NORTH;
-			case SOUTH: return Direction.EAST;
-			case WEST: return Direction.SOUTH;
-			default: return null; // No left for up/down
-		}
-	}
-
-	/**
-	 * Get the direction to the right of the given direction
-	 */
-	private Direction getRightDirection(Direction direction) {
-		switch (direction) {
-			case NORTH: return Direction.EAST;
-			case EAST: return Direction.SOUTH;
-			case SOUTH: return Direction.WEST;
-			case WEST: return Direction.NORTH;
-			default: return null; // No right for up/down
-		}
-	}
-
-	/**
-	 * Get the upward direction relative to player facing
-	 */
-	private Direction getUpDirection(Direction playerDirection) {
-		if (playerDirection == Direction.UP) {
-			Direction horizontal = MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
-			return horizontal != null ? horizontal.getOpposite() : Direction.UP;
-		} else if (playerDirection == Direction.DOWN) {
-			return MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
-		} else if (playerDirection != null) {
-			// Player is looking horizontally, so "up" is simply UP
-			return Direction.UP;
-		}else {
-			return null;
-		}
-	}
-	/**
-	 * Get the downward direction relative to player facing
-	 */
-	private Direction getDownDirection(Direction playerDirection) {
-		if (playerDirection == Direction.UP) {
-			return MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
-		} else if (playerDirection == Direction.DOWN) {
-			Direction horizontal = MyUtils.getHorizontalDirectionFromYaw(mc.player.getYaw(), angleRange.get());
-			return horizontal != null ? horizontal.getOpposite() : Direction.DOWN;
-		} else if (playerDirection != null) {
-			// Player is looking horizontally, so "down" is simply DOWN
-			return Direction.DOWN;
-		} else {
-			return null;
-		}
-	}
-	/**
-	 * Check if position is in cache (recently attempted)
-	 */
-	private boolean isPositionCached(BlockPos pos) {
-		return enableCache.get() && positionCache.contains(pos);
-	}
-
-	/**
-	 * Add position to cache and manage cache size
-	 */
-	private void addToCache(BlockPos pos) {
-		if (!enableCache.get()) return;
-		
-		positionCache.add(pos);
-		
-		// Remove oldest entries if cache exceeds limit
-		while (positionCache.size() > cacheSize.get()) {
-			var iterator = positionCache.iterator();
-			if (iterator.hasNext()) {
-				iterator.next();
-				iterator.remove();
-			}
-		}
-	}
-
-
-
 	@EventHandler
 	private void onRender(Render3DEvent event) {
 		placed_fade.forEach(s -> {
@@ -832,28 +313,6 @@ public class Printer extends Module {
 		});
 	}
 
-	/**
-	 * Check if multi-structure block placement is allowed based on BED_PART and DOUBLE_BLOCK_HALF
-	 * Returns false for certain parts to prevent improper placement
-	 */
-	private boolean isMultiStructurePlacementAllowed(BlockState required) {
-		if (required.contains(Properties.BED_PART)) {
-			BedPart bedPart = required.get(Properties.BED_PART);
-			if (bedPart == BedPart.HEAD) {
-				return false;
-			}
-		}
-		
-		if (required.contains(Properties.DOUBLE_BLOCK_HALF)) {
-			DoubleBlockHalf doubleBlockHalf = required.get(Properties.DOUBLE_BLOCK_HALF);
-			if (doubleBlockHalf == DoubleBlockHalf.UPPER) {
-				return false; 
-			}
-		}
-		return true;
-	}
-
-	@SuppressWarnings("unused")
 	public enum SortAlgorithm {
 		None(false, (a, b) -> 0),
 		TopDown(true, Comparator.comparingInt(value -> value.getY() * -1)),
@@ -871,7 +330,6 @@ public class Printer extends Module {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	public enum SortingSecond {
 		None(SortAlgorithm.None.algorithm),
 		Nearest(SortAlgorithm.Nearest.algorithm),

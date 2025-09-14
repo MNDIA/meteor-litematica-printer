@@ -14,7 +14,7 @@ public class RotationStuff {
 	public static Rotation calcRotationFromVec3d(Vec3d orig, Vec3d dest, Rotation current) {
 		return wrapAnglesToRelative(current, calcRotationFromVec3d(orig, dest));
 	}
-	private static Rotation calcRotationFromVec3d(Vec3d orig, Vec3d dest) {
+	public static Rotation calcRotationFromVec3d(Vec3d orig, Vec3d dest) {
 		double[] delta = {orig.x - dest.x, orig.y - dest.y, orig.z - dest.z};
 		double yaw = MathHelper.atan2(delta[0], -delta[2]);
 		double dist = Math.sqrt(delta[0] * delta[0] + delta[2] * delta[2]);
