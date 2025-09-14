@@ -103,9 +103,7 @@ public class AutoSwarm extends Module {
             boolean isHost = swarm.isHost();
             boolean isWorker = swarm.isWorker();
 
-            if (isActive && (isHost || isWorker)) {
-                // Swarm is active and in a valid mode, do nothing
-            } else {
+
                 if (!isActive) {
                     swarm.toggle();
                 }
@@ -120,7 +118,7 @@ public class AutoSwarm extends Module {
                     swarm.mode.set(Mode.Worker);
                     swarm.worker = new SwarmWorker(ipAddress.get(), serverPort.get());
                 }
-            }
+            
         }
     }
 }
