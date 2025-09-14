@@ -333,8 +333,6 @@ public class PlaceSettings extends Module {
 				Blocks.TORCH, Blocks.SOUL_TORCH, Blocks.REDSTONE_TORCH,
 				// 梯子
 				Blocks.LADDER,
-				// 钟
-				Blocks.BELL,
 				// 拉杆
 				Blocks.LEVER,
 
@@ -396,6 +394,9 @@ public class PlaceSettings extends Module {
 			.name("precise-facing-backward")
 			.description("Blocks for precise placement facing backward.")
 			.defaultValue(
+				
+				// 钟
+				Blocks.BELL,
 				// 漏斗
 				Blocks.HOPPER,
 				//双头棍子
