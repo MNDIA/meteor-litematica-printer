@@ -184,6 +184,17 @@ public class Finder extends Module {
         .build()
     );
 
+    private final Setting<List<Block>> scanFromBlocks = sgGeneral.add(new BlockListSetting.Builder()
+        .name("scan-from-blocks")
+        .description("Only scan these block types to find ores. Scan from stone to find ores.")
+        .defaultValue(
+            Blocks.STONE,
+            Blocks.DEEPSLATE
+        )
+        .onChanged(v -> scanned.clear())
+        .build()
+    );
+
 
 	private final Setting<ESPBlockData> defaultBlockConfig = sgGeneral.add(new GenericSetting.Builder<ESPBlockData>()
 		.name("whitelist-default-config")
@@ -885,7 +896,12 @@ public class Finder extends Module {
 		}
 		else {
 			BlockState state = mc.world.getBlockState(blockpos);
-			if (state.getBlock() == Blocks.WALL_TORCH || state.getBlock() == Blocks.TORCH || state.getBlock() == Blocks.AIR || state.getBlock() == Blocks.LAVA || state.getBlock() == Blocks.WATER) {
+			Block block = state.getBlock();
+			if (block == Blocks.WALL_TORCH || block == Blocks.TORCH || block == Blocks.AIR || block == Blocks.LAVA || block == Blocks.WATER) {
+				sucess = false;
+			}
+			// Only scan blocks that are in the scanFromBlocks whitelist
+			if (!scanFromBlocks.get().contains(block)) {
 				sucess = false;
 			}
 		}
