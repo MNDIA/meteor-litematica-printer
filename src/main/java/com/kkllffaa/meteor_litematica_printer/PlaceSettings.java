@@ -638,18 +638,17 @@ public class PlaceSettings extends Module {
 			// 确定要点一个邻居面不会导致状态错误的话，计算邻居和点击位置(面中心+侧方半砖偏移)
 			BlockPos neighbour;
 
-			Direction OppositeFace = face.getOpposite();
 			if (airPlace.get()) {
 				neighbour = pos;
 			} else {
+				Direction OppositeFace = face.getOpposite();
 				neighbour = pos.offset(OppositeFace);
 				if (!canPlaceAgainst(required, neighbour, face)) {
 					continue;
 				}
-				
+				tempHitPos = tempHitPos.add(OppositeFace.getOffsetX() * 0.5, OppositeFace.getOffsetY() * 0.5,
+						OppositeFace.getOffsetZ() * 0.5);
 			}
-			tempHitPos = tempHitPos.add(OppositeFace.getOffsetX() * 0.5, OppositeFace.getOffsetY() * 0.5,
-					OppositeFace.getOffsetZ() * 0.5);
 			hitPos = tempHitPos;
 			// 确定了face 邻居坐标 点击位置
 
