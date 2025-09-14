@@ -849,8 +849,9 @@ public class Deleter extends Module {
         private void updateBlockBreakingProgress() {
             if(OnlyAttack.get()){
                 MyUtils.breakBlockONLYAttack(blockPos, swingHand.get(), directionMode.get()); 
+            }else{
+                MyUtils.breakBlock(blockPos, swingHand.get(), directionMode.get(),mining);
             }
-            MyUtils.breakBlock(blockPos, swingHand.get(), directionMode.get(),mining);
         }
 
         public void render(Render3DEvent event) {
