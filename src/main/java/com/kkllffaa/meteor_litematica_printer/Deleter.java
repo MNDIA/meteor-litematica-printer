@@ -180,7 +180,7 @@ public class Deleter extends Module {
     private final Setting<Integer> maxBlocksPerTick = sgGeneral.add(new IntSetting.Builder()
         .name("max-blocks-per-tick")
         .description("Maximum blocks to try to mine per tick. Useful when insta mining.")
-        .defaultValue(10)
+        .defaultValue(11)
         .min(1)
         .max(1024)
         .build()
@@ -377,6 +377,18 @@ public class Deleter extends Module {
         .name("height-reference")
         .description("Reference system for height protection.")
         .defaultValue(HeightReferenceMode.Player)
+        .visible(heightProtection::get)
+        .build()
+    );
+
+    
+    private final Setting<Integer> standHeight = sgProtection.add(new IntSetting.Builder()
+        .name("stand-height")
+        .description("No digging height, you need to stand on top.")
+        .defaultValue(-1)
+        .min(-64)
+        .max(320)
+        .sliderRange(-20, 20)
         .visible(heightProtection::get)
         .build()
     );
@@ -951,7 +963,7 @@ public class Deleter extends Module {
                         boolean hasNeighbourInBlocks = false;
                         for (Vec3i offset : faceNeighbours) {
                             BlockPos neighbour = scanPos.add(offset);
-                            if (isMiningBlock(neighbour)) {
+                            if (mc.world.getBlockState(neighbour).isAir() || isMiningBlock(neighbour)) {
                                 hasNeighbourInBlocks = true;
                                 break;
                             }
@@ -1133,7 +1145,7 @@ public class Deleter extends Module {
         int blockY = pos.getY();
         int relativeHeight = blockY - referenceY;
         
-        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get();
+        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get() && relativeHeight != standHeight.get();
     }
 
     /**
