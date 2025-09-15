@@ -8,7 +8,10 @@ import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import java.util.List;
 
 public class AutoFix extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -19,6 +22,19 @@ public class AutoFix extends Module {
         .defaultValue(99.9)
         .range(1, 100)
         .sliderRange(1, 100)
+        .build()
+    );
+
+    private final Setting<List<Item>> blacklist = sgGeneral.add(new ItemListSetting.Builder()
+        .name("blacklist")
+        .description("Items that should not be auto-fixed.")
+        .defaultValue(Items.NETHERITE_SWORD,
+        Items.WOODEN_SWORD,
+        Items.STONE_SWORD,
+        Items.IRON_SWORD,
+        Items.GOLDEN_SWORD,
+        Items.DIAMOND_SWORD
+        )
         .build()
     );
 
@@ -46,7 +62,7 @@ public class AutoFix extends Module {
 
 
     private boolean needFix (ItemStack itemStack){
-        return Utils.hasEnchantment(itemStack, Enchantments.MENDING) && (itemStack.getMaxDamage() - itemStack.getDamage()) < (itemStack.getMaxDamage() * Durability.get() / 100D);
+        return Utils.hasEnchantment(itemStack, Enchantments.MENDING) && (itemStack.getMaxDamage() - itemStack.getDamage()) < (itemStack.getMaxDamage() * Durability.get() / 100D) && !blacklist.get().contains(itemStack.getItem());
     }
  
 }
