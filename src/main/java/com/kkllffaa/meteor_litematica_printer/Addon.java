@@ -23,6 +23,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new Deleter());
 		Modules.get().add(new Finder());
 		Modules.get().add(new AutoSwarm());
+		Modules.get().add(new AutoFix());
 		
 	}
 
