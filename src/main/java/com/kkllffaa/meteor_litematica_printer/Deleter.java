@@ -50,7 +50,15 @@ public class Deleter extends Module {
     private final Set<Vec3i> lowerNeighbours = Set.of(
         new Vec3i(0, -1, 0)
     );
+    private final Set<Vec3i> faceNeighbours = Set.of(
+            new Vec3i(0, 1, 0),
 
+            new Vec3i(0, 0, 1),
+            new Vec3i(1, 0, 0), new Vec3i(-1, 0, 0),
+            new Vec3i(0, 0, -1),
+
+            new Vec3i(0, -1, 0)
+    );
     private final Set<Vec3i> blockNeighbours = Set.of(
         new Vec3i(1, -1, 1), new Vec3i(0, -1, 1), new Vec3i(-1, -1, 1),
         new Vec3i(1, -1, 0), new Vec3i(0, -1, 0), new Vec3i(-1, -1, 0),
@@ -115,6 +123,25 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> scanMode = sgGeneral.add(new BoolSetting.Builder()
+        .name("scan-mode")
+        .description("mesh mining")
+        .defaultValue(false)
+        .visible(continuousMode ::get)
+        .build()
+    );
+
+    private final Setting<Double> normalDistance = sgGeneral.add(new DoubleSetting.Builder()
+        .name("scan-distance")
+        .description("Distance within which blocks are normally destroyed to avoid affecting player movement.")
+        .defaultValue(1.0)
+        .min(0.0)
+        .max(10.0)
+        .sliderRange(0.0, 10.0)
+        .visible(scanMode::get)
+        .build()
+    );
+
     private final Setting<Integer> scanRadius = sgGeneral.add(new IntSetting.Builder()
         .name("scan-radius")
         .description("Radius to scan for blocks in continuous mode.")
@@ -171,6 +198,8 @@ public class Deleter extends Module {
         .defaultValue(false)
         .build()
     );
+    
+
 
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
         .name("rotate")
@@ -705,7 +734,7 @@ public class Deleter extends Module {
             cacheCleanupTickTimer++;
             if (cacheCleanupTickTimer >= cacheCleanupInterval.get() * 20) {
                 
-                // 一级缓存中不是空气且不是流体的砖放入二级缓存
+                // 清理一级缓存，固体转移到二级缓存
                 for (BlockPos pos : minedBlockCache) {
                     BlockState state = mc.world.getBlockState(pos);
                     if (!isAirOrFluid(state)) {
@@ -713,7 +742,7 @@ public class Deleter extends Module {
                     }
                 }
                 minedBlockCache.clear();
-                // 清理二级缓存中已变为空气或流体的砖
+                // 清理二级缓存中非固体
                 minedBlockCache2.removeIf(pos -> isAirOrFluid(mc.world.getBlockState(pos)));
                 cacheCleanupTickTimer = 0;
             }
@@ -905,10 +934,38 @@ public class Deleter extends Module {
                     ) {
                         continue;
                     }
-                    // Add to mining queue
-                    MyBlock block = blockPool.get();
-                    block.set(scanPos, Direction.UP); // Default direction for continuous mode
-                    blocks.add(block);
+                   
+                    if (scanMode.get()&& 
+                    
+                    !(Utils.distance(
+                        mc.player.getX(), 0, mc.player.getZ(),
+                         scanPos.getX()+0.5, 0, scanPos.getZ()+0.5) < normalDistance.get() && (
+
+                         mc.player.getY()-0.1<scanPos.getY()&&scanPos.getY()<mc.player.getY()+1.1
+                         )
+                         
+                         )
+                    
+                    
+                    ) {
+                        boolean hasNeighbourInBlocks = false;
+                        for (Vec3i offset : faceNeighbours) {
+                            BlockPos neighbour = scanPos.add(offset);
+                            if (isMiningBlock(neighbour)) {
+                                hasNeighbourInBlocks = true;
+                                break;
+                            }
+                        }
+                        if (!hasNeighbourInBlocks) {
+                            MyBlock block = blockPool.get();
+                            block.set(scanPos, Direction.UP); // Default direction for continuous mode
+                            blocks.add(block);
+                        }
+                    } else {
+                        MyBlock block = blockPool.get();
+                        block.set(scanPos, Direction.UP); // Default direction for continuous mode
+                        blocks.add(block);
+                    }
                 }
             }
         }
