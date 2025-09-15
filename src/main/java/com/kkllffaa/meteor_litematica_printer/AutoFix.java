@@ -29,7 +29,7 @@ public class AutoFix extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (!InvUtils.testInOffHand(itemStack -> !needFix(itemStack))) {
+        if (InvUtils.testInOffHand(itemStack -> !needFix(itemStack))) {
             FindItemResult result = InvUtils.find(itemStack -> needFix(itemStack), 0, 35);
             if (result.found()) {
                 InvUtils.move().from(result.slot()).toOffhand();
