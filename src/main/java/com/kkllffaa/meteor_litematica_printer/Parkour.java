@@ -29,7 +29,7 @@ public class Parkour extends Module {
     }
 
     @EventHandler
-    private void onTick(TickEvent.Post event) {
+    private void onTick(TickEvent.Pre event) {
         if(!mc.player.isOnGround() || mc.options.jumpKey.isPressed()) return;
 
         if(mc.player.isSneaking() || mc.options.sneakKey.isPressed()) return;
@@ -45,6 +45,5 @@ public class Parkour extends Module {
         }
 
         mc.player.setJumping(true);
-        mc.player.jump();
     }
 }
