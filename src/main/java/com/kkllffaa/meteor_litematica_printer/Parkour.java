@@ -30,9 +30,7 @@ public class Parkour extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (needJump) {
-            mc.options.jumpKey.setPressed(true);
-        }
+        mc.options.jumpKey.setPressed(needJump);
     }
 
     @EventHandler
