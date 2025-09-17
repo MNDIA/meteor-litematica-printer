@@ -5,12 +5,10 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.client.*;
 
 import java.util.stream.Stream;
 
@@ -41,7 +39,10 @@ public class Parkour extends Module {
 
         Stream<VoxelShape> blockCollisions = Streams.stream(mc.world.getBlockCollisions(mc.player, adjustedBox));
 
-        if(blockCollisions.findAny().isPresent()) return;
+        if(blockCollisions.findAny().isPresent()) {
+            mc.player.setJumping(false);
+            return;
+        }
 
         mc.player.setJumping(true);
         mc.player.jump();
