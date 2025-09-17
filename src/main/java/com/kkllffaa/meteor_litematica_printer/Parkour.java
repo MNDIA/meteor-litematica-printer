@@ -43,6 +43,6 @@ public class Parkour extends Module {
 
         if(blockCollisions.findAny().isPresent()) return;
 
-        mc.player.input.jumping = true;
+        mc.player.input.playerInput.jump();
     }
 }
