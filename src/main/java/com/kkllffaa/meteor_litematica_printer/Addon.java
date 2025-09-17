@@ -25,6 +25,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new AutoSwarm());
 		Modules.get().add(new AutoFix());
 		Modules.get().add(new AutoRenew());
+		Modules.get().add(new Parkour());
 		
 	}
 
