@@ -8,7 +8,7 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.shape.VoxelShape;import net.minecraft.client.
+import net.minecraft.util.shape.VoxelShape;
 import java.util.stream.Stream;
 
 public class Parkour extends Module {
