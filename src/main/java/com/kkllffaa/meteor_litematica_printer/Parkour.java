@@ -1,9 +1,4 @@
-/*
- * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client).
- * Copyright (c) Meteor Development.
- */
-
-package meteordevelopment.meteorclient.systems.modules.movement;
+package com.kkllffaa.meteor_litematica_printer;
 
 import com.google.common.collect.Streams;
 import meteordevelopment.meteorclient.events.world.TickEvent;
