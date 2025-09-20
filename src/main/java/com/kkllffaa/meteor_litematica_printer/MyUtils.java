@@ -41,8 +41,8 @@ import org.jetbrains.annotations.NotNull;
 
 
 public class MyUtils {
-	public static PlaceSettings settingsModule = new PlaceSettings();
-	public static InteractSettings interactSettingsModule = new InteractSettings();
+	public static PlaceSettings PlaceSettingsModule = new PlaceSettings();
+	public static InteractSettings InteractSettingsModule = new InteractSettings();
 
 	private static final Vec3d[] FACE_OFFSETS_UP = {
 			new Vec3d(0, 1, 0),
@@ -492,10 +492,10 @@ public class MyUtils {
         return true;
     }
 	public static boolean batchInteractToTargetState(BlockState targetState, BlockPos pos) {
-		return interactSettingsModule.batchInteractToTargetState(targetState, pos);
+		return InteractSettingsModule.batchInteractToTargetState(targetState, pos);
 	}
 	public static boolean placeBlock(BlockState required, BlockPos pos) {
-		return settingsModule.placeBlock(required, pos);
+		return PlaceSettingsModule.placeBlock(required, pos);
 	}
     private static final int[] DELAY_NONE = {0};
     private static final int[] DELAY_FAST = {0, 0, 1};
