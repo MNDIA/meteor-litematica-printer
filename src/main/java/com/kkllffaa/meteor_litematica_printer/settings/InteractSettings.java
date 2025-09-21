@@ -118,7 +118,7 @@ public class InteractSettings extends Module {
         }
 		return true;
 	}
-	private boolean interactWithBlock(BlockPos pos, int count) {
+	public boolean interactWithBlock(BlockPos pos, int count) {
         
         Direction face = switch (safetyInteractFaceMode.get()) {
             case SafetyFaceMode.None -> Direction.UP; // Default face when no safety is applied
@@ -146,7 +146,7 @@ public class InteractSettings extends Module {
 	}
 
 
-	private int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
+	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
         ClientWorld world = mc.world;
 		if (world == null)
 			return 0;

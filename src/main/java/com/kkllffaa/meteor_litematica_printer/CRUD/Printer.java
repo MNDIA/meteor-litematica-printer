@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.MyUtils;
@@ -182,6 +184,9 @@ public class Printer extends Module {
     private final LinkedHashSet<BlockPos> positionCache = new LinkedHashSet<>();
     private int cacheCleanupTickTimer = 0;
 
+    // Pending interactions: position -> remaining interactions needed
+    private final Map<BlockPos, Integer> pendingInteractions = new HashMap<>();
+
 	public Printer() {
 		super(Addon.CRUDCATEGORY, "litematica-printer", "Automatically prints open schematics");
 	}
@@ -212,6 +217,7 @@ public class Printer extends Module {
 		placed_fade.clear();
 		positionCache.clear();
 		cacheCleanupTickTimer = 0;
+		pendingInteractions.clear();
 	}
 
 	@EventHandler
@@ -239,6 +245,17 @@ public class Printer extends Module {
 			toggle();
 			return;
 		}
+
+		// Clean up pending interactions: remove positions that are out of range, no longer need interaction, or block changed
+		pendingInteractions.entrySet().removeIf(entry -> {
+			BlockPos pos = entry.getKey();
+			if (!mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())) return true;
+			BlockState current = mc.world.getBlockState(pos);
+			BlockState target = worldSchematic.getBlockState(pos);
+			if (current.getBlock() != target.getBlock()) return true; // block changed, not our concern
+			int needed = MyUtils.InteractSettingsModule.calculateRequiredInteractions(target, pos);
+			return needed <= 0; // no longer needs interaction
+		});
 
 		toSort.clear();
 
@@ -288,17 +305,37 @@ public class Printer extends Module {
 						placed++;
 						addToCache(pos);
 						
-						mc.execute(() -> {
-								if (!MyUtils.batchInteractToTargetState(state,pos)) {
-									warning("Failed to interact with block to set correct state at " + pos);
-								}
-							});
+						// Check if interaction is needed and add to pending
+						int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
+						if (requiredInteractions > 0) {
+							pendingInteractions.put(pos, requiredInteractions);
+						}
 						
 						if (renderBlocks.get()) {
 							placed_fade.add(new Pair<>(fadeTime.get(), new BlockPos(pos)));
 						}
 						if (placed >= bpt.get()) {
 							return;
+						}
+					}
+				}
+
+				// Handle pending interactions with remaining budget
+				int totalOps = placed;
+				for (Map.Entry<BlockPos, Integer> entry : new HashMap<>(pendingInteractions).entrySet()) {
+					if (totalOps >= bpt.get()) break;
+					BlockPos pos = entry.getKey();
+					int remaining = entry.getValue();
+					if (remaining > 0) {
+						int toDo = Math.min(remaining, bpt.get() - totalOps);
+						if (MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo)) {
+							int newRemaining = remaining - toDo;
+							if (newRemaining <= 0) {
+								pendingInteractions.remove(pos);
+							} else {
+								pendingInteractions.put(pos, newRemaining);
+							}
+							totalOps += toDo;
 						}
 					}
 				}
