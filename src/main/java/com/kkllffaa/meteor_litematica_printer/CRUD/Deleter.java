@@ -39,7 +39,7 @@ public class Deleter extends Module {
     private final SettingGroup sgProtection = settings.createGroup("Mining Protection");
     private final SettingGroup sgCache = settings.createGroup("Cache");
     private final SettingGroup sgLighting = settings.createGroup("Auto Lighting");
-
+    //region 砖块偏移常量
     private final Set<Vec3i> upperNeighbours = Set.of(
         new Vec3i(0, 1, 0)
     );
@@ -75,8 +75,8 @@ public class Deleter extends Module {
         new Vec3i(1, 1, 0), new Vec3i(0, 1, 0), new Vec3i(-1, 1, 0),
         new Vec3i(1, 1, -1), new Vec3i(0, 1, -1), new Vec3i(-1, 1, -1)
     );
-
-    // General
+    //endregion
+    //region General Settings
 
     private final Setting<Boolean> whiteList = sgGeneral.add(new BoolSetting.Builder()
         .name("whiteList")
@@ -210,7 +210,8 @@ public class Deleter extends Module {
         .defaultValue(false)
         .build()
     );
-
+    //endregion
+    //region Render Settings
     private final Setting<Boolean> swingHand = sgRender.add(new BoolSetting.Builder()
         .name("swing-hand")
         .description("Swing hand client-side.")
@@ -245,8 +246,9 @@ public class Deleter extends Module {
         .defaultValue(new SettingColor(204, 0, 0, 255))
         .build()
     );
+    //endregion
 
-    // Cache Settings
+    //region Cache Settings
     private final Setting<Boolean> enableCache = sgCache.add(new BoolSetting.Builder()
         .name("enable-cache")
         .description("Enable position cache to prevent mining the same block multiple times (prevents rebounding block issues).")
@@ -281,8 +283,8 @@ public class Deleter extends Module {
         .visible(enableCache::get)
         .build()
     );
-
-    // Protection Settings
+    //endregion
+    //region Protection Settings
     private final Setting<Boolean> fluidProtection = sgProtection.add(new BoolSetting.Builder()
         .name("fluid-protection")
         .description("Prevent mining blocks that are adjacent to fluids (water, lava, etc.).")
@@ -538,10 +540,10 @@ public class Deleter extends Module {
         .defaultValue(false)
         .build()
     );
+    //endregion
 
 
-
-    // Auto Lighting Settings
+    //region Auto Lighting Settings
     private final Setting<Boolean> autoLighting = sgLighting.add(new BoolSetting.Builder()
         .name("auto-lighting")
         .description("Automatically place light sources on dark blocks to prevent mob spawning.")
@@ -635,6 +637,7 @@ public class Deleter extends Module {
         .visible(autoLighting::get)
         .build()
     );
+    //endregion
 
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     private final List<MyBlock> blocks = new ArrayList<>();
@@ -654,7 +657,7 @@ public class Deleter extends Module {
     private BlockPos bestLightPosition = null;
     private int lightingTickTimer = 0;
 
-    private int tick = 0;
+    private int 间隔计数器tick = 0;
     
     private final Random random = new Random();
     
@@ -743,7 +746,10 @@ public class Deleter extends Module {
     
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        blocks.removeIf(MyBlock::shouldRemove);
+        if (blocks.removeIf(MyBlock::shouldRemove) )
+        {
+            间隔计数器tick = 0;
+        }
         // Cache cleanup timer - clears cache periodically to prevent stale entries
         if (enableCache.get()) {
             cacheCleanupTickTimer++;
@@ -777,11 +783,10 @@ public class Deleter extends Module {
             int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
             int totalDelay = delay.get() + randomDelay;
             
-            if (tick < totalDelay && !blocks.getFirst().mining) {
-                tick++;
+            if (间隔计数器tick <= totalDelay && !blocks.getFirst().mining) {
+                间隔计数器tick++;
                 return;
             }
-            tick = 0;
             
             // Mine up to maxBlocksPerTick blocks per tick
             int count = 0;
