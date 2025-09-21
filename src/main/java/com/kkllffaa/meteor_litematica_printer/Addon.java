@@ -1,11 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer;
 
-import com.kkllffaa.meteor_litematica_printer.CRUD.Deleter;
-import com.kkllffaa.meteor_litematica_printer.CRUD.Printer;
-import com.kkllffaa.meteor_litematica_printer.tools.AutoFix;
-import com.kkllffaa.meteor_litematica_printer.tools.AutoRenew;
-import com.kkllffaa.meteor_litematica_printer.tools.AutoSwarm;
-import com.kkllffaa.meteor_litematica_printer.tools.Parkour;
+import com.kkllffaa.meteor_litematica_printer.CRUD.*;
+import com.kkllffaa.meteor_litematica_printer.tools.*;
 
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Category;
@@ -29,6 +25,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new AutoFix());
 		Modules.get().add(new AutoRenew());
 		Modules.get().add(new Parkour());
+		Modules.get().add(new AutoLogin());
 		
 	}
 
