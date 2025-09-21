@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.settings;
 
 import meteordevelopment.meteorclient.settings.BlockListSetting;
 import meteordevelopment.meteorclient.settings.BoolSetting;
@@ -23,6 +23,9 @@ import net.minecraft.util.math.Vec3d;
 import java.util.List;
 import javax.annotation.Nullable;
 
+import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.MyUtils;
+import com.kkllffaa.meteor_litematica_printer.Rotation;
 import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
 
 import static meteordevelopment.meteorclient.utils.world.BlockUtils.canPlace;

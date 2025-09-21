@@ -1,6 +1,8 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.tools;
 
 import com.google.common.collect.Streams;
+import com.kkllffaa.meteor_litematica_printer.Addon;
+
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;

@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.tools;
 
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
@@ -12,6 +12,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import java.util.List;
+
+import com.kkllffaa.meteor_litematica_printer.Addon;
 
 public class AutoFix extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();

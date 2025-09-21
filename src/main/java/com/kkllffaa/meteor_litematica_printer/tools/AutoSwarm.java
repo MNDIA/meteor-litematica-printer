@@ -1,4 +1,6 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.tools;
+
+import com.kkllffaa.meteor_litematica_printer.Addon;
 
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.GameLeftEvent;

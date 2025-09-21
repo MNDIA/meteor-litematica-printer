@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.CRUD;
 
 import meteordevelopment.meteorclient.events.entity.player.StartBreakingBlockEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
@@ -29,6 +29,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+
+import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.MyUtils;
+import com.kkllffaa.meteor_litematica_printer.MyUtils.RandomDelayMode;
+import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
 
 public class Deleter extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();

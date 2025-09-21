@@ -39,6 +39,9 @@ import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.kkllffaa.meteor_litematica_printer.settings.InteractSettings;
+import com.kkllffaa.meteor_litematica_printer.settings.PlaceSettings;
+
 
 public class MyUtils {
 	public static PlaceSettings PlaceSettingsModule = new PlaceSettings();

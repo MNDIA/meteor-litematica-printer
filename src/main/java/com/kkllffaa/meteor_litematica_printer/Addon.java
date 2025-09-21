@@ -1,5 +1,12 @@
 package com.kkllffaa.meteor_litematica_printer;
 
+import com.kkllffaa.meteor_litematica_printer.CRUD.Deleter;
+import com.kkllffaa.meteor_litematica_printer.CRUD.Printer;
+import com.kkllffaa.meteor_litematica_printer.tools.AutoFix;
+import com.kkllffaa.meteor_litematica_printer.tools.AutoRenew;
+import com.kkllffaa.meteor_litematica_printer.tools.AutoSwarm;
+import com.kkllffaa.meteor_litematica_printer.tools.Parkour;
+
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
