@@ -40,5 +40,7 @@ public class Addon extends MeteorAddon {
 	@Override
 	public void onRegisterCategories() {
 		Modules.registerCategory(CRUDCATEGORY);
+		Modules.registerCategory(SETTINGSCATEGORY);
+		Modules.registerCategory(TOOLSCATEGORY);
 	}
 }
