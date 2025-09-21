@@ -29,7 +29,7 @@ import static com.kkllffaa.meteor_litematica_printer.MyUtils.*;
 
 public class InteractSettings extends Module {
 	public InteractSettings() {
-		super(Addon.CATEGORY, "InteractSettings", "Module to configure settings.");
+		super(Addon.SETTINGSCATEGORY, "InteractSettings", "Module to configure settings.");
 	}
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();

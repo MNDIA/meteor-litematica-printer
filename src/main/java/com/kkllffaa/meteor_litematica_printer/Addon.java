@@ -5,23 +5,19 @@ import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class Addon extends MeteorAddon {
-	public static final Logger LOG = LogManager.getLogger();
-	public static final Category CATEGORY = new Category("Printer", new ItemStack(Items.PINK_CARPET));
-
+	public static final Category CRUDCATEGORY = new Category("EXCRUD", new ItemStack(Items.PINK_CARPET));
+	public static final Category SETTINGSCATEGORY = new Category("EXSettings", new ItemStack(Items.PINK_CARPET));
+	public static final Category TOOLSCATEGORY = new Category("EXTools", new ItemStack(Items.PINK_CARPET));
+	
 	@Override
 	public void onInitialize() {
-		LOG.info("Initializing litematica printer");
-
 		// Modules
 		Modules.get().add(MyUtils.PlaceSettingsModule);
 		Modules.get().add(MyUtils.InteractSettingsModule);
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());
-		Modules.get().add(new Finder());
 		Modules.get().add(new AutoSwarm());
 		Modules.get().add(new AutoFix());
 		Modules.get().add(new AutoRenew());
@@ -36,6 +32,6 @@ public class Addon extends MeteorAddon {
 
 	@Override
 	public void onRegisterCategories() {
-		Modules.registerCategory(CATEGORY);
+		Modules.registerCategory(CRUDCATEGORY);
 	}
 }

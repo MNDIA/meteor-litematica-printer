@@ -32,7 +32,7 @@ public class Parkour extends Module {
             .build());
 
     public Parkour() {
-        super(Addon.CATEGORY, "parkour", "Automatically jumps at the edges of blocks.");
+        super(Addon.TOOLSCATEGORY, "parkour", "Automatically jumps at the edges of blocks.");
     }
 
     private boolean needControlJump = false;

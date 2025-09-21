@@ -18,7 +18,7 @@ public class AutoSwarm extends Module {
     private final Setting<Integer> checkCycle = sgGeneral.add(new IntSetting.Builder()
             .name("check-cycle")
             .description("Delay in seconds between checkings")
-            .defaultValue(2)
+            .defaultValue(1)
             .range(1, 60)
             .build());
 
@@ -54,7 +54,7 @@ public class AutoSwarm extends Module {
     private long lastWorldChangeTime = 0;
 
     public AutoSwarm() {
-        super(Addon.CATEGORY, "auto-swarm", "Automatically manages swarm instances.");
+        super(Addon.TOOLSCATEGORY, "auto-swarm", "Automatically manages swarm instances.");
     }
 
     @Override

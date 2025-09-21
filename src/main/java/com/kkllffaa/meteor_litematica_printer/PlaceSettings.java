@@ -33,7 +33,7 @@ import static com.kkllffaa.meteor_litematica_printer.MyUtils.*;
 
 public class PlaceSettings extends Module {
 	public PlaceSettings() {
-		super(Addon.CATEGORY, "PlaceSettings", "Module to configure settings.");
+		super(Addon.SETTINGSCATEGORY, "PlaceSettings", "Module to configure settings.");
 	}
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();

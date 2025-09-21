@@ -662,7 +662,7 @@ public class Deleter extends Module {
 
 
     public Deleter() {
-        super(Addon.CATEGORY, "deleter", "Mines all nearby blocks with this type");
+        super(Addon.CRUDCATEGORY, "deleter", "Mines all nearby blocks with this type");
     }
 
     @Override

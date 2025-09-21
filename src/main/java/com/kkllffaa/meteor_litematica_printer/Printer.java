@@ -180,7 +180,7 @@ public class Printer extends Module {
     private int cacheCleanupTickTimer = 0;
 
 	public Printer() {
-		super(Addon.CATEGORY, "litematica-printer", "Automatically prints open schematics");
+		super(Addon.CRUDCATEGORY, "litematica-printer", "Automatically prints open schematics");
 	}
 	private boolean isPositionCached(BlockPos pos) {
 		return enableCache.get() && positionCache.contains(pos);

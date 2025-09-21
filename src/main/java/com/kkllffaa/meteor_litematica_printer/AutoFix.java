@@ -19,7 +19,7 @@ public class AutoFix extends Module {
     private final Setting<Double> Durability = sgGeneral.add(new DoubleSetting.Builder()
         .name("percentage")
         .description("The durability percentage.")
-        .defaultValue(99.9)
+        .defaultValue(100)
         .range(1, 100)
         .sliderRange(1, 100)
         .build()
@@ -39,7 +39,7 @@ public class AutoFix extends Module {
     );
 
     public AutoFix () {
-        super(Addon.CATEGORY, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手");
+        super(Addon.TOOLSCATEGORY, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手");
     }
 
 
