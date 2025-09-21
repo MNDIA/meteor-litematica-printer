@@ -1,16 +1,19 @@
-package com.kkllffaa.meteor_litematica_printer.tools;
+/*
+ * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client).
+ * Copyright (c) Meteor Development.
+ */
+
+package meteordevelopment.meteorclient.systems.modules.misc;
 
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.text.*;
-import net.minecraft.util.Formatting;
+import net.minecraft.text.Text;
 
 import java.util.List;
-
-import com.kkllffaa.meteor_litematica_printer.Addon;
 
 public class AutoLogin extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -37,7 +40,7 @@ public class AutoLogin extends Module {
     );
 
     public AutoLogin() {
-        super(Addon.TOOLSCATEGORY, "auto-login", "Automatically logs in when receiving specific messages.");
+        super(Categories.Misc, "auto-login", "Automatically logs in when receiving specific messages.");
     }
 
     @EventHandler
@@ -46,16 +49,7 @@ public class AutoLogin extends Module {
         String messageString = message.getString();
 
         if (debug.get()) {
-            Text copyText = Texts.bracketed(
-                Text.literal("Copy Message")
-                    .fillStyle(Style.EMPTY
-                        .withColor(Formatting.GREEN)
-                        .withClickEvent(new ClickEvent.CopyToClipboard(messageString))
-                        .withHoverEvent(new HoverEvent.ShowText(Text.literal("Click to copy the message")))
-                        .withInsertion(messageString)
-                    )
-            );
-            info(copyText);
+            System.out.println("Received message: " + messageString);
         }
 
         if (messageString.contains(triggerMessage.get())) {
