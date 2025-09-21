@@ -1,9 +1,4 @@
-/*
- * This file is part of the Meteor Client distribution (https://github.com/MeteorDevelopment/meteor-client).
- * Copyright (c) Meteor Development.
- */
-
-package meteordevelopment.meteorclient.systems.modules.misc;
+package com.kkllffaa.meteor_litematica_printer.tools;
 
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.settings.*;
