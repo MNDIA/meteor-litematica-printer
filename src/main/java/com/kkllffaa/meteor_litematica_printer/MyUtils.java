@@ -20,7 +20,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -47,6 +46,8 @@ public class MyUtils {
 	public static PlaceSettings PlaceSettingsModule = new PlaceSettings();
 	public static InteractSettings InteractSettingsModule = new InteractSettings();
 
+
+	//region 方块锚点到方块面四顶点的偏移常量Vec3d[4]
 	private static final Vec3d[] FACE_OFFSETS_UP = {
 			new Vec3d(0, 1, 0),
 			new Vec3d(1, 1, 0),
@@ -88,7 +89,9 @@ public class MyUtils {
 			new Vec3d(0, 1, 1),
 			new Vec3d(0, 1, 0)
 	};
+	//endregion
 
+	//region 方块锚点到方块面四顶点的偏移常量Vec3d[4]，稍微外扩0.05
 	private static final Vec3d[] FACE_OFFSETS_UP_OUT = {
 			new Vec3d(0.05, 1.05, 0.05),
 			new Vec3d(0.95, 1.05, 0.05),
@@ -130,8 +133,9 @@ public class MyUtils {
 			new Vec3d(-0.05, 0.95, 0.95),
 			new Vec3d(-0.05, 0.95, 0.05)
 	};
+	//endregion
 
-	// 角度对准面
+	// 玩家角度对准方块的面
 	public static boolean isPlayerYawPitchInAFaceOfBlock(BlockPos blockPos, Direction direction) {
 
 		ClientPlayerEntity player = mc.player;
@@ -175,7 +179,7 @@ public class MyUtils {
 		return yawInRange && pitchInRange;
 	}
 
-	// 面不穿墙
+	// 方块的面不穿墙
 	public static boolean isAFaceOutVisibleOfBlock(BlockPos blockPos, Direction direction) {
 		ClientPlayerEntity player = mc.player;
 		if (player == null)
@@ -208,18 +212,7 @@ public class MyUtils {
 		return isLineOfSightClear(playerEye, point);
 	}
 
-	public static void place(BlockHitResult blockHitResult, boolean swing) {
-		if (mc.player == null || mc.interactionManager == null || mc.getNetworkHandler() == null)
-			return;
-		ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
-		if (result == ActionResult.SUCCESS) {
-			if (swing)
-				mc.player.swingHand(Hand.MAIN_HAND);
-			else
-				mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-		}
-	}
-
+	// 获取玩家参考系下的相对方向
 	public static @Nullable Direction getLeftDirectionFromPlayer(@NotNull Direction playerDirection) {
 		return switch (playerDirection) {
 			case NORTH -> Direction.WEST;
@@ -257,6 +250,7 @@ public class MyUtils {
 		throw new IllegalArgumentException("Unexpected direction: " + playerDirection);
 	}
 
+	//获取方块的一个可区分标志方向
 	public static @Nullable Direction getATagFaceOf(@NotNull BlockState state) {
 		if (state.contains(Properties.FACING))
 			return state.get(Properties.FACING);
@@ -279,7 +273,7 @@ public class MyUtils {
 	}
 
 
-	// 不支持使用None
+	// 不支持使用None 依据保护规则选择仅一个合适的面
 	public static @Nullable Direction getASafetyFaceOrNull(@NotNull BlockPos pos,
 			@NotNull SafetyFaceMode directionMode) {
 		return switch (directionMode) {
@@ -371,22 +365,27 @@ public class MyUtils {
 
     public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, SettingColor sideColorToUse, SettingColor lineColorToUse) {
             VoxelShape shape = mc.world.getBlockState(blockPos).getOutlineShape(mc.world, blockPos);
-
-            double x1 = blockPos.getX();
-            double y1 = blockPos.getY();
-            double z1 = blockPos.getZ();
-            double x2 = blockPos.getX() + 1;
-            double y2 = blockPos.getY() + 1;
-            double z2 = blockPos.getZ() + 1;
-
-            if (!shape.isEmpty()) {
-                x1 = blockPos.getX() + shape.getMin(Direction.Axis.X);
-                y1 = blockPos.getY() + shape.getMin(Direction.Axis.Y);
-                z1 = blockPos.getZ() + shape.getMin(Direction.Axis.Z);
-                x2 = blockPos.getX() + shape.getMax(Direction.Axis.X);
-                y2 = blockPos.getY() + shape.getMax(Direction.Axis.Y);
-                z2 = blockPos.getZ() + shape.getMax(Direction.Axis.Z);
-            }
+            double x1;
+            double y1;
+            double z1;
+            double x2;
+            double y2;
+			double z2;
+			if (!shape.isEmpty()) {
+				x1 = blockPos.getX() + shape.getMin(Direction.Axis.X);
+				y1 = blockPos.getY() + shape.getMin(Direction.Axis.Y);
+				z1 = blockPos.getZ() + shape.getMin(Direction.Axis.Z);
+				x2 = blockPos.getX() + shape.getMax(Direction.Axis.X);
+				y2 = blockPos.getY() + shape.getMax(Direction.Axis.Y);
+				z2 = blockPos.getZ() + shape.getMax(Direction.Axis.Z);
+			} else {
+				x1 = blockPos.getX();
+				y1 = blockPos.getY();
+				z1 = blockPos.getZ();
+				x2 = blockPos.getX() + 1;
+				y2 = blockPos.getY() + 1;
+				z2 = blockPos.getZ() + 1;
+			}
             event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode, 0);
     }
 
@@ -404,7 +403,7 @@ public class MyUtils {
 
 
 
-
+ 	//两点之间没有遮挡
 	private static boolean isLineOfSightClear(Vec3d start, Vec3d end) {
 		if (mc.world == null)
 			return false;
@@ -413,7 +412,7 @@ public class MyUtils {
 		BlockHitResult result = mc.world.raycast(context);
 		return result.getType() == HitResult.Type.MISS;
 	}
-
+	//yaw转换四方向
 	private static @NotNull Direction getHorizontalDirectionFromYaw(float yaw) {
 		yaw = Rotation.normalizeYaw(yaw);
 		if ((yaw >= 45 && yaw < 135)) {
@@ -426,7 +425,7 @@ public class MyUtils {
 			return Direction.NORTH;
 		}
 	}
-
+	//铁轨属性转换标志方向
 	private static @Nullable Direction railShapeToDirection(net.minecraft.block.enums.RailShape shape) {
 		return switch (shape) {
 			case NORTH_SOUTH -> Direction.SOUTH;
@@ -439,7 +438,7 @@ public class MyUtils {
 		};
 	}
 
-	
+	//region 数学工具
 	private static boolean isInRangeBetweenValues(float subject, float min, float max) {
 		return subject > min && subject < max;
 	}
@@ -447,12 +446,10 @@ public class MyUtils {
 	private static boolean CoverZero(float yaw1, float yaw2) {
 		return (Float.floatToIntBits(yaw1) ^ Float.floatToIntBits(yaw2)) < 0 && Math.abs(yaw2 - yaw1) < 180;
 	}
-	
+	//endregion
+
+
 	private static int usedSlot = -1;
-
-
-
-	
 	@EventHandler(priority = EventPriority.HIGHEST + 100)
     private static void onTickPre(TickEvent.Pre event) {
         breakingThisTick = false;
@@ -494,13 +491,16 @@ public class MyUtils {
 
         return true;
     }
+	
 	public static boolean batchInteractToTargetState(BlockState targetState, BlockPos pos) {
 		return InteractSettingsModule.batchInteractToTargetState(targetState, pos);
 	}
+	
 	public static boolean placeBlock(BlockState required, BlockPos pos) {
 		return PlaceSettingsModule.placeBlock(required, pos);
 	}
-    private static final int[] DELAY_NONE = {0};
+    
+	private static final int[] DELAY_NONE = {0};
     private static final int[] DELAY_FAST = {0, 0, 1};
     private static final int[] DELAY_BALANCED = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
     private static final int[] DELAY_SLOW = {0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6};

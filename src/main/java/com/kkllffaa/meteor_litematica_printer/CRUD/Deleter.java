@@ -32,8 +32,6 @@ import java.util.Set;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.MyUtils;
-import com.kkllffaa.meteor_litematica_printer.MyUtils.RandomDelayMode;
-import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
 
 public class Deleter extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();

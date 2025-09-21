@@ -14,7 +14,10 @@ import net.minecraft.block.*;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.state.property.Properties;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -24,7 +27,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Rotation;
 import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
 
@@ -694,7 +696,7 @@ public class PlaceSettings extends Module {
 				Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 50, clientSide.get(),
 							() -> place(new BlockHitResult(hitPos, face, neighbour, false), swing.get()));
 			} else {
-				MyUtils.place(new BlockHitResult(hitPos, face, neighbour, false), swing.get());
+				place(new BlockHitResult(hitPos, face, neighbour, false), swing.get());
 			}
 			return true;
 		}
@@ -884,4 +886,19 @@ public class PlaceSettings extends Module {
 			)
 		);
 	}
+
+
+
+	private void place(BlockHitResult blockHitResult, boolean swing) {
+		if (mc.player == null || mc.interactionManager == null || mc.getNetworkHandler() == null)
+			return;
+		ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
+		if (result == ActionResult.SUCCESS) {
+			if (swing)
+				mc.player.swingHand(Hand.MAIN_HAND);
+			else
+				mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+		}
+	}
+
 }

@@ -22,7 +22,6 @@ import net.minecraft.util.math.Vec3d;
 import java.util.List;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
 
 import static com.kkllffaa.meteor_litematica_printer.MyUtils.*;
