@@ -316,14 +316,16 @@ public class Printer extends Module {
 					if (placed >= bpt.get()) return;
 					Map.Entry<BlockPos, Integer> entry = iterator.next();
 					BlockPos pos = entry.getKey();
-					Integer remaining = entry.getValue();
+					int remaining = entry.getValue();
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, bpt.get() - placed);
 						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
-						entry.setValue(remaining - did);
 						placed += did;
-						if (remaining - did <= 0) {
+						int newRemaining = remaining - did;
+						if (newRemaining <= 0) {
 							iterator.remove();
+						}else{
+							entry.setValue(newRemaining);
 						}
 					}else{
 						iterator.remove();
