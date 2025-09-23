@@ -14,6 +14,8 @@ import net.minecraft.block.*;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
@@ -27,6 +29,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Rotation;
 import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
 
@@ -142,7 +145,19 @@ public class PlaceSettings extends Module {
 			.build()
     );
 
+    private final Setting<Boolean> returnHand = sgGeneral.add(new BoolSetting.Builder()
+			.name("return-slot")
+			.description("Return to old slot.")
+			.defaultValue(false)
+			.build()
+    );
 
+	private final Setting<Boolean> dirtgrass = sgGeneral.add(new BoolSetting.Builder()
+			.name("dirt-as-grass")
+			.description("Use dirt instead of grass.")
+			.defaultValue(false)
+			.build()
+	);
 
 
 
@@ -681,14 +696,19 @@ public class PlaceSettings extends Module {
 			if (onlyPlaceOnLookFace.get() && !isPlayerYawPitchInAFaceOfBlock(neighbour, face)) {
 				continue;
 			}
-
-			if (rotate.get()) {
-				Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 50, clientSide.get(),
-							() -> place(new BlockHitResult(hitPos, face, neighbour, false), swing.get()));
-			} else {
-				place(new BlockHitResult(hitPos, face, neighbour, false), swing.get());
-			}
-			return true;
+			Item item = required.getBlock().asItem();
+			if (dirtgrass.get() && item == Items.GRASS_BLOCK)
+				item = Items.DIRT;
+			return MyUtils.switchItem(item, required, returnHand.get(),
+					() -> {
+						if (rotate.get()) {
+							Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 50, clientSide.get(),
+									() -> place(new BlockHitResult(hitPos, face, neighbour, false), swing.get()));
+						} else {
+							place(new BlockHitResult(hitPos, face, neighbour, false), swing.get());
+						}
+						return true;
+					});
 		}
 		return false;
 	}

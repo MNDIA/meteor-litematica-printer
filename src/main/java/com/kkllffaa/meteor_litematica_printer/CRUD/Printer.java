@@ -73,19 +73,7 @@ public class Printer extends Module {
 			.build()
 	);
 
-    private final Setting<Boolean> returnHand = sgGeneral.add(new BoolSetting.Builder()
-			.name("return-slot")
-			.description("Return to old slot.")
-			.defaultValue(false)
-			.build()
-    );
 
-	private final Setting<Boolean> dirtgrass = sgGeneral.add(new BoolSetting.Builder()
-			.name("dirt-as-grass")
-			.description("Use dirt instead of grass.")
-			.defaultValue(false)
-			.build()
-	);
 
     private final Setting<SortAlgorithm> firstAlgorithm = sgGeneral.add(new EnumSetting.Builder<SortAlgorithm>()
 			.name("first-sorting-mode")
@@ -284,14 +272,9 @@ public class Printer extends Module {
 
 				int placed = 0;
 				for (BlockPos pos : toSort) {
-
 					BlockState state = worldSchematic.getBlockState(pos);
-					Item item = state.getBlock().asItem();
 
-					if (dirtgrass.get() && item == Items.GRASS_BLOCK)
-						item = Items.DIRT;
-					if (MyUtils.switchItem(item, state, returnHand.get(),
-							() -> MyUtils.placeBlock(state, pos))) {
+					if (MyUtils.placeBlock(state, pos)) {
 						timer = 0;
 						placed++;
 						addToCache(pos);

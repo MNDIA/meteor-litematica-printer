@@ -1444,8 +1444,7 @@ public class Deleter extends Module {
         if (lightSource == null)
             return;
         BlockState liteState = lightSource.getDefaultState();
-        if (MyUtils.switchItem(lightSource.asItem(), liteState, false,
-                () -> MyUtils.placeBlock(liteState, bestLightPosition))) {
+        if (MyUtils.placeBlock(liteState, bestLightPosition)) {
             bestLightPosition = null;
         }
 
