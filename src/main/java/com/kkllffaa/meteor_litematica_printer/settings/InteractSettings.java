@@ -2,6 +2,7 @@ package com.kkllffaa.meteor_litematica_printer.settings;
 
 import meteordevelopment.meteorclient.settings.BlockListSetting;
 import meteordevelopment.meteorclient.settings.BoolSetting;
+import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -88,19 +89,14 @@ public class InteractSettings extends Module {
 			.visible(enableInteraction::get)
             .build());
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+	private final Setting<Double> maxInteractionDistance = sgGeneral.add(new DoubleSetting.Builder()
+			.name("max-interaction-distance")
+			.description("Maximum distance to interact with blocks.")
+			.defaultValue(5.5)
+			.min(0.0)
+			.max(10.0)
+			.visible(enableInteraction::get)
+			.build());
 
 
 
@@ -131,9 +127,15 @@ public class InteractSettings extends Module {
         if (onlyInteractOnLook.get() && !isPlayerYawPitchInAFaceOfBlock(pos, face)) {
             return false;
         }
+		
         ClientPlayerEntity player = mc.player;
         ClientPlayerInteractionManager interactionManager = mc.interactionManager;
         if (player == null || interactionManager == null) return false;
+
+        if (getPlayerEyePos(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
+            return false;
+        }
+
         Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         for (int i = 0; i < count; i++) {
 		    BlockHitResult blockHitResult = new BlockHitResult(hitPos, face, pos, false);
@@ -144,8 +146,6 @@ public class InteractSettings extends Module {
         }
         return true;
 	}
-
-
 	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
         ClientWorld world = mc.world;
 		if (world == null)

@@ -82,16 +82,6 @@ public class PlaceSettings extends Module {
 			.visible(enableAddList::get)
 			.build());
 
-
-
-
-
-
-
-
-
-
-
 	private final Setting<Double> placeRange = sgGeneral.add(new DoubleSetting.Builder()
 			.name("place-range")
 			.description("The block place range.")

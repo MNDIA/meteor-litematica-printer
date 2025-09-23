@@ -310,26 +310,24 @@ public class Printer extends Module {
 					}
 				}
 
-				// Handle pending interactions with remaining budget
-				int totalOps = placed;
-				for (Map.Entry<BlockPos, BlockState> entry : pendingInteractions.entrySet()) {
-					if (totalOps >= bpt.get()) break;
-					BlockPos pos = entry.getKey();
-					BlockState state = entry.getValue();
-					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
-					if (remaining > 0) {
-						int toDo = Math.min(remaining, bpt.get() - totalOps);
-						if (MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo)) {
-							totalOps += toDo;
-						}
-					}
-				}
 				pendingInteractions.entrySet().removeIf(entry -> {
 					BlockPos pos = entry.getKey();
 					BlockState state = entry.getValue();
 					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
 					return remaining <= 0;
 				});
+				for (Map.Entry<BlockPos, BlockState> entry : pendingInteractions.entrySet()) {
+					if (placed >= bpt.get()) return;
+					BlockPos pos = entry.getKey();
+					BlockState state = entry.getValue();
+					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
+					if (remaining > 0) {
+						int toDo = Math.min(remaining, bpt.get() - placed);
+						if (MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo)) {
+							placed += toDo;
+						}
+					}
+				}
 			});
 
 
