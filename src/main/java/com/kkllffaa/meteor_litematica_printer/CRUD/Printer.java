@@ -295,11 +295,12 @@ public class Printer extends Module {
 						timer = 0;
 						placed++;
 						addToCache(pos);
-						
-						// Check if interaction is needed and add to pending
-						int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
-						if (requiredInteractions > 0) {
-							pendingInteractions.put(pos, requiredInteractions);
+						if(MyUtils.InteractSettingsModule.enableInteraction.get()) {
+							// Check if interaction is needed and add to pending
+							int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
+							if (requiredInteractions > 0) {
+								pendingInteractions.put(pos, requiredInteractions);
+							}
 						}
 						
 						if (renderBlocks.get()) {
@@ -321,6 +322,9 @@ public class Printer extends Module {
 						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
 						entry.setValue(remaining - did);
 						placed += did;
+						if (remaining - did <= 0) {
+							iterator.remove();
+						}
 					}else{
 						iterator.remove();
 					}

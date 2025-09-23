@@ -35,7 +35,7 @@ public class InteractSettings extends Module {
 	}
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
-	private final Setting<Boolean> enableInteraction = sgGeneral.add(new BoolSetting.Builder()
+	public final Setting<Boolean> enableInteraction = sgGeneral.add(new BoolSetting.Builder()
 			.name("enable-interaction")
 			.description("Enable interaction with blocks.")
 			.defaultValue(true)
@@ -107,7 +107,7 @@ public class InteractSettings extends Module {
 
 	public int interactWithBlock(BlockPos pos, int count) {
          if (!enableInteraction.get()) {
-            return count;
+            return 0;
         }
         Direction face = switch (safetyInteractFaceMode.get()) {
             case SafetyFaceMode.None -> Direction.UP; // Default face when no safety is applied
