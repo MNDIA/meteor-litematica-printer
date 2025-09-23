@@ -319,6 +319,9 @@ public class Printer extends Module {
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, bpt.get() - placed);
 						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
+						if (did > 0){
+							timer = 0;
+						}
 						placed += did;
 						int newRemaining = remaining - did;
 						if (newRemaining <= 0) {
