@@ -312,8 +312,7 @@ public class Printer extends Module {
 					}
 				}
 				Iterator<Map.Entry<BlockPos, Integer>> iterator = pendingInteractions.entrySet().iterator();
-				while (iterator.hasNext()) {
-					if (placed >= bpt.get()) return;
+				while (iterator.hasNext() && placed < bpt.get()) {
 					Map.Entry<BlockPos, Integer> entry = iterator.next();
 					BlockPos pos = entry.getKey();
 					int remaining = entry.getValue();
