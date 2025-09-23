@@ -185,7 +185,7 @@ public class Printer extends Module {
     private int cacheCleanupTickTimer = 0;
 
     // Pending interactions: position -> remaining interactions needed
-    private final Map<BlockPos, Integer> pendingInteractions = new HashMap<>();
+    private final Map<BlockPos, BlockState> pendingInteractions = new HashMap<>();
 
 	public Printer() {
 		super(Addon.CRUDCATEGORY, "litematica-printer", "Automatically prints open schematics");
@@ -246,17 +246,7 @@ public class Printer extends Module {
 			return;
 		}
 
-		// Clean up pending interactions: remove positions that are out of range, no longer need interaction, or block changed
-		pendingInteractions.entrySet().removeIf(entry -> {
-			BlockPos pos = entry.getKey();
-			if (!mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())) return true;
-			BlockState current = mc.world.getBlockState(pos);
-			BlockState target = worldSchematic.getBlockState(pos);
-			if (current.getBlock() != target.getBlock()) return true; // block changed, not our concern
-			int needed = MyUtils.InteractSettingsModule.calculateRequiredInteractions(target, pos);
-			return needed <= 0; // no longer needs interaction
-		});
-
+		
 		toSort.clear();
 
 
@@ -308,7 +298,7 @@ public class Printer extends Module {
 						// Check if interaction is needed and add to pending
 						int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
 						if (requiredInteractions > 0) {
-							pendingInteractions.put(pos, requiredInteractions);
+							pendingInteractions.put(pos, state);
 						}
 						
 						if (renderBlocks.get()) {
@@ -322,23 +312,24 @@ public class Printer extends Module {
 
 				// Handle pending interactions with remaining budget
 				int totalOps = placed;
-				for (Map.Entry<BlockPos, Integer> entry : new HashMap<>(pendingInteractions).entrySet()) {
+				for (Map.Entry<BlockPos, BlockState> entry : pendingInteractions.entrySet()) {
 					if (totalOps >= bpt.get()) break;
 					BlockPos pos = entry.getKey();
-					int remaining = entry.getValue();
+					BlockState state = entry.getValue();
+					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, bpt.get() - totalOps);
 						if (MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo)) {
-							int newRemaining = remaining - toDo;
-							if (newRemaining <= 0) {
-								pendingInteractions.remove(pos);
-							} else {
-								pendingInteractions.put(pos, newRemaining);
-							}
 							totalOps += toDo;
 						}
 					}
 				}
+				pendingInteractions.entrySet().removeIf(entry -> {
+					BlockPos pos = entry.getKey();
+					BlockState state = entry.getValue();
+					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
+					return remaining <= 0;
+				});
 			});
 
 
