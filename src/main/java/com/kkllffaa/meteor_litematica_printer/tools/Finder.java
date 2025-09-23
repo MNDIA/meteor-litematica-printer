@@ -114,7 +114,7 @@ public class Finder extends Module {
     private Dimension lastDimension;
 
     public Finder() {
-        super(Addon.TOOLSCATEGORY, "block-esp", "Renders specified blocks through walls.", "search");
+        super(Addon.TOOLSCATEGORY, "block-finder", "Renders specified blocks through walls.", "search");
 
         RainbowColors.register(this::onTickRainbow);
     }
