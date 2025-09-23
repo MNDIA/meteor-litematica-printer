@@ -27,7 +27,6 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new Parkour());
 		Modules.get().add(new AutoLogin());
 		Modules.get().add(new MidiParser());
-		Modules.get().add(new Finder());
 		
 	}
 
