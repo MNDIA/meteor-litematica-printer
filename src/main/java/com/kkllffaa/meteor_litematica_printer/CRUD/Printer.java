@@ -2,6 +2,7 @@ package com.kkllffaa.meteor_litematica_printer.CRUD;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.HashMap;
@@ -185,7 +186,7 @@ public class Printer extends Module {
     private int cacheCleanupTickTimer = 0;
 
     // Pending interactions: position -> remaining interactions needed
-    private final Map<BlockPos, BlockState> pendingInteractions = new HashMap<>();
+    private final Map<BlockPos, Integer> pendingInteractions = new HashMap<>();
 
 	public Printer() {
 		super(Addon.CRUDCATEGORY, "litematica-printer", "Automatically prints open schematics");
@@ -298,7 +299,7 @@ public class Printer extends Module {
 						// Check if interaction is needed and add to pending
 						int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
 						if (requiredInteractions > 0) {
-							pendingInteractions.put(pos, state);
+							pendingInteractions.put(pos, requiredInteractions);
 						}
 						
 						if (renderBlocks.get()) {
@@ -309,23 +310,19 @@ public class Printer extends Module {
 						}
 					}
 				}
-
-				pendingInteractions.entrySet().removeIf(entry -> {
-					BlockPos pos = entry.getKey();
-					BlockState state = entry.getValue();
-					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
-					return remaining <= 0;
-				});
-				for (Map.Entry<BlockPos, BlockState> entry : pendingInteractions.entrySet()) {
+				Iterator<Map.Entry<BlockPos, Integer>> iterator = pendingInteractions.entrySet().iterator();
+				while (iterator.hasNext()) {
 					if (placed >= bpt.get()) return;
+					Map.Entry<BlockPos, Integer> entry = iterator.next();
 					BlockPos pos = entry.getKey();
-					BlockState state = entry.getValue();
-					int remaining = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
+					Integer remaining = entry.getValue();
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, bpt.get() - placed);
-						if (MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo)) {
-							placed += toDo;
-						}
+						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
+						entry.setValue(remaining - did);
+						placed += did;
+					}else{
+						iterator.remove();
 					}
 				}
 			});

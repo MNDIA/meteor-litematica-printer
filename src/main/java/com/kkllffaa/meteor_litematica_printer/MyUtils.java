@@ -492,13 +492,10 @@ public class MyUtils {
         return true;
     }
 	
-	public static boolean batchInteractToTargetState(BlockState targetState, BlockPos pos) {
-		return InteractSettingsModule.batchInteractToTargetState(targetState, pos);
-	}
 	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
 		return InteractSettingsModule.calculateRequiredInteractions(targetState, pos);
 	}
-	public boolean interactWithBlock(BlockPos pos, int count) {
+	public int interactWithBlock(BlockPos pos, int count) {
 		return InteractSettingsModule.interactWithBlock(pos, count);
 	}
 

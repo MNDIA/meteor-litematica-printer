@@ -104,36 +104,29 @@ public class InteractSettings extends Module {
 
 
 
-	public boolean batchInteractToTargetState(BlockState targetState, BlockPos pos) {
-        if (!enableInteraction.get()) {
-            return true;
+
+	public int interactWithBlock(BlockPos pos, int count) {
+         if (!enableInteraction.get()) {
+            return count;
         }
-		int requiredInteractions = calculateRequiredInteractions(targetState, pos);
-		if (requiredInteractions > 0) {
-            return interactWithBlock(pos, requiredInteractions);
-        }
-		return true;
-	}
-	public boolean interactWithBlock(BlockPos pos, int count) {
-        
         Direction face = switch (safetyInteractFaceMode.get()) {
             case SafetyFaceMode.None -> Direction.UP; // Default face when no safety is applied
             default -> getASafetyFaceOrNull(pos,safetyInteractFaceMode.get() );
         };
         if (face == null) {
-            return false; 
+            return 0;
         }
 
         if (onlyInteractOnLook.get() && !isPlayerYawPitchInAFaceOfBlock(pos, face)) {
-            return false;
+            return 0;
         }
 		
         ClientPlayerEntity player = mc.player;
         ClientPlayerInteractionManager interactionManager = mc.interactionManager;
-        if (player == null || interactionManager == null) return false;
+        if (player == null || interactionManager == null) return 0;
 
         if (getPlayerEyePos(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
-            return false;
+            return 0;
         }
 
         Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
@@ -141,10 +134,10 @@ public class InteractSettings extends Module {
 		    BlockHitResult blockHitResult = new BlockHitResult(hitPos, face, pos, false);
 		    ActionResult result = interactionManager.interactBlock(player, Hand.MAIN_HAND, blockHitResult);
 		    if (!result.isAccepted()) {
-                return false;
+                return i;
             }
         }
-        return true;
+        return count;
 	}
 	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
         ClientWorld world = mc.world;
