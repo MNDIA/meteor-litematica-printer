@@ -33,12 +33,11 @@ import meteordevelopment.meteorclient.utils.world.BlockIterator;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
+
 
 public class Printer extends Module {
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -247,6 +246,7 @@ public class Printer extends Module {
 							pos);
 					if (requiredInteractions > 0) {
 						pendingInteractions.put(pos, requiredInteractions);
+						warning("Added pending interaction at " + pos + " with " + requiredInteractions + " required interactions");
 					}
 				}
 				if (mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
