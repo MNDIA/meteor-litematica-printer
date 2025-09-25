@@ -124,7 +124,9 @@ public class InteractSettings extends Module {
         ClientPlayerEntity player = mc.player;
         ClientPlayerInteractionManager interactionManager = mc.interactionManager;
         if (player == null || interactionManager == null) return 0;
-
+		if (player.isSneaking()){
+			return 0;
+		}
         if (getPlayerEyePos(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
             return 0;
         }

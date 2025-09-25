@@ -254,6 +254,12 @@ public class Printer extends Module {
 						&& !(isPositionCached(pos))) {
 					if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
 						toSort.add(new BlockPos(pos));
+						if (MyUtils.InteractSettingsModule.enableInteraction.get()) {
+							int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(required, pos);
+							if (requiredInteractions > 0 && !pendingInteractions.containsKey(pos)) {
+								pendingInteractions.put(pos, requiredInteractions);
+							}
+						}
 					}
 				}
 			});
@@ -290,7 +296,7 @@ public class Printer extends Module {
 						}else{
 							entry.setValue(newRemaining);
 						}
-					}else{
+					} else {
 						iterator.remove();
 					}
 				}
@@ -302,13 +308,6 @@ public class Printer extends Module {
 						timer = 0;
 						placed++;
 						addToCache(pos);
-						if(MyUtils.InteractSettingsModule.enableInteraction.get()) {
-							// Check if interaction is needed and add to pending
-							int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(state, pos);
-							if (requiredInteractions > 0) {
-								pendingInteractions.put(pos, requiredInteractions);
-							}
-						}
 						
 						if (renderBlocks.get()) {
 							placed_fade.add(new Pair<>(fadeTime.get(), new BlockPos(pos)));
