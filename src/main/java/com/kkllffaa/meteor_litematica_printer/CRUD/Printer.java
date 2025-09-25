@@ -271,6 +271,30 @@ public class Printer extends Module {
 
 
 				int placed = 0;
+				
+				Iterator<Map.Entry<BlockPos, Integer>> iterator = pendingInteractions.entrySet().iterator();
+				while (iterator.hasNext() && placed < bpt.get()) {
+					Map.Entry<BlockPos, Integer> entry = iterator.next();
+					BlockPos pos = entry.getKey();
+					int remaining = entry.getValue();
+					if (remaining > 0) {
+						int toDo = Math.min(remaining, bpt.get() - placed);
+						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
+						if (did > 0){
+							timer = 0;
+						}
+						placed += did;
+						int newRemaining = remaining - did;
+						if (newRemaining <= 0) {
+							iterator.remove();
+						}else{
+							entry.setValue(newRemaining);
+						}
+					}else{
+						iterator.remove();
+					}
+				}
+
 				for (BlockPos pos : toSort) {
 					BlockState state = worldSchematic.getBlockState(pos);
 
@@ -292,28 +316,6 @@ public class Printer extends Module {
 						if (placed >= bpt.get()) {
 							return;
 						}
-					}
-				}
-				Iterator<Map.Entry<BlockPos, Integer>> iterator = pendingInteractions.entrySet().iterator();
-				while (iterator.hasNext() && placed < bpt.get()) {
-					Map.Entry<BlockPos, Integer> entry = iterator.next();
-					BlockPos pos = entry.getKey();
-					int remaining = entry.getValue();
-					if (remaining > 0) {
-						int toDo = Math.min(remaining, bpt.get() - placed);
-						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
-						if (did > 0){
-							timer = 0;
-						}
-						placed += did;
-						int newRemaining = remaining - did;
-						if (newRemaining <= 0) {
-							iterator.remove();
-						}else{
-							entry.setValue(newRemaining);
-						}
-					}else{
-						iterator.remove();
 					}
 				}
 			});
