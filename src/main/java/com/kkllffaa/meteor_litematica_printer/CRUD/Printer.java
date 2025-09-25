@@ -246,7 +246,6 @@ public class Printer extends Module {
 							pos);
 					if (requiredInteractions > 0) {
 						pendingInteractions.put(new BlockPos(pos), requiredInteractions);
-						warning("Put at " + pos);
 					}
 				}
 				if (mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
@@ -282,7 +281,6 @@ public class Printer extends Module {
 				while (iterator.hasNext() && placed < bpt.get()) {
 					Map.Entry<BlockPos, Integer> entry = iterator.next();
 					BlockPos pos = entry.getKey();
-					warning("Read at " + pos);
 					int remaining = entry.getValue();
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, bpt.get() - placed);
