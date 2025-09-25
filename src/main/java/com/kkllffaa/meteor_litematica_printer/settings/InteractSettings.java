@@ -114,10 +114,12 @@ public class InteractSettings extends Module {
             default -> getASafetyFaceOrNull(pos,safetyInteractFaceMode.get() );
         };
         if (face == null) {
+            warning("Cannot find safe face for interaction at " + pos);
             return 0;
         }
 
         if (onlyInteractOnLook.get() && !isPlayerYawPitchInAFaceOfBlock(pos, face)) {
+            warning("Player not looking at the required face for interaction at " + pos);
             return 0;
         }
 		
@@ -125,9 +127,11 @@ public class InteractSettings extends Module {
         ClientPlayerInteractionManager interactionManager = mc.interactionManager;
         if (player == null || interactionManager == null) return 0;
 		if (player.isSneaking()){
+			warning("Player is sneaking, cannot interact at " + pos);
 			return 0;
 		}
         if (getPlayerEyePos(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
+            warning("Block at " + pos + " is too far for interaction, distance: " + getPlayerEyePos(player).distanceTo(Vec3d.ofCenter(pos)));
             return 0;
         }
 
@@ -136,6 +140,7 @@ public class InteractSettings extends Module {
 		    BlockHitResult blockHitResult = new BlockHitResult(hitPos, face, pos, false);
 		    ActionResult result = interactionManager.interactBlock(player, Hand.MAIN_HAND, blockHitResult);
 		    if (!result.isAccepted()) {
+                warning("Interaction not accepted at " + pos + ", result: " + result);
                 return i;
             }
         }
