@@ -245,7 +245,7 @@ public class Printer extends Module {
 					int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(required,
 							pos);
 					if (requiredInteractions > 0) {
-						pendingInteractions.put(pos, requiredInteractions);
+						pendingInteractions.put(new BlockPos(pos), requiredInteractions);
 						warning("Put at " + pos);
 					}
 				}
