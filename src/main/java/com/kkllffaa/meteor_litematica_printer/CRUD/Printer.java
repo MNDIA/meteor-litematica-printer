@@ -242,7 +242,13 @@ public class Printer extends Module {
 		if (timer >= printing_delay.get()) {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
-
+				if (MyUtils.InteractSettingsModule.enableInteraction.get() && !pendingInteractions.containsKey(pos)) {
+					int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(required,
+							pos);
+					if (requiredInteractions > 0) {
+						pendingInteractions.put(pos, requiredInteractions);
+					}
+				}
 				if (mc.player.getBlockPos().isWithinDistance(pos, printing_range.get())
 						&& blockState.isReplaceable()
 						&& required.getFluidState().isEmpty()
@@ -254,12 +260,6 @@ public class Printer extends Module {
 						&& !(isPositionCached(pos))) {
 					if (!whitelistenabled.get() || whitelist.get().contains(required.getBlock())) {
 						toSort.add(new BlockPos(pos));
-						if (MyUtils.InteractSettingsModule.enableInteraction.get()) {
-							int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(required, pos);
-							if (requiredInteractions > 0 && !pendingInteractions.containsKey(pos)) {
-								pendingInteractions.put(pos, requiredInteractions);
-							}
-						}
 					}
 				}
 			});
