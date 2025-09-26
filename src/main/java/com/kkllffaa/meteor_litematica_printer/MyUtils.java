@@ -272,12 +272,21 @@ public class MyUtils {
 			return null; // Return null for blocks without directional properties
 	}
 
-
+    // Meteor原始方法
+    private static Direction getDirection(BlockPos pos) {
+        Vec3d eyesPos = new Vec3d(mc.player.getX(), mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ());
+        if ((double) pos.getY() > eyesPos.y) {
+            if (mc.world.getBlockState(pos.add(0, -1, 0)).isReplaceable()) return Direction.DOWN;
+            else return mc.player.getHorizontalFacing().getOpposite();
+        }
+        if (!mc.world.getBlockState(pos.add(0, 1, 0)).isReplaceable()) return mc.player.getHorizontalFacing().getOpposite();
+        return Direction.UP;
+    }
 	// 不支持使用None 依据保护规则选择仅一个合适的面
 	public static @Nullable Direction getASafetyFaceOrNull(@NotNull BlockPos pos,
 			@NotNull SafetyFaceMode directionMode) {
 		return switch (directionMode) {
-			case PlayerRotation -> BlockUtils.getDirection(pos);
+			case PlayerRotation -> getDirection(pos);
 			case PlayerPosition -> {
 				ClientPlayerEntity player = mc.player;
 				if (player == null)
@@ -448,49 +457,7 @@ public class MyUtils {
 	}
 	//endregion
 
-
 	private static int usedSlot = -1;
-	@EventHandler(priority = EventPriority.HIGHEST + 100)
-    private static void onTickPre(TickEvent.Pre event) {
-        breakingThisTick = false;
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST - 100)
-    private static void onTickPost(TickEvent.Post event) {
-        if (!breakingThisTick && breaking) {
-            breaking = false;
-            if (mc.interactionManager != null) mc.interactionManager.cancelBlockBreaking();
-        }
-    }
-	private static boolean breaking;
-    private static boolean breakingThisTick;
-	public static boolean breakBlockONLYAttack(BlockPos blockPos, boolean swing, SafetyFaceMode directionMode) {
-		if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
-        // Creating new instance of block pos because minecraft assigns the parameter to a field, and we don't want it to change when it has been stored in a field somewhere
-        BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
-        mc.interactionManager.attackBlock(pos,getASafetyFaceOrNull(blockPos, directionMode));
-        if (swing) mc.player.swingHand(Hand.MAIN_HAND);
-        else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-        return true;
-	}
-	public static boolean breakBlock(BlockPos blockPos, boolean swing, SafetyFaceMode directionMode, boolean isBreaking) {
-        if (! BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos))) return false;
-
-        // Creating new instance of block pos because minecraft assigns the parameter to a field, and we don't want it to change when it has been stored in a field somewhere
-        BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
-
-        if (isBreaking){
-			mc.interactionManager.updateBlockBreakingProgress(pos, getASafetyFaceOrNull(blockPos, directionMode));
-		}
-        else mc.interactionManager.attackBlock(pos,getASafetyFaceOrNull(blockPos, directionMode));
-		
-        if (swing) mc.player.swingHand(Hand.MAIN_HAND);
-        else mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-		breaking = true;
-		breakingThisTick = true;
-
-        return true;
-    }
 	
 	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
 		return InteractSettingsModule.calculateRequiredInteractions(targetState, pos);
