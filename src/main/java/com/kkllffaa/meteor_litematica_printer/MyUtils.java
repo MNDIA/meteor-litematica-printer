@@ -268,8 +268,11 @@ public class MyUtils {
 			return state.get(Properties.VERTICAL_DIRECTION);
 		else if (state.contains(Properties.ROTATION))
 			return RotationPropertyHelper.toDirection(state.get(Properties.ROTATION)).orElse(null);
+		else if (state.contains(Properties.ORIENTATION))
+			return state.get(Properties.ORIENTATION).getFacing();
 		else
 			return null; // Return null for blocks without directional properties
+		
 	}
 
     // Meteor原始方法
@@ -470,21 +473,6 @@ public class MyUtils {
 		return PlaceSettingsModule.placeBlock(required, pos);
 	}
     
-	private static final int[] DELAY_NONE = {0};
-    private static final int[] DELAY_FAST = {0, 0, 1};
-    private static final int[] DELAY_BALANCED = {0, 0, 0, 0, 1, 1, 1, 2, 2, 3};
-    private static final int[] DELAY_SLOW = {0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6};
-    private static final int[] DELAY_VARIABLE = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-
-    public static int[] getRandomDelayArray(RandomDelayMode mode) {
-        return switch (mode) {
-            case None -> DELAY_NONE;
-            case Fast -> DELAY_FAST;
-            case Balanced -> DELAY_BALANCED;
-            case Slow -> DELAY_SLOW;
-            case Variable -> DELAY_VARIABLE;
-        };
-    }
     public static int getLightLevel(BlockPos pos) {
 		ClientWorld world = mc.world;
         if (world == null) return 15;
@@ -496,12 +484,48 @@ public class MyUtils {
 		None
 	}
     public static enum RandomDelayMode {
-        None,    
-        Fast,     
-        Balanced, 
-        Slow,      
-        Variable   
+        None(new int[]{0}),    
+        Fast(new int[]{0, 0, 1}),     
+        Balanced(new int[]{0, 0, 0, 0, 1, 1, 1, 2, 2, 3}), 
+        Slow(new int[]{0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6}),      
+        Variable(new int[]{0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+
+        public final int[] delays;
+
+        RandomDelayMode(int[] delays) {
+            this.delays = delays;
+        }
     }
+
+    public static enum DistanceMode {
+        Auto,
+        Max,
+    }
+    public static enum HeightReferenceMode {
+        Player,
+        World
+    }
+	public static enum ListMode {
+        Whitelist,
+        Blacklist
+    }
+    public static enum ColorScheme {
+        红(new SettingColor(204, 0, 0, 10), new SettingColor(204, 0, 0, 255)),
+        绿(new SettingColor(0, 204, 0, 10), new SettingColor(0, 204, 0, 255)),
+        蓝(new SettingColor(0, 0, 204, 10), new SettingColor(0, 0, 204, 255)),
+        黄(new SettingColor(204, 204, 0, 10), new SettingColor(204, 204, 0, 255)),
+        紫(new SettingColor(204, 0, 204, 10), new SettingColor(204, 0, 204, 255)),
+        青(new SettingColor(0, 204, 204, 10), new SettingColor(0, 204, 204, 255));
+
+        public final SettingColor sideColor;
+        public final SettingColor lineColor;
+
+        ColorScheme(SettingColor side, SettingColor line) {
+            this.sideColor = side;
+            this.lineColor = line;
+        }
+    }
+
 	public static boolean switchItem(Item item, BlockState state, boolean returnHand, Supplier<Boolean> action) {
 		if (mc.player == null)
 			return false;
