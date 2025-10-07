@@ -9,7 +9,6 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
-import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
@@ -17,12 +16,13 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
+import java.util.Objects;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -200,29 +200,17 @@ public class DeleterRef extends Module {
         .build()
     );
 
+    private final Setting<Boolean> renderCanceledOrMinedEndWithoutRebound = sgRender.add(new BoolSetting.Builder()
+        .name("render-canceled-or-mined-end-without-rebound")
+        .description("渲染挖掘取消或挖掘完毕(不回弹)的方块")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<ShapeMode> shapeMode = sgRender.add(new EnumSetting.Builder<ShapeMode>()
         .name("shape-mode")
         .description("How the shapes are rendered.")
         .defaultValue(ShapeMode.Lines)
-        .build()
-    );
-    //endregion
-
-    //region Cache Settings
-    private final Setting<Integer> 缓存检查间隔Tick = sgCache.add(new IntSetting.Builder()
-        .name("cache-check-interval-tick")
-        .description("Time in ticks between cache checks.")
-        .defaultValue(0)
-        .min(0).sliderMin(0)
-        .max(40).sliderMax(40)
-        .build());
-    
-    private final Setting<Integer> 缓存大小 = sgCache.add(new IntSetting.Builder()
-        .name("cache-size")
-        .description("Number of recently mined positions to cache.")
-        .defaultValue(200)
-        .min(10).sliderMin(10)
-        .max(200).sliderMax(200)
         .build()
     );
     //endregion
@@ -502,6 +490,7 @@ public class DeleterRef extends Module {
     private final List<BlockPos> foundBlockPos = new ArrayList<>();
 
     private int tick = 0;
+    private final Random random = new Random();
 
     public DeleterRef() {
         super(Addon.CRUDCATEGORY, "block-deleter", "Deletes all nearby blocks with this type");
@@ -512,63 +501,111 @@ public class DeleterRef extends Module {
         return MyUtils.getDistanceToPlayerEyes(Pos) > handDistance;
     }
 
-    private boolean 允许挖掘(BlockState state){
-        if (BlockListMode.get() == ListMode.Whitelist && !whiteListBlocks.get().contains(state.getBlock()))
+    private boolean 允许存入挖掘表(BlockPos pos){
+        if (isOutOfDistance(pos)) return false;
+        throw new NotImplementedException();
+    }
+    private boolean 允许存入挖掘表(BlockState state){
+        throw new NotImplementedException();
+    }
+    private boolean 允许存入挖掘表(Block block){
+        if (BlockListMode.get() == ListMode.Whitelist && !whiteListBlocks.get().contains(block))
             return false;
-        if (BlockListMode.get() == ListMode.Blacklist && blackListBlocks.get().contains(state.getBlock()))
+        if (BlockListMode.get() == ListMode.Blacklist && blackListBlocks.get().contains(block))
             return false;
 
         return true;
-    }
-    private boolean 允许挖掘(BlockPos pos){
-         throw new NotImplementedException();
     }
 
 
 
     @Override
     public void onDeactivate() {
-        for (MyBlock block : blocks) blockPool.free(block);
+        blocks.forEach(blockPool::free);
         blocks.clear();
         foundBlockPos.clear();
     }
 
-    private boolean is可添加块(BlockPos pos) {
-        for (MyBlock block : blocks) {
-            if (block.blockPos.equals(pos)) return false;
-        }
 
-        return true;
-    }
 
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
         if (TriggerMode.get() != 触发模式.手动相连同类) return;
 
         BlockPos pos = event.blockPos;
+        if (!允许存入挖掘表(pos)) return;
 
         BlockState state = mc.world.getBlockState(pos);
-        if (!允许挖掘(state)) return;
+        if (!允许存入挖掘表(state)) return;
         
-        Block originalBlock = state.getBlock();
-        尝试添加块到blocks(pos, originalBlock);
+        Block block = state.getBlock();
+        if (!允许存入挖掘表(block)) return;
+
+        尝试添加块到blocks(pos, block);
 
         foundBlockPos.clear();
-        mineNearbyBlocks(originalBlock.asItem(), pos, depth.get());
+        mineNearbyBlocks(block.asItem(), pos, depth.get());
+    }
+
+    private void mineNearbyBlocks(Item item, BlockPos pos, int depth) {
+        if (depth<=0) return;
+        if (foundBlockPos.contains(pos)) return;
+        foundBlockPos.add(pos);
+
+
+        for(Vec3i neighbourOffset: blockNeighbours) {
+            BlockPos neighbourPos = pos.add(neighbourOffset);
+            if (!允许存入挖掘表(neighbourPos)) continue;
+            BlockState neighbourState = mc.world.getBlockState(neighbourPos);
+            if (!允许存入挖掘表(neighbourState)) continue;
+            Block neighbourBlock = neighbourState.getBlock();
+
+            if (neighbourBlock.asItem() == item) {
+                尝试添加块到blocks(neighbourPos, neighbourBlock);
+                mineNearbyBlocks(item, neighbourPos, depth-1);
+            }
+        }
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
+
+        //1
+        blocks.forEach(MyBlock::UpdateState);
         blocks.removeIf(MyBlock::shouldRemove);
 
         if (!blocks.isEmpty()) {
-            if (tick < delay.get() && blocks.getFirst().startTime == 0) {
+            int[] randomDelays = randomDelayMode.get().delays;
+            int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
+            int totalDelay = delay.get() + randomDelay;
+            
+            if (tick < totalDelay) {
                 tick++;
                 return;
             }
             tick = 0;
-            blocks.getFirst().mine();
+
+            int count = 0;
+            for (MyBlock block : blocks) {
+                if (count >= maxBlocksPerTick.get()) break;
+
+                if (block.state != MyBlock.State.ToMine && block.state != MyBlock.State.Mining) continue;
+
+                if (BlockUtils.canInstaBreak(block.blockPos)) {
+                    if (block.state == MyBlock.State.ToMine) {
+                        block.mine();
+                        count++;
+                    }
+                } else {
+                    block.mine();
+                    break;
+                }
+
+            }
+            
         }
+
+        //2
     }
 
     @EventHandler
@@ -579,29 +616,80 @@ public class DeleterRef extends Module {
     }
 
     private class MyBlock {
-        public BlockPos blockPos;
-        public Block originalBlock;
-        public long startTime = 0;
-        public long finishTime = 0;
+        private BlockPos blockPos;
+        private Block originalBlock;
+        private long startTime = 0;
+        private long finishTime = 0;
         public State state = State.ToMine;
-        public static enum State {
+        private static enum State {
             ToMine,
             Mining,
             TimeOut,
             MinedMayRebound,
             Rebound,
-            MinedEndWithoutRebound
+            Canceled,
+            MinedEndWithoutRebound,
         }
+        public void UpdateState(){
+            state = calculateState();
+        }
+        private State calculateState() {
+            if (!允许存入挖掘表(blockPos)) {
+                return State.Canceled;
+            }
+
+            if (finishTime == 0) {
+                var world = mc.world;
+                if (world == null || world.getBlockState(blockPos).getBlock() != originalBlock) {
+                    finishTime = System.currentTimeMillis();
+                }
+            }
+
+            if (startTime == 0) {
+                if (finishTime == 0) {
+                    return State.ToMine;
+                }else{
+                    return State.MinedEndWithoutRebound;
+                }
+            }else {
+                if (finishTime == 0){
+                    if (启用挖掘超时保护.get()){
+                        long currentTime = System.currentTimeMillis();
+                        double elapsedSeconds = (currentTime - startTime) / 1000.0;
+                        if (elapsedSeconds > 挖掘超时时间.get()) {
+                            return State.TimeOut;
+                        }
+                    }
+                    return State.Mining;
+                }else{
+                    long currentTime = System.currentTimeMillis();
+                    double elapsedSeconds = (currentTime - finishTime) / 1000.0;
+                    if (elapsedSeconds < 挖掘回弹时间.get()){
+                        return State.MinedMayRebound;
+                    }else{
+                        var world = mc.world;
+                        if (world == null || world.getBlockState(blockPos).getBlock() != originalBlock) {
+                            return State.MinedEndWithoutRebound;
+                        }else{
+                            return State.Rebound;
+                        }
+                    }
+                }
+            }
+        }
+            
 
 
         public void set(BlockPos pos, Block originalBlock) {
             this.blockPos = pos;
             this.originalBlock = originalBlock;
+            this.startTime = 0;
+            this.finishTime = 0;
+            this.state = State.ToMine;
         }
 
         public boolean shouldRemove() {
-            return mc.world.getBlockState(blockPos).getBlock() != originalBlock || 
-            isOutOfDistance(blockPos);
+            return state == State.Canceled || state == State.MinedEndWithoutRebound;
         }
 
         public void mine() {
@@ -617,32 +705,73 @@ public class DeleterRef extends Module {
         }
 
         public void render(Render3DEvent event) {
-            SettingColor sideColorToUse = ColorScheme.红.sideColor;
-            SettingColor lineColorToUse = ColorScheme.红.lineColor;
-            MyUtils.renderPos(event, blockPos, shapeMode.get(), sideColorToUse, lineColorToUse);
-        }
-    }
-
-    private void mineNearbyBlocks(Item item, BlockPos pos, int depth) {
-        if (depth<=0) return;
-        if (foundBlockPos.contains(pos)) return;
-        foundBlockPos.add(pos);
-        if (isOutOfDistance(pos)) return;
-        for(Vec3i neighbourOffset: blockNeighbours) {
-            BlockPos neighbour = pos.add(neighbourOffset);
-            Block originalBlock = mc.world.getBlockState(neighbour).getBlock();
-            if (originalBlock.asItem() == item) {
-                尝试添加块到blocks(neighbour, originalBlock);
-                mineNearbyBlocks(item, neighbour, depth-1);
+            switch (state){
+                case ToMine ->{
+                    if(renderToMine.get()){
+                        var color = ColorScheme.红;
+                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                    }
+                }
+                case Mining ->{
+                    if(renderMining.get()){
+                        var color = ColorScheme.蓝;
+                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                    }
+                }
+                case TimeOut ->{
+                    if(renderTimeOut.get()){
+                        var color = ColorScheme.黄;
+                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                    }
+                }
+                case MinedMayRebound ->{
+                    if(renderMined.get()){
+                        var color = ColorScheme.紫;
+                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                    }
+                }
+                case Rebound ->{
+                    if(renderReboundCache.get()){
+                        var color = ColorScheme.绿;
+                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                    }
+                }
+                case Canceled, MinedEndWithoutRebound ->{
+                    if(renderCanceledOrMinedEndWithoutRebound.get()){
+                        var color = ColorScheme.青;
+                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                    }
+                }
             }
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            MyBlock myBlock = (MyBlock) obj;
+            return Objects.equals(blockPos, myBlock.blockPos);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(blockPos);
+        }
     }
 
+
     private void 尝试添加块到blocks(BlockPos pos, Block originalBlock){
-        if (!is可添加块(pos)) return;
+        if (表里已经包含(pos)) return;
         MyBlock block = blockPool.get(); 
         block.set(pos, originalBlock);
         blocks.add(block);
+    }
+    private boolean 表里已经包含(BlockPos pos) {
+        for (MyBlock block : blocks) {
+            if (block.blockPos.equals(pos)) return  true;
+        }
+
+        return false;
     }
 
     @Override
