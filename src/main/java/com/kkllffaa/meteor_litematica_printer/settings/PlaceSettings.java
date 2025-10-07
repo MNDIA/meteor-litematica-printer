@@ -240,6 +240,8 @@ public class PlaceSettings extends Module {
 			.name("idirectional-backward")
 			.description("Blocks that should face away from player.")
 			.defaultValue(
+					//合成器
+					Blocks.CRAFTER,
 					// 活塞
 					Blocks.PISTON, Blocks.STICKY_PISTON,
 					// 箱子
