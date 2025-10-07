@@ -530,6 +530,7 @@ public class DeleterRef extends Module {
 
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
+        if (!isActive()) return;
         if (TriggerMode.get() != 触发模式.手动相连同类) return;
 
         BlockPos pos = event.blockPos;
@@ -541,7 +542,7 @@ public class DeleterRef extends Module {
         Block block = state.getBlock();
         if (!允许存入挖掘表(block)) return;
 
-        尝试添加块到blocks(pos, block);
+        TryBlocksAdd(pos, block);
 
         foundBlockPos.clear();
         mineNearbyBlocks(block.asItem(), pos, depth.get());
@@ -561,7 +562,7 @@ public class DeleterRef extends Module {
             Block neighbourBlock = neighbourState.getBlock();
 
             if (neighbourBlock.asItem() == item) {
-                尝试添加块到blocks(neighbourPos, neighbourBlock);
+                TryBlocksAdd(neighbourPos, neighbourBlock);
                 mineNearbyBlocks(item, neighbourPos, depth-1);
             }
         }
@@ -569,10 +570,16 @@ public class DeleterRef extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
+        if (!isActive()) return;
 
-        //1
         blocks.forEach(MyBlock::UpdateState);
-        blocks.removeIf(MyBlock::shouldRemove);
+        blocks.removeIf(block -> {
+            if (block.shouldRemove()) {
+                blockPool.free(block);
+                return true;
+            }
+            return false;
+        });
 
         if (!blocks.isEmpty()) {
             int[] randomDelays = randomDelayMode.get().delays;
@@ -605,14 +612,11 @@ public class DeleterRef extends Module {
             
         }
 
-        //2
     }
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        if (renderToMine.get()) {
-            for (MyBlock block : blocks) block.render(event);
-        }
+        blocks.forEach(block -> block.render(event));
     }
 
     private class MyBlock {
@@ -760,7 +764,7 @@ public class DeleterRef extends Module {
     }
 
 
-    private void 尝试添加块到blocks(BlockPos pos, Block originalBlock){
+    private void TryBlocksAdd(BlockPos pos, Block originalBlock){
         if (表里已经包含(pos)) return;
         MyBlock block = blockPool.get(); 
         block.set(pos, originalBlock);
