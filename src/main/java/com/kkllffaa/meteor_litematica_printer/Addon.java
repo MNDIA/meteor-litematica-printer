@@ -2,7 +2,7 @@ package com.kkllffaa.meteor_litematica_printer;
 
 import com.kkllffaa.meteor_litematica_printer.CRUD.*;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
-import com.kkllffaa.meteor_litematica_printer.tools.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.*;
 
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Category;

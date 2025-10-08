@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer.tools;
+package com.kkllffaa.meteor_litematica_printer.Modules;
 
 import com.google.common.collect.Streams;
 import com.kkllffaa.meteor_litematica_printer.Addon;
