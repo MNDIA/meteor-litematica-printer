@@ -923,7 +923,7 @@ public class Deleter extends Module {
                     && 本tick需要挖掘的一个硬砖.blockPos.equals(上一次间隔挖掘的一个硬砖.blockPos);
 
                     
-            if (tick < totalDelay && !(Attacks == 0 && 挖掘的是同一个硬砖)) {
+            if (tick < totalDelay && Attacks == 0 && !挖掘的是同一个硬砖) {
                 tick++;
                 return;
             }
