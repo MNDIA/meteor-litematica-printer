@@ -112,6 +112,14 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<MeshMineMode> meshMineMode = sgGeneral.add(new EnumSetting.Builder<MeshMineMode>()
+        .name("mesh-mining-mode")
+        .description("Quickly probe blocks")
+        .defaultValue(MeshMineMode.Cache)
+        .visible(MeshMine::get)
+        .build()
+    );
+
     private final Setting<Integer> depth = sgGeneral.add(new IntSetting.Builder()
         .name("depth")
         .description("Amount of iterations used to scan for similar blocks.")
@@ -325,8 +333,8 @@ public class Deleter extends Module {
     );
 
     
-    private final Setting<Integer> standHeight = sgProtection.add(new IntSetting.Builder()
-        .name("stand-height")
+    private final Setting<Integer> 排除高度 = sgProtection.add(new IntSetting.Builder()
+        .name("exclude-height")
         .description("No digging height, you need to stand on top.")
         .defaultValue(-1)
         .min(-64)
@@ -491,7 +499,7 @@ public class Deleter extends Module {
     private final List<BlockPos> foundBlockPos = new ArrayList<>();
 
     private int tick = 0;
-    private MyBlock 上一tick挖掘的一个硬砖 = null;
+    private MyBlock 上一次间隔挖掘的一个硬砖 = null;
     private static final Random random = new Random();
     
     private BlockPos lastPlayerPos = null;
@@ -582,7 +590,7 @@ public class Deleter extends Module {
         int blockY = pos.getY();
         int relativeHeight = blockY - referenceY;
         
-        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get() && relativeHeight != standHeight.get();
+        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get() && relativeHeight != 排除高度.get();
     }
 
 
@@ -777,7 +785,7 @@ public class Deleter extends Module {
         }
     }
     private void scanBlocks() {
-        Vec3d centerPos = mc.player.getPos();
+        Vec3d centerPos = MyUtils.getPlayerEyePos(mc.player);
         double radius = getHandDistance();
 
         int minX = (int) (Math.floor(centerPos.x - radius )+ 0.01);
@@ -798,16 +806,31 @@ public class Deleter extends Module {
                     Block scanBlock = scanState.getBlock();
                     if (!允许存入挖掘表(scanBlock))  continue;
 
-                   
                     if (
                         MeshMine.get()
                     ) {
                         boolean hasNeighbourInBlocks = false;
-                        for (Vec3i offset : faceNeighbours) {
+                        outer: for (Vec3i offset : faceNeighbours) {
                             BlockPos neighbour = scanPos.add(offset);
-                            if (表里已经包含(neighbour)) {
-                                hasNeighbourInBlocks = true;
-                                break;
+                            switch (meshMineMode.get()) {
+                                case Cache -> {
+                                    if (表里已经包含(neighbour)) {
+                                        hasNeighbourInBlocks = true;
+                                        break outer;
+                                    }
+                                }
+                                case CacheAndAir -> {
+                                    if (表里已经包含(neighbour) || mc.world.getBlockState(neighbour).isAir()) {
+                                        hasNeighbourInBlocks = true;
+                                        break outer;
+                                    }
+                                }
+                                case CacheAndAirAndFluid -> {
+                                    if (表里已经包含(neighbour) || isAirOrFluid(mc.world.getBlockState(neighbour))) {
+                                        hasNeighbourInBlocks = true;
+                                        break outer;
+                                    }
+                                }
                             }
                         }
                         if (!hasNeighbourInBlocks) {
@@ -896,16 +919,15 @@ public class Deleter extends Module {
                 .findFirst()
                 .orElse(null) : null;
 
-            boolean 挖掘的是同一个硬砖 = 本tick需要挖掘的一个硬砖 != null && 上一tick挖掘的一个硬砖 != null
-                    && 本tick需要挖掘的一个硬砖.blockPos.equals(上一tick挖掘的一个硬砖.blockPos);
+            boolean 挖掘的是同一个硬砖 = 本tick需要挖掘的一个硬砖 != null && 上一次间隔挖掘的一个硬砖 != null
+                    && 本tick需要挖掘的一个硬砖.blockPos.equals(上一次间隔挖掘的一个硬砖.blockPos);
 
-            上一tick挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
-            
-
+                    
             if (tick < totalDelay && !(Attacks == 0 && 挖掘的是同一个硬砖)) {
                 tick++;
                 return;
             }
+            上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             tick = 0;
 
             ToAttackBlocks.stream().limit(Attacks).forEach(MyBlock::mine);
@@ -1087,11 +1109,15 @@ public class Deleter extends Module {
 
 
 
-    public enum 触发模式 {
+    public static enum 触发模式 {
         自动半径全部,
         手动相连同类,
     }
 
 
-
+    public static enum MeshMineMode{
+        Cache,
+        CacheAndAir,
+        CacheAndAirAndFluid,
+    }
 }
