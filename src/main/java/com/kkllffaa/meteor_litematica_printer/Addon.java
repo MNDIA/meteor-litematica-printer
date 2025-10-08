@@ -20,6 +20,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(MyUtils.PlaceSettingsModule);
 		Modules.get().add(MyUtils.InteractSettingsModule);
 		Modules.get().add(new Printer());
+		Modules.get().add(new Deleter());
 		Modules.get().add(new AutoSwarm());
 		Modules.get().add(new AutoFix());
 		Modules.get().add(new AutoRenew());

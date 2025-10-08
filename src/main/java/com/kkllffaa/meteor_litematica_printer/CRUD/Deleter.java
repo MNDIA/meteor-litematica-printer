@@ -6,7 +6,6 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
@@ -16,6 +15,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
 import java.util.ArrayList;
@@ -24,19 +25,16 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Objects;
 
-import org.apache.commons.lang3.NotImplementedException;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.MyUtils.*;
 
 
-public class DeleterRef extends Module {
+public class Deleter extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final SettingGroup sgRender = settings.createGroup("Render");
     private final SettingGroup sgProtection = settings.createGroup("Mining Protection");
-    private final SettingGroup sgCache = settings.createGroup("Cache");
-    private final SettingGroup sgLighting = settings.createGroup("Auto Lighting");
     //region 砖块偏移常量
     private final Set<Vec3i> upperNeighbours = Set.of(
         new Vec3i(0, 1, 0)
@@ -193,7 +191,7 @@ public class DeleterRef extends Module {
         .build()
     );
 
-    private final Setting<Boolean> renderReboundCache = sgCache.add(new BoolSetting.Builder()
+    private final Setting<Boolean> renderReboundCache = sgRender.add(new BoolSetting.Builder()
         .name("render-rebound-cache")
         .description("渲染挖掘后回弹的方块")
         .defaultValue(true)
@@ -216,7 +214,7 @@ public class DeleterRef extends Module {
     //endregion
 
     //region Protection Settings
-    private final Setting<Boolean> 启用流体相邻保护 = sgProtection.add(new BoolSetting.Builder()
+    private final Setting<Boolean> 流体相邻保护 = sgProtection.add(new BoolSetting.Builder()
         .name("enable-fluid-adjacent-protection")
         .description("Enable protection to prevent mining blocks that are adjacent to fluids (water, lava, etc.).")
         .defaultValue(true)
@@ -266,7 +264,7 @@ public class DeleterRef extends Module {
         .build()
     );
 
-    private final Setting<Double> 挖掘回弹时间 = sgCache.add(new DoubleSetting.Builder()
+    private final Setting<Double> 挖掘回弹时间 = sgProtection.add(new DoubleSetting.Builder()
         .name("mining-rebound-time")
         .description("Duration in seconds to keep mined positions in cache for rebound protection.")
         .defaultValue(2)
@@ -482,6 +480,9 @@ public class DeleterRef extends Module {
     );
     //endregion
 
+
+
+    
     private final Pool<MyBlock> blockPool = new Pool<>(MyBlock::new);
     //存储将要挖掘，挖掘中，挖掘超时，挖掘完毕(延迟未完成)，挖掘完毕延迟后回弹的方块，
     //不存储挖掘取消，挖掘完毕(延迟后不回弹)的方块
@@ -490,23 +491,258 @@ public class DeleterRef extends Module {
     private final List<BlockPos> foundBlockPos = new ArrayList<>();
 
     private int tick = 0;
-    private final Random random = new Random();
+    private MyBlock 上一tick挖掘的一个硬砖 = null;
+    private static final Random random = new Random();
+    
+    private BlockPos lastPlayerPos = null;
+    private int continuousScanTimer = 0;
 
-    public DeleterRef() {
+    public Deleter() {
         super(Addon.CRUDCATEGORY, "block-deleter", "Deletes all nearby blocks with this type");
     }
 
-    private boolean isOutOfDistance(BlockPos Pos) {
-        double handDistance =  distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
-        return MyUtils.getDistanceToPlayerEyes(Pos) > handDistance;
+    private double getHandDistance() {
+        return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
     }
 
+    private boolean isOutOfDistance(BlockPos Pos) {
+        return MyUtils.getDistanceToPlayerEyes(Pos) > getHandDistance();
+    }
+    private boolean isAirOrFluid(BlockState state) {
+        return state.isAir() || !state.getFluidState().isEmpty();
+    }
+
+    private boolean isProtectedPosition(BlockPos pos) {
+        if ((groundProtection.get() && !mc.player.isOnGround())
+        ||(widthProtection.get() && !isWithinWidthRange(pos))
+        ||(heightProtection.get() && !isWithinHeightRange(pos))
+        ||(regionProtection.get() && !isWithinRegion(pos))
+        ||(directionalProtection.get() && !isWithinDirectionalRange(pos))
+        ) {
+            return true;
+        }
+
+        if (流体相邻保护.get()) {
+            for (Vec3i neighbourOffset : faceNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (!neighbourState.getFluidState().isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        
+        if (自定义相邻保护.get()) {
+            for (Vec3i neighbourOffset : upperNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (相邻保护上.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+            
+            for (Vec3i neighbourOffset : sideNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (相邻保护侧.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+            
+            for (Vec3i neighbourOffset : lowerNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+
+                if (相邻保护下.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    //region ProtectionChecks
+
+
+    private boolean isWithinHeightRange(BlockPos pos) {
+        int referenceY;
+        
+        if (heightReferenceMode.get() == HeightReferenceMode.Player) {
+            // Use player's Y position as reference
+            referenceY = mc.player.getBlockPos().getY();
+        } else {
+            // Use world coordinates (Y=0 as reference)
+            referenceY = 0;
+        }
+        
+        int blockY = pos.getY();
+        int relativeHeight = blockY - referenceY;
+        
+        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get() && relativeHeight != standHeight.get();
+    }
+
+
+    private boolean isWithinRegion(BlockPos pos) {
+        // Calculate min and max coordinates from the two corner points
+        int minX = Math.min(region1X.get(), region2X.get());
+        int maxX = Math.max(region1X.get(), region2X.get());
+        int minY = Math.min(region1Y.get(), region2Y.get());
+        int maxY = Math.max(region1Y.get(), region2Y.get());
+        int minZ = Math.min(region1Z.get(), region2Z.get());
+        int maxZ = Math.max(region1Z.get(), region2Z.get());
+        
+        // Check if the position is within the region bounds
+        return pos.getX() >= minX && pos.getX() <= maxX &&
+               pos.getY() >= minY && pos.getY() <= maxY &&
+               pos.getZ() >= minZ && pos.getZ() <= maxZ;
+    }
+
+
+
+    private boolean isWithinDirectionalRange(BlockPos pos) {
+        // Get player position and yaw
+        double playerX = mc.player.getX();
+        double playerZ = mc.player.getZ();
+        
+        // Get player's yaw and normalize it to -180 to 180
+        float playerYaw = mc.player.getYaw() % 360;
+        if (playerYaw > 180) playerYaw -= 360;
+        if (playerYaw < -180) playerYaw += 360;
+        
+        // Define the four corners of the block (on the horizontal plane)
+        double[][] corners = {
+            {pos.getX(), pos.getZ()},           // Bottom-left
+            {pos.getX() + 1, pos.getZ()},      // Bottom-right  
+            {pos.getX(), pos.getZ() + 1},      // Top-left
+            {pos.getX() + 1, pos.getZ() + 1}   // Top-right
+        };
+        
+        // Check if all corners are within the directional range
+        for (double[] corner : corners) {
+            // Calculate the direction vector from player to corner
+            double deltaYMath = corner[0] - playerX;
+            double deltaXMath = corner[1] - playerZ;
+            
+            // Skip if corner is at player position (avoid division by zero)
+            if (deltaYMath == 0 && deltaXMath == 0) continue;
+            
+            // Calculate the angle to the corner in degrees (-180 to 180)
+            double angleToCorner = -Math.toDegrees(Math.atan2(deltaYMath, deltaXMath));
+            
+            // Calculate the angle difference
+            double angleDifference = Math.abs(angleToCorner - playerYaw);
+            if (angleDifference > 180) {
+                angleDifference = 360 - angleDifference;
+            }
+            
+            // If any corner is outside the allowed range, reject the block
+            if (angleDifference > directionalAngle.get()) {
+                return false;
+            }
+        }
+        
+        // All corners are within range
+        return true;
+    }
+
+    //region WidthProtection
+    private boolean isWithinWidthRange(BlockPos pos) {
+        if (mc.player == null) return false;
+        
+        // Get player position
+        double playerX = mc.player.getX();
+        double playerZ = mc.player.getZ();
+        
+        // Get player's yaw and normalize it to -180 to 180
+        float playerYaw = mc.player.getYaw() % 360;
+        if (playerYaw > 180) playerYaw -= 360;
+        if (playerYaw < -180) playerYaw += 360;
+        
+        // Classify player's yaw into four main directions (East, South, West, North)
+        Direction primaryDirection = classifyYawToDirection(playerYaw);
+        
+        // Transform block position to player's reference frame
+        int[] playerRefCoords = transformToPlayerReference(pos, playerX, playerZ, primaryDirection);
+        int leftRightPos = playerRefCoords[0]; // Left-right position in player's reference frame
+        
+        // Check if the block is within the specified width range
+        // widthLeft is the leftmost boundary (negative = right side)
+        // widthRight is the rightmost boundary (negative = left side)
+        int minWidth = Math.min(widthLeft.get(), widthRight.get());
+        int maxWidth = Math.max(widthLeft.get(), widthRight.get());
+        
+        return leftRightPos >= minWidth && leftRightPos <= maxWidth;
+    }
+
+    private Direction classifyYawToDirection(float yaw) {
+        // Normalize yaw to 0-360 range
+        yaw = yaw % 360;
+        if (yaw < 0) yaw += 360;
+        
+        // Classify into four directions with 90-degree ranges
+        if (yaw >= 315 || yaw < 45) {
+            return Direction.SOUTH; // 0° (facing negative Z)
+        } else if (yaw >= 45 && yaw < 135) {
+            return Direction.WEST; // 90° (facing negative X) 
+        } else if (yaw >= 135 && yaw < 225) {
+            return Direction.NORTH; // 180° (facing positive Z)
+        } else {
+            return Direction.EAST; // 270° (facing positive X)
+        }
+    }
+
+
+    private int[] transformToPlayerReference(BlockPos blockPos, double playerX, double playerZ, Direction playerFacing) {
+        // Calculate relative position from player to block
+        int relativeX = blockPos.getX() - (int)Math.floor(playerX);
+        int relativeZ = blockPos.getZ() - (int)Math.floor(playerZ);
+        
+        int leftRight, forwardBack;
+        
+        // Transform coordinates based on player's primary facing direction
+        switch (playerFacing) {
+            case SOUTH: // Player facing negative Z (yaw ≈ 0°)
+                leftRight = -relativeX;   // Left = negative X direction
+                forwardBack = -relativeZ; // Forward = negative Z direction
+                break;
+                
+            case WEST: // Player facing negative X (yaw ≈ 90°)  
+                leftRight = -relativeZ;   // Left = negative Z direction
+                forwardBack = relativeX;  // Forward = positive X direction
+                break;
+                
+            case NORTH: // Player facing positive Z (yaw ≈ 180°)
+                leftRight = relativeX;    // Left = positive X direction  
+                forwardBack = relativeZ;  // Forward = positive Z direction
+                break;
+                
+            case EAST: // Player facing positive X (yaw ≈ 270°)
+                leftRight = relativeZ;    // Left = positive Z direction
+                forwardBack = -relativeX; // Forward = negative X direction
+                break;
+                
+            default:
+                leftRight = 0;
+                forwardBack = 0;
+                break;
+        }
+        
+        return new int[]{leftRight, forwardBack};
+    }
+
+    //endregion
+
+    //endregion
+
     private boolean 允许存入挖掘表(BlockPos pos){
-        if (isOutOfDistance(pos)) return false;
-        throw new NotImplementedException();
+        return !isOutOfDistance(pos) && !isProtectedPosition(pos);
     }
     private boolean 允许存入挖掘表(BlockState state){
-        throw new NotImplementedException();
+        return !isAirOrFluid(state);
     }
     private boolean 允许存入挖掘表(Block block){
         if (BlockListMode.get() == ListMode.Whitelist && !whiteListBlocks.get().contains(block))
@@ -527,11 +763,67 @@ public class DeleterRef extends Module {
     }
 
 
+    private void 自动半径加入挖掘表() {
+        if ( TriggerMode.get() != 触发模式.自动半径全部) return;
+        BlockPos currentPlayerPos = mc.player.getBlockPos();
+        
+        boolean playerMoved = lastPlayerPos == null || !lastPlayerPos.equals(currentPlayerPos);
+        continuousScanTimer++;
+        
+        if (playerMoved || continuousScanTimer > 10) {
+            lastPlayerPos = currentPlayerPos.toImmutable();
+            continuousScanTimer = 0;
+            scanBlocks();
+        }
+    }
+    private void scanBlocks() {
+        Vec3d centerPos = mc.player.getPos();
+        double radius = getHandDistance();
+
+        int minX = (int) (Math.floor(centerPos.x - radius )+ 0.01);
+        int maxX = (int) (Math.floor(centerPos.x + radius )+ 0.01);
+        int minY = (int) (Math.floor(centerPos.y - radius )+ 0.01);
+        int maxY = (int) (Math.floor(centerPos.y + radius )+ 0.01);
+        int minZ = (int) (Math.floor(centerPos.z - radius )+ 0.01);
+        int maxZ = (int) (Math.floor(centerPos.z + radius )+ 0.01);
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    BlockPos scanPos = new BlockPos(x, y, z);
+                    
+                    if (!允许存入挖掘表(scanPos))  continue;
+                    BlockState scanState = mc.world.getBlockState(scanPos);
+                    if (!允许存入挖掘表(scanState))  continue;
+                    Block scanBlock = scanState.getBlock();
+                    if (!允许存入挖掘表(scanBlock))  continue;
+
+                   
+                    if (
+                        MeshMine.get()
+                    ) {
+                        boolean hasNeighbourInBlocks = false;
+                        for (Vec3i offset : faceNeighbours) {
+                            BlockPos neighbour = scanPos.add(offset);
+                            if (表里已经包含(neighbour)) {
+                                hasNeighbourInBlocks = true;
+                                break;
+                            }
+                        }
+                        if (!hasNeighbourInBlocks) {
+                            TryBlocksAdd(scanPos, scanBlock);
+                        }
+                    } else {
+                        TryBlocksAdd(scanPos, scanBlock);
+                    }
+                }
+            }
+        }
+    }
 
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
-        if (!isActive()) return;
-        if (TriggerMode.get() != 触发模式.手动相连同类) return;
+        if (!isActive() || TriggerMode.get() != 触发模式.手动相连同类) return;
 
         BlockPos pos = event.blockPos;
         if (!允许存入挖掘表(pos)) return;
@@ -572,6 +864,8 @@ public class DeleterRef extends Module {
     private void onTick(TickEvent.Pre event) {
         if (!isActive()) return;
 
+        自动半径加入挖掘表();
+
         blocks.forEach(MyBlock::UpdateState);
         blocks.removeIf(block -> {
             if (block.shouldRemove()) {
@@ -586,30 +880,38 @@ public class DeleterRef extends Module {
             int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
             int totalDelay = delay.get() + randomDelay;
             
-            if (tick < totalDelay) {
+            
+            List<MyBlock> FliterBlocks = blocks.stream()
+            .filter(b -> b.state == MyBlock.State.ToMine || b.state == MyBlock.State.Mining)
+            .toList();
+            
+            List<MyBlock> ToAttackBlocks = FliterBlocks.stream()
+            .filter(b -> b.state == MyBlock.State.ToMine && BlockUtils.canInstaBreak(b.blockPos))
+            .toList();
+            
+            int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
+            
+            MyBlock 本tick需要挖掘的一个硬砖 = Attacks < maxBlocksPerTick.get() ? FliterBlocks.stream()
+                .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
+                .findFirst()
+                .orElse(null) : null;
+
+            boolean 挖掘的是同一个硬砖 = 本tick需要挖掘的一个硬砖 != null && 上一tick挖掘的一个硬砖 != null
+                    && 本tick需要挖掘的一个硬砖.blockPos.equals(上一tick挖掘的一个硬砖.blockPos);
+
+            上一tick挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
+            
+
+            if (tick < totalDelay && !(Attacks == 0 && 挖掘的是同一个硬砖)) {
                 tick++;
                 return;
             }
             tick = 0;
 
-            int count = 0;
-            for (MyBlock block : blocks) {
-                if (count >= maxBlocksPerTick.get()) break;
-
-                if (block.state != MyBlock.State.ToMine && block.state != MyBlock.State.Mining) continue;
-
-                if (BlockUtils.canInstaBreak(block.blockPos)) {
-                    if (block.state == MyBlock.State.ToMine) {
-                        block.mine();
-                        count++;
-                    }
-                } else {
-                    block.mine();
-                    break;
-                }
-
+            ToAttackBlocks.stream().limit(Attacks).forEach(MyBlock::mine);
+            if (本tick需要挖掘的一个硬砖 != null) {
+                本tick需要挖掘的一个硬砖.mine();
             }
-            
         }
 
     }
@@ -638,7 +940,7 @@ public class DeleterRef extends Module {
             state = calculateState();
         }
         private State calculateState() {
-            if (!允许存入挖掘表(blockPos)) {
+            if (!允许存入挖掘表(blockPos) || !允许存入挖掘表(originalBlock)) {
                 return State.Canceled;
             }
 
