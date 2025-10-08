@@ -20,12 +20,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
-import static com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
-
 import java.util.List;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.MeteorCopy;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
 
 
@@ -110,15 +109,16 @@ public class InteractSettings extends Module {
          if (!enableInteraction.get()) {
             return 0;
         }
-        Direction face = switch (safetyInteractFaceMode.get()) {
-            case SafetyFaceMode.None -> Direction.UP; // Default face when no safety is applied
-            default -> getASafetyFaceOrNull(pos,safetyInteractFaceMode.get() );
+        Direction SafeFace = switch (safetyInteractFaceMode.get()) {
+            case SafetyFaceMode.None -> Direction.UP;
+			case SafetyFaceMode.PlayerRotation -> MeteorCopy.getDirection(pos);
+            case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getTheSafetyPositionFaceOrNull(pos);
         };
-        if (face == null) {
+        if (SafeFace == null) {
             return 0;
         }
 
-        if (onlyInteractOnLook.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(pos, face)) {
+        if (onlyInteractOnLook.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(pos, SafeFace)) {
             return 0;
         }
 		
@@ -134,7 +134,7 @@ public class InteractSettings extends Module {
 
         Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         for (int i = 0; i < count; i++) {
-		    BlockHitResult blockHitResult = new BlockHitResult(hitPos, face, pos, false);
+		    BlockHitResult blockHitResult = new BlockHitResult(hitPos, SafeFace, pos, false);
 		    ActionResult result = interactionManager.interactBlock(player, Hand.MAIN_HAND, blockHitResult);
 		    if (!result.isAccepted()) {
                 warning("Interaction not accepted at " + pos + ", result: " + result);
@@ -205,43 +205,4 @@ public class InteractSettings extends Module {
 		return 0; // 未知类型或不可交互类型
 	}
 
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
 }

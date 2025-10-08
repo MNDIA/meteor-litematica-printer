@@ -1049,43 +1049,41 @@ public class Deleter extends Module {
         }
 
         public void render(Render3DEvent event) {
+            ColorScheme color = null;
             switch (state){
                 case ToMine ->{
                     if(renderToMine.get()){
-                        var color = ColorScheme.红;
-                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                        color = ColorScheme.红;
                     }
                 }
                 case Mining ->{
                     if(renderMining.get()){
-                        var color = ColorScheme.蓝;
-                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                        color = ColorScheme.蓝;
                     }
                 }
                 case TimeOut ->{
                     if(renderTimeOut.get()){
-                        var color = ColorScheme.黄;
-                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                        color = ColorScheme.黄;
                     }
                 }
                 case MinedMayRebound ->{
                     if(renderMined.get()){
-                        var color = ColorScheme.紫;
-                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                        color = ColorScheme.紫;
                     }
                 }
                 case Rebound ->{
                     if(renderReboundCache.get()){
-                        var color = ColorScheme.绿;
-                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                        color = ColorScheme.绿;
                     }
                 }
                 case Canceled, MinedEndWithoutRebound ->{
                     if(renderCanceledOrMinedEndWithoutRebound.get()){
-                        var color = ColorScheme.青;
-                        MyUtils.renderPos(event, blockPos, shapeMode.get(), color.sideColor, color.lineColor);
+                        color = ColorScheme.青;
                     }
                 }
+            }
+            if (color != null){
+                MyUtils.renderPos(event, blockPos, shapeMode.get(), color);
             }
         }
 

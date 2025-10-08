@@ -2,15 +2,32 @@ package com.kkllffaa.meteor_litematica_printer.Functions;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
+import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.NotNull;
+
+
+import static com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import meteordevelopment.meteorclient.utils.Utils;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.LightType;
+import net.minecraft.world.RaycastContext;
+
 
 public class BlockPosUtils {
+	
+    public static int getLightLevel(BlockPos pos) {
+        if (mc.world == null) return 15;
+        return mc.world.getLightLevel(LightType.BLOCK, pos);
+    }
 
-
+	//region 距离计算
     public static int getManhattanDistance(Vec3i pos1, Vec3i pos2) {
         return Math.abs(pos1.getX() - pos2.getX()) + 
                Math.abs(pos1.getY() - pos2.getY()) + 
@@ -28,7 +45,9 @@ public class BlockPosUtils {
 				pos.getY() + 0.5,
 				pos.getZ() + 0.5);
 	}
+	// endregion
 
+	//region 玩家角度对准方块的面
     //region 方块锚点到方块面(四顶点)的偏移常量Vec3d[4]
     private static final Vec3d[] FACE_OFFSETS_UP = {
     		new Vec3d(0, 1, 0),
@@ -73,7 +92,6 @@ public class BlockPosUtils {
 	};
 	//endregion
 
-    // 玩家角度对准方块的面
     public static boolean isPlayerYawPitchInTheFaceOfBlock(Vec3i blockPos, Direction direction) {
     
     	ClientPlayerEntity player = mc.player;
@@ -116,6 +134,120 @@ public class BlockPosUtils {
     
     	return yawInRange && pitchInRange;
     }
+	// endregion
+
+	//region 方块穿墙可见性判断功能
+	//region 方块锚点到方块面四顶点的偏移常量Vec3d[4]，稍微外扩0.05
+	private static final Vec3d[] FACE_OFFSETS_UP_OUT = {
+			new Vec3d(0.05, 1.05, 0.05),
+			new Vec3d(0.95, 1.05, 0.05),
+			new Vec3d(0.95, 1.05, 0.95),
+			new Vec3d(0.05, 1.05, 0.95)
+	};
+
+	private static final Vec3d[] FACE_OFFSETS_DOWN_OUT = {
+			new Vec3d(0.05, -0.05, 0.05),
+			new Vec3d(0.95, -0.05, 0.05),
+			new Vec3d(0.95, -0.05, 0.95),
+			new Vec3d(0.05, -0.05, 0.95)
+	};
+
+	private static final Vec3d[] FACE_OFFSETS_NORTH_OUT = {
+			new Vec3d(0.05, 0.05, -0.05),
+			new Vec3d(0.95, 0.05, -0.05),
+			new Vec3d(0.95, 0.95, -0.05),
+			new Vec3d(0.05, 0.95, -0.05)
+	};
+
+	private static final Vec3d[] FACE_OFFSETS_SOUTH_OUT = {
+			new Vec3d(0.05, 0.05, 1.05),
+			new Vec3d(0.95, 0.05, 1.05),
+			new Vec3d(0.95, 0.95, 1.05),
+			new Vec3d(0.05, 0.95, 1.05)
+	};
+
+	private static final Vec3d[] FACE_OFFSETS_EAST_OUT = {
+			new Vec3d(1.05, 0.05, 0.05),
+			new Vec3d(1.05, 0.05, 0.95),
+			new Vec3d(1.05, 0.95, 0.95),
+			new Vec3d(1.05, 0.95, 0.05)
+	};
+
+	private static final Vec3d[] FACE_OFFSETS_WEST_OUT = {
+			new Vec3d(-0.05, 0.05, 0.05),
+			new Vec3d(-0.05, 0.05, 0.95),
+			new Vec3d(-0.05, 0.95, 0.95),
+			new Vec3d(-0.05, 0.95, 0.05)
+	};
+	//endregion
+	
+	//两点之间没有遮挡
+	private static boolean isLineOfSightClear(Vec3d start, Vec3d end) {
+		if (mc.world == null) return false;
+		RaycastContext context = new RaycastContext(start, end, RaycastContext.ShapeType.COLLIDER,
+				RaycastContext.FluidHandling.NONE, mc.player);
+		BlockHitResult result = mc.world.raycast(context);
+		return result.getType() == HitResult.Type.MISS;
+	}
+
+	// 方块的面可见(不穿墙)
+	public static boolean isTheOutFaceVisibleOfBlock(Vec3i blockPos, Direction direction) {
+		if (mc.player == null) return false;
+		Vec3d playerEye = MyUtils.getPlayerEye(mc.player);
+
+		Vec3d[] offsets = switch (direction) {
+			case UP -> FACE_OFFSETS_UP_OUT;
+			case DOWN -> FACE_OFFSETS_DOWN_OUT;
+			case NORTH -> FACE_OFFSETS_NORTH_OUT;
+			case SOUTH -> FACE_OFFSETS_SOUTH_OUT;
+			case EAST -> FACE_OFFSETS_EAST_OUT;
+			case WEST -> FACE_OFFSETS_WEST_OUT;
+		};
+
+		for (Vec3d offset : offsets) {
+			Vec3d point = new Vec3d(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
+			if (isLineOfSightClear(playerEye, point)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// 点可见(不穿墙)
+	public static boolean isPointVisible(Vec3d point) {
+		if (mc.player == null) return false;
+		Vec3d playerEye = MyUtils.getPlayerEye(mc.player);
+		return isLineOfSightClear(playerEye, point);
+	}
+	// endregion
+
+
+	// 依据保护规则选择仅一个合适的面
+	public static @Nullable Direction getTheSafetyPositionFaceOrNull(@NotNull Vec3i pos) {
+		if (mc.player == null)
+			return null;
+		Vec3d eyePos = getPlayerEye(mc.player);
+
+		Vec3d blockCenter = Vec3d.ofCenter(pos);
+
+		Vec3d direction = blockCenter.subtract(eyePos);
+
+		double absX = Math.abs(direction.x);
+		double absY = Math.abs(direction.y);
+		double absZ = Math.abs(direction.z);
+
+		// Find which component is largest - this determines which face the ray hits
+		if (absX >= absY && absX >= absZ) {
+			// Ray hits either EAST or WEST face
+			return direction.x > 0 ? Direction.WEST : Direction.EAST;
+		} else if (absY >= absX && absY >= absZ) {
+			// Ray hits either UP or DOWN face
+			return direction.y > 0 ? Direction.DOWN : Direction.UP;
+		} else {
+			// Ray hits either SOUTH or NORTH face
+			return direction.z > 0 ? Direction.NORTH : Direction.SOUTH;
+		}
+	}
 
 
 }

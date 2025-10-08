@@ -7,20 +7,15 @@ import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket;
 import net.minecraft.state.property.Properties;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationPropertyHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.LightType;
-import net.minecraft.world.RaycastContext;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 import java.util.function.Supplier;
@@ -38,85 +33,20 @@ public class MyUtils {
 	public static InteractSettings InteractSettingsModule = new InteractSettings();
 
 
-	
-
-	//region 方块锚点到方块面四顶点的偏移常量Vec3d[4]，稍微外扩0.05
-	private static final Vec3d[] FACE_OFFSETS_UP_OUT = {
-			new Vec3d(0.05, 1.05, 0.05),
-			new Vec3d(0.95, 1.05, 0.05),
-			new Vec3d(0.95, 1.05, 0.95),
-			new Vec3d(0.05, 1.05, 0.95)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_DOWN_OUT = {
-			new Vec3d(0.05, -0.05, 0.05),
-			new Vec3d(0.95, -0.05, 0.05),
-			new Vec3d(0.95, -0.05, 0.95),
-			new Vec3d(0.05, -0.05, 0.95)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_NORTH_OUT = {
-			new Vec3d(0.05, 0.05, -0.05),
-			new Vec3d(0.95, 0.05, -0.05),
-			new Vec3d(0.95, 0.95, -0.05),
-			new Vec3d(0.05, 0.95, -0.05)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_SOUTH_OUT = {
-			new Vec3d(0.05, 0.05, 1.05),
-			new Vec3d(0.95, 0.05, 1.05),
-			new Vec3d(0.95, 0.95, 1.05),
-			new Vec3d(0.05, 0.95, 1.05)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_EAST_OUT = {
-			new Vec3d(1.05, 0.05, 0.05),
-			new Vec3d(1.05, 0.05, 0.95),
-			new Vec3d(1.05, 0.95, 0.95),
-			new Vec3d(1.05, 0.95, 0.05)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_WEST_OUT = {
-			new Vec3d(-0.05, 0.05, 0.05),
-			new Vec3d(-0.05, 0.05, 0.95),
-			new Vec3d(-0.05, 0.95, 0.95),
-			new Vec3d(-0.05, 0.95, 0.05)
-	};
-	//endregion
-
-	// 方块的面不穿墙
-	public static boolean isAFaceOutVisibleOfBlock(BlockPos blockPos, Direction direction) {
-		ClientPlayerEntity player = mc.player;
-		if (player == null)
-			return false;
-		Vec3d[] offsets = switch (direction) {
-			case UP -> FACE_OFFSETS_UP_OUT;
-			case DOWN -> FACE_OFFSETS_DOWN_OUT;
-			case NORTH -> FACE_OFFSETS_NORTH_OUT;
-			case SOUTH -> FACE_OFFSETS_SOUTH_OUT;
-			case EAST -> FACE_OFFSETS_EAST_OUT;
-			case WEST -> FACE_OFFSETS_WEST_OUT;
-		};
-
-		Vec3d playerEye = getPlayerEye(player);
-		for (Vec3d offset : offsets) {
-			Vec3d point = new Vec3d(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
-			if (isLineOfSightClear(playerEye, point)) {
-				return true;
-			}
+	//yaw转换四方向
+	private static @NotNull Direction ConvertToDirectionFromYaw(float yaw) {
+		yaw = Rotation.normalizeYaw(yaw);
+		if ((yaw >= 45 && yaw < 135)) {
+			return Direction.WEST;
+		} else if ((yaw >= -45 && yaw < 45)) {
+			return Direction.SOUTH;
+		} else if ((yaw >= -135 && yaw < -45)) {
+			return Direction.EAST;
+		} else {
+			return Direction.NORTH;
 		}
-		return false;
 	}
-
-	// 点不穿墙
-	public static boolean isPointVisible(Vec3d point) {
-		ClientPlayerEntity player = mc.player;
-		if (player == null)
-			return false;
-		Vec3d playerEye = getPlayerEye(player);
-		return isLineOfSightClear(playerEye, point);
-	}
-
+	
 	// 获取玩家参考系下的相对方向
 	public static @Nullable Direction getLeftDirectionFromPlayer(@NotNull Direction playerDirection) {
 		return switch (playerDirection) {
@@ -129,7 +59,7 @@ public class MyUtils {
 				if (player == null) {
 					yield null;
 				} else {
-					Direction horizontal = getHorizontalDirectionFromYaw(player.getYaw());
+					Direction horizontal = ConvertToDirectionFromYaw(player.getYaw());
 					yield getLeftDirectionFromPlayer(horizontal);
 				}
 			}
@@ -144,7 +74,7 @@ public class MyUtils {
 		ClientPlayerEntity player = mc.player;
 		if (player == null)
 			return null;
-		Direction horizontal = getHorizontalDirectionFromYaw(player.getYaw());
+		Direction horizontal = ConvertToDirectionFromYaw(player.getYaw());
 
 		if (playerDirection == Direction.UP) {
 			return horizontal.getOpposite();
@@ -155,7 +85,21 @@ public class MyUtils {
 		throw new IllegalArgumentException("Unexpected direction: " + playerDirection);
 	}
 
-	//获取方块的一个可区分标志方向
+
+
+	//铁轨属性转换标志方向
+	private static @Nullable Direction ConvertToDirection(net.minecraft.block.enums.RailShape shape) {
+		return switch (shape) {
+			case NORTH_SOUTH -> Direction.SOUTH;
+			case EAST_WEST -> Direction.EAST;
+			case ASCENDING_EAST -> Direction.EAST;
+			case ASCENDING_WEST -> Direction.EAST;
+			case ASCENDING_NORTH -> Direction.SOUTH;
+			case ASCENDING_SOUTH -> Direction.SOUTH;
+			default -> null; // For corner rails
+		};
+	}
+	//获取方块状态的一个可区分标志方向
 	public static @Nullable Direction getATagFaceOf(@NotNull BlockState state) {
 		if (state.contains(Properties.FACING))
 			return state.get(Properties.FACING);
@@ -168,7 +112,7 @@ public class MyUtils {
 		else if (state.contains(Properties.HORIZONTAL_AXIS))
 			return Direction.from(state.get(Properties.HORIZONTAL_AXIS), Direction.AxisDirection.POSITIVE);
 		else if (state.contains(Properties.STRAIGHT_RAIL_SHAPE))
-			return railShapeToDirection(state.get(Properties.STRAIGHT_RAIL_SHAPE));
+			return ConvertToDirection(state.get(Properties.STRAIGHT_RAIL_SHAPE));
 		else if (state.contains(Properties.VERTICAL_DIRECTION))
 			return state.get(Properties.VERTICAL_DIRECTION);
 		else if (state.contains(Properties.ROTATION))
@@ -180,57 +124,10 @@ public class MyUtils {
 		
 	}
 
-    // Meteor原始方法
-    private static Direction getDirection(BlockPos pos) {
-        Vec3d eyesPos = new Vec3d(mc.player.getX(), mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), mc.player.getZ());
-        if ((double) pos.getY() > eyesPos.y) {
-            if (mc.world.getBlockState(pos.add(0, -1, 0)).isReplaceable()) return Direction.DOWN;
-            else return mc.player.getHorizontalFacing().getOpposite();
-        }
-        if (!mc.world.getBlockState(pos.add(0, 1, 0)).isReplaceable()) return mc.player.getHorizontalFacing().getOpposite();
-        return Direction.UP;
-    }
-	// 不支持使用None 依据保护规则选择仅一个合适的面
-	public static @Nullable Direction getASafetyFaceOrNull(@NotNull BlockPos pos,
-			@NotNull SafetyFaceMode directionMode) {
-		return switch (directionMode) {
-			case PlayerRotation -> getDirection(pos);
-			case PlayerPosition -> {
-				ClientPlayerEntity player = mc.player;
-				if (player == null)
-					yield null;
-				// Get player eye position
-				Vec3d eyePos = getPlayerEye(player);
 
-				// Get block center position
-				Vec3d blockCenter = new Vec3d(
-						pos.getX() + 0.5,
-						pos.getY() + 0.5,
-						pos.getZ() + 0.5);
 
-				// Calculate direction vector from eye to block center
-				Vec3d direction = blockCenter.subtract(eyePos);
 
-				// Get absolute values of direction components
-				double absX = Math.abs(direction.x);
-				double absY = Math.abs(direction.y);
-				double absZ = Math.abs(direction.z);
 
-				// Find which component is largest - this determines which face the ray hits
-				if (absX >= absY && absX >= absZ) {
-					// Ray hits either EAST or WEST face
-					yield direction.x > 0 ? Direction.WEST : Direction.EAST;
-				} else if (absY >= absX && absY >= absZ) {
-					// Ray hits either UP or DOWN face
-					yield direction.y > 0 ? Direction.DOWN : Direction.UP;
-				} else {
-					// Ray hits either SOUTH or NORTH face
-					yield direction.z > 0 ? Direction.NORTH : Direction.SOUTH;
-				}
-			}
-			default -> null;
-		};
-	}
 
 
 	public static boolean isBlockShapeFullCube(BlockState state) {
@@ -246,9 +143,7 @@ public class MyUtils {
 		return new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()), player.getZ());
 	}
 
-
-
-    public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, SettingColor sideColorToUse, SettingColor lineColorToUse) {
+    public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, ColorScheme colorScheme) {
             VoxelShape shape = mc.world.getBlockState(blockPos).getOutlineShape(mc.world, blockPos);
             double x1;
             double y1;
@@ -271,76 +166,11 @@ public class MyUtils {
 				y2 = blockPos.getY() + 1;
 				z2 = blockPos.getZ() + 1;
 			}
-            event.renderer.box(x1, y1, z1, x2, y2, z2, sideColorToUse, lineColorToUse, shapeMode, 0);
+            event.renderer.box(x1, y1, z1, x2, y2, z2, colorScheme.sideColor, colorScheme.lineColor, shapeMode, 0);
     }
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
- 	//两点之间没有遮挡
-	private static boolean isLineOfSightClear(Vec3d start, Vec3d end) {
-		if (mc.world == null)
-			return false;
-		RaycastContext context = new RaycastContext(start, end, RaycastContext.ShapeType.COLLIDER,
-				RaycastContext.FluidHandling.NONE, mc.player);
-		BlockHitResult result = mc.world.raycast(context);
-		return result.getType() == HitResult.Type.MISS;
-	}
-	//yaw转换四方向
-	private static @NotNull Direction getHorizontalDirectionFromYaw(float yaw) {
-		yaw = Rotation.normalizeYaw(yaw);
-		if ((yaw >= 45 && yaw < 135)) {
-			return Direction.WEST;
-		} else if ((yaw >= -45 && yaw < 45)) {
-			return Direction.SOUTH;
-		} else if ((yaw >= -135 && yaw < -45)) {
-			return Direction.EAST;
-		} else {
-			return Direction.NORTH;
-		}
-	}
-	//铁轨属性转换标志方向
-	private static @Nullable Direction railShapeToDirection(net.minecraft.block.enums.RailShape shape) {
-		return switch (shape) {
-			case NORTH_SOUTH -> Direction.SOUTH;
-			case EAST_WEST -> Direction.EAST;
-			case ASCENDING_EAST -> Direction.EAST;
-			case ASCENDING_WEST -> Direction.EAST;
-			case ASCENDING_NORTH -> Direction.SOUTH;
-			case ASCENDING_SOUTH -> Direction.SOUTH;
-			default -> null; // For corner rails
-		};
-	}
-
-	private static int usedSlot = -1;
-	
-	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
-		return InteractSettingsModule.calculateRequiredInteractions(targetState, pos);
-	}
-	public int interactWithBlock(BlockPos pos, int count) {
-		return InteractSettingsModule.interactWithBlock(pos, count);
-	}
-
-	public static boolean placeBlock(BlockState required, BlockPos pos) {
-		return PlaceSettingsModule.placeBlock(required, pos);
-	}
-    
-    public static int getLightLevel(BlockPos pos) {
-		ClientWorld world = mc.world;
-        if (world == null) return 15;
-        return world.getLightLevel(LightType.BLOCK, pos);
-    }
 	public static enum SafetyFaceMode {
 		PlayerRotation,
 		PlayerPosition, // 射线方向
@@ -389,6 +219,7 @@ public class MyUtils {
         }
     }
 
+	private static int usedSlot = -1;
 	public static boolean switchItem(Item item, BlockState state, boolean returnHand, Supplier<Boolean> action) {
 		if (mc.player == null)
 			return false;
@@ -467,6 +298,18 @@ public class MyUtils {
 			return true;
 		} else
 			return false;
+	}
+
+	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
+		return InteractSettingsModule.calculateRequiredInteractions(targetState, pos);
+	}
+
+	public int interactWithBlock(BlockPos pos, int count) {
+		return InteractSettingsModule.interactWithBlock(pos, count);
+	}
+
+	public static boolean placeBlock(BlockState required, BlockPos pos) {
+		return PlaceSettingsModule.placeBlock(required, pos);
 	}
 
 }

@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MathUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.MeteorCopy;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.Rotation;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
@@ -684,17 +685,22 @@ public class PlaceSettings extends Module {
 			}
 
 			// 筛出不安全的面
-			if (safetyPlaceFaceMode.get() != SafetyFaceMode.None
-					&& face != getASafetyFaceOrNull(neighbour, safetyPlaceFaceMode.get())) {
-				continue;
+			SafetyFaceMode safetyPlaceFaceModeValue = safetyPlaceFaceMode.get();
+			if (safetyPlaceFaceModeValue != SafetyFaceMode.None) {
+				Direction SafeFace = switch (safetyPlaceFaceModeValue) {
+					case SafetyFaceMode.PlayerRotation -> MeteorCopy.getDirection(pos);
+					case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getTheSafetyPositionFaceOrNull(pos);
+					case SafetyFaceMode.None -> null;//dead code
+				};
+				if (face != SafeFace) continue;
 			}
 			if (!placeThroughWall.get()) {
 				if (airPlace.get()) {
-					if (!isPointVisible(hitPos)) {
+					if (!BlockPosUtils.isPointVisible(Vec3d.ofCenter(pos))) {
 						continue;
 					}
 				} else {
-					if (!isAFaceOutVisibleOfBlock(neighbour, face)) {
+					if (!BlockPosUtils.isTheOutFaceVisibleOfBlock(neighbour, face)) {
 						continue;
 					}
 				}
