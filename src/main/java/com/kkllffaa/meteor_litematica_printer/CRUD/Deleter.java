@@ -516,7 +516,7 @@ public class Deleter extends Module {
     }
 
     private boolean isOutOfDistance(BlockPos Pos) {
-        return MyUtils.getDistanceToPlayerEyes(Pos) > getHandDistance();
+        return BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(Pos) > getHandDistance();
     }
     private boolean isAirOrFluid(BlockState state) {
         return state.isAir() || !state.getFluidState().isEmpty();

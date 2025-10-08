@@ -1,6 +1,5 @@
 package com.kkllffaa.meteor_litematica_printer.Functions;
 
-import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
@@ -335,17 +334,6 @@ public class MyUtils {
 	public static @NotNull Vec3d getPlayerEyePos(@NotNull ClientPlayerEntity player) {
 		return new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()), player.getZ());
 	}
-
-	public static double getDistanceToPlayerEyes(BlockPos pos) {
-        return  Utils.distance(
-            mc.player.getX(), 
-            mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()), 
-            mc.player.getZ(), 
-            pos.getX() + 0.5, 
-            pos.getY() + 0.5, 
-            pos.getZ() + 0.5
-        );
-    }
 
 	public static boolean isMultiStructurePlacementAllowed(BlockState required) {
 		if (required.contains(Properties.BED_PART)) {
