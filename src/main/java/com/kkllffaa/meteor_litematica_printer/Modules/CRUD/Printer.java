@@ -63,10 +63,10 @@ public class Printer extends Module {
 			.build()
 	);
 
-	private final Setting<Integer> bpt = sgGeneral.add(new IntSetting.Builder()
+	private final Setting<Integer> blocksPerTick = sgGeneral.add(new IntSetting.Builder()
 			.name("blocks/tick")
 			.description("How many blocks place per tick.")
-			.defaultValue(1)
+			.defaultValue(3)
 			.min(1).sliderMin(1)
 			.max(100).sliderMax(100)
 			.build()
@@ -278,12 +278,12 @@ public class Printer extends Module {
 				int placed = 0;
 				
 				Iterator<Map.Entry<BlockPos, Integer>> iterator = pendingInteractions.entrySet().iterator();
-				while (iterator.hasNext() && placed < bpt.get()) {
+				while (iterator.hasNext() && placed < blocksPerTick.get()) {
 					Map.Entry<BlockPos, Integer> entry = iterator.next();
 					BlockPos pos = entry.getKey();
 					int remaining = entry.getValue();
 					if (remaining > 0) {
-						int toDo = Math.min(remaining, bpt.get() - placed);
+						int toDo = Math.min(remaining, blocksPerTick.get() - placed);
 						int did = MyUtils.interactWithBlock(pos, toDo);
 						if (did > 0){
 							timer = 0;
@@ -311,7 +311,7 @@ public class Printer extends Module {
 						if (renderBlocks.get()) {
 							placed_fade.add(new Pair<>(fadeTime.get(), new BlockPos(pos)));
 						}
-						if (placed >= bpt.get()) {
+						if (placed >= blocksPerTick.get()) {
 							return;
 						}
 					}
@@ -325,8 +325,8 @@ public class Printer extends Module {
 	@EventHandler
 	private void onRender(Render3DEvent event) {
 		placed_fade.forEach(s -> {
-			Color a = new Color(colour.get().r, colour.get().g, colour.get().b, (int) (((float)s.getLeft() / (float) fadeTime.get()) * colour.get().a));
-			event.renderer.box(s.getRight(), a, null, ShapeMode.Sides, 0);
+			Color color = new Color(colour.get().r, colour.get().g, colour.get().b, (int) (((float)s.getLeft() / (float) fadeTime.get()) * colour.get().a));
+			event.renderer.box(s.getRight(), color, null, ShapeMode.Sides, 0);
 		});
 	}
 
