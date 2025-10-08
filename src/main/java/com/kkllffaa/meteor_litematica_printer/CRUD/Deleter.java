@@ -28,6 +28,7 @@ import java.util.Objects;
 
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 
@@ -310,7 +311,7 @@ public class Deleter extends Module {
     private final Setting<Double> maxDistance = sgProtection.add(new DoubleSetting.Builder()
         .name("max-distance")
         .description("Maximum distance from player to mine blocks.")
-        .defaultValue(4.5)
+        .defaultValue(5.49999)
         .min(1.0)
         .max(1024.0)
         .sliderRange(1.0, 8.0)
@@ -941,13 +942,9 @@ public class Deleter extends Module {
             上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             tick = 0;
 
+            BlockPos playerPos = mc.player.getBlockPos();
             ToAttackBlocks.stream()
-                .sorted(Comparator.comparingDouble(b -> {
-                    BlockPos playerPos = mc.player.getBlockPos();
-                    return Math.abs(b.blockPos.getX() - playerPos.getX()) + 
-                           Math.abs(b.blockPos.getY() - playerPos.getY()) + 
-                           Math.abs(b.blockPos.getZ() - playerPos.getZ());
-                }))
+                .sorted(Comparator.comparingInt(b -> BlockPosUtils.getManhattanDistance(b.blockPos, playerPos)))
                 .limit(Attacks)
                 .forEach(MyBlock::mine);
             if (本tick需要挖掘的一个硬砖 != null) {

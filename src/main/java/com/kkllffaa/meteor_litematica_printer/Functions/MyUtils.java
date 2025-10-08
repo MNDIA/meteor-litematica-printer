@@ -322,11 +322,6 @@ public class MyUtils {
 	}
 
 
-	public static boolean isInRangeOfValue(float subject, float value, float halfRange) {
-		return isInRangeBetweenValues(subject, value - halfRange, value + halfRange);
-	}
-
-
 	public static boolean isBlockShapeFullCube(BlockState state) {
 		try {
 			return Block.isShapeFullCube(state.getCollisionShape(null, null));
@@ -445,7 +440,7 @@ public class MyUtils {
 	}
 
 	//region 数学工具
-	private static boolean isInRangeBetweenValues(float subject, float min, float max) {
+	static boolean isInRangeBetweenValues(float subject, float min, float max) {
 		return subject > min && subject < max;
 	}
 	

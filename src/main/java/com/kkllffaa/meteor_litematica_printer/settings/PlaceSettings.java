@@ -29,6 +29,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.Functions.MathUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.Rotation;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
@@ -817,19 +818,19 @@ public class PlaceSettings extends Module {
 			return null;
 		}
 		float pitch = player.getPitch();
-		if (isInRangeOfValue(pitch, 90, angleRangeForDirectionProtection.get())) {
+		if (MathUtils.isInRangeOfValue(pitch, 90, angleRangeForDirectionProtection.get())) {
 			return Direction.DOWN;
-		} else if (isInRangeOfValue(pitch, -90, angleRangeForDirectionProtection.get())) {
+		} else if (MathUtils.isInRangeOfValue(pitch, -90, angleRangeForDirectionProtection.get())) {
 			return Direction.UP;
-		} else if (isInRangeOfValue(pitch, 0, angleRangeForDirectionProtection.get())) {
+		} else if (MathUtils.isInRangeOfValue(pitch, 0, angleRangeForDirectionProtection.get())) {
 			float yaw = Rotation.normalizeYaw(player.getYaw());
-			if (isInRangeOfValue(yaw, 90, angleRangeForDirectionProtection.get())) {
+			if (MathUtils.isInRangeOfValue(yaw, 90, angleRangeForDirectionProtection.get())) {
 				return Direction.WEST;
-			} else if (isInRangeOfValue(yaw, 0, angleRangeForDirectionProtection.get())) {
+			} else if (MathUtils.isInRangeOfValue(yaw, 0, angleRangeForDirectionProtection.get())) {
 				return Direction.SOUTH;
-			} else if (isInRangeOfValue(yaw, -90, angleRangeForDirectionProtection.get())) {
+			} else if (MathUtils.isInRangeOfValue(yaw, -90, angleRangeForDirectionProtection.get())) {
 				return Direction.EAST;
-			} else if (isInRangeOfValue(yaw, 180, angleRangeForDirectionProtection.get()) || isInRangeOfValue(yaw, -180, angleRangeForDirectionProtection.get())) {
+			} else if (MathUtils.isInRangeOfValue(yaw, 180, angleRangeForDirectionProtection.get()) || MathUtils.isInRangeOfValue(yaw, -180, angleRangeForDirectionProtection.get())) {
 				return Direction.NORTH;
 			} else {
 				return null;
