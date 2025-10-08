@@ -242,8 +242,8 @@ public class Printer extends Module {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
 				if (MyUtils.InteractSettingsModule.enableInteraction.get() && !pendingInteractions.containsKey(pos)) {
-					int requiredInteractions = MyUtils.InteractSettingsModule.calculateRequiredInteractions(required,
-							pos);
+					int requiredInteractions = MyUtils.calculateRequiredInteractions(required,
+							blockState);
 					if (requiredInteractions > 0) {
 						pendingInteractions.put(new BlockPos(pos), requiredInteractions);
 					}
@@ -284,7 +284,7 @@ public class Printer extends Module {
 					int remaining = entry.getValue();
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, bpt.get() - placed);
-						int did = MyUtils.InteractSettingsModule.interactWithBlock(pos, toDo);
+						int did = MyUtils.interactWithBlock(pos, toDo);
 						if (did > 0){
 							timer = 0;
 						}

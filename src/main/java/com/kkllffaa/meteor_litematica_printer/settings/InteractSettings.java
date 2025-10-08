@@ -11,7 +11,6 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -35,12 +34,23 @@ public class InteractSettings extends Module {
 	}
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+
 	public final Setting<Boolean> enableInteraction = sgGeneral.add(new BoolSetting.Builder()
 			.name("enable-interaction")
 			.description("Enable interaction with blocks.")
 			.defaultValue(true)
 			.build());
-            
+
+    private final Setting<Double> maxDistanceToBlockCenter = sgGeneral.add(new DoubleSetting.Builder()
+			.name("max-distance-to-block-center")
+			.description("Maximum distance to the block center.")
+			.defaultValue(5.9)
+			.min(0.0)
+			.max(10.0)
+			.visible(enableInteraction::get)
+			.build());
+
 	private final Setting<SafetyFaceMode> safetyInteractFaceMode = sgGeneral.add(new EnumSetting.Builder<SafetyFaceMode>()
 			.name("safety-interact-face-mode")
 			.description("Only interact with blocks on safe faces.")
@@ -89,24 +99,11 @@ public class InteractSettings extends Module {
 			.visible(enableInteraction::get)
             .build());
 
-	private final Setting<Double> maxDistanceToBlockCenter = sgGeneral.add(new DoubleSetting.Builder()
-			.name("max-distance-to-block-center")
-			.description("Maximum distance to the block center.")
-			.defaultValue(5.9)
-			.min(0.0)
-			.max(10.0)
-			.visible(enableInteraction::get)
-			.build());
-
-
-
-
-
-
+	//todo: 添加穿墙保护
 
 
 	public int interactWithBlock(BlockPos pos, int count) {
-         if (!enableInteraction.get()) {
+        if (!enableInteraction.get()) {
             return 0;
         }
         Direction SafeFace = switch (safetyInteractFaceMode.get()) {
@@ -125,6 +122,7 @@ public class InteractSettings extends Module {
         ClientPlayerEntity player = mc.player;
         ClientPlayerInteractionManager interactionManager = mc.interactionManager;
         if (player == null || interactionManager == null) return 0;
+
 		if (player.isSneaking()){
 			return 0;
 		}
@@ -143,12 +141,8 @@ public class InteractSettings extends Module {
         }
         return count;
 	}
-	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
-        ClientWorld world = mc.world;
-		if (world == null)
-			return 0;
+	public int calculateRequiredInteractions(BlockState targetState, BlockState currentState) {
 
-		BlockState currentState = world.getBlockState(pos);
         Block currentblock = currentState.getBlock();
         if (currentblock != targetState.getBlock()) {
             return 0;
@@ -157,7 +151,7 @@ public class InteractSettings extends Module {
 			return 0;
 		}
 
-		// For note blocks: calculate note difference
+		// 音符盒
 		if (currentblock instanceof NoteBlock) {
 				int currentNote = currentState.get(Properties.NOTE);
 				int targetNote = targetState.get(Properties.NOTE);
@@ -167,7 +161,7 @@ public class InteractSettings extends Module {
 				return diff;
 		}
 
-		// For repeaters: calculate delay difference
+		// 中继器
 		if (currentblock instanceof RepeaterBlock) {
 				int currentDelay = currentState.get(Properties.DELAY);
 				int targetDelay = targetState.get(Properties.DELAY);
@@ -177,26 +171,24 @@ public class InteractSettings extends Module {
 				return diff;
 		}
 
-		// For comparators: calculate mode difference
+		// 比较器
 		if (currentblock instanceof ComparatorBlock) {
 			return currentState.get(Properties.COMPARATOR_MODE) == targetState.get(Properties.COMPARATOR_MODE) ? 0
 						: 1;
 		}
 
-		// For daylight detectors: check inverted state
+		// 光传感器
 		if (currentblock instanceof DaylightDetectorBlock) {
 			return currentState.get(Properties.INVERTED) == targetState.get(Properties.INVERTED) ? 0 : 1;
 			
 		}
 
-		// For levers: check powered state
+		// 拉杆
 		if (currentblock instanceof LeverBlock) {
 			return currentState.get(Properties.POWERED) == targetState.get(Properties.POWERED) ? 0 : 1;
 		}
 
-		// For fence gates: check open state
-		// For trapdoors: check open state
-		// For doors: check open state
+		// 栅栏门 活板门 门
 		if (currentState.contains(Properties.OPEN)) {
 				return currentState.get(Properties.OPEN) == targetState.get(Properties.OPEN) ? 0 : 1;
 		}

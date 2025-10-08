@@ -300,11 +300,11 @@ public class MyUtils {
 			return false;
 	}
 
-	public int calculateRequiredInteractions(BlockState targetState, BlockPos pos) {
-		return InteractSettingsModule.calculateRequiredInteractions(targetState, pos);
+	public static int calculateRequiredInteractions(BlockState targetState, BlockState currentState) {
+		return InteractSettingsModule.calculateRequiredInteractions(targetState, currentState);
 	}
 
-	public int interactWithBlock(BlockPos pos, int count) {
+	public static int interactWithBlock(BlockPos pos, int count) {
 		return InteractSettingsModule.interactWithBlock(pos, count);
 	}
 
