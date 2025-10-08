@@ -132,8 +132,8 @@ public class Deleter extends Module {
 
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay")
-        .description("Delay between mining blocks.")
-        .defaultValue(0)
+        .description("Delay between mining blocks(非立即破坏的单一砖挖掘之间切换目标).")
+        .defaultValue(5)
         .min(0)
         .sliderRange(0, 20)
         .build()
