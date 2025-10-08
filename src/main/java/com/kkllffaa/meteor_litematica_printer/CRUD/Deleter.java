@@ -519,6 +519,16 @@ public class Deleter extends Module {
     private boolean isAirOrFluid(BlockState state) {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
+    
+    private boolean isPlayerSurrounding(BlockPos pos) {
+        BlockPos playerPos = mc.player.getBlockPos();
+        int playerY = playerPos.getY();
+        int playerX = playerPos.getX();
+        int playerZ = playerPos.getZ();
+        return pos.getY() >= playerY && pos.getY() <= playerY + 1 &&
+               Math.abs(pos.getX() - playerX) <= 2 &&
+               Math.abs(pos.getZ() - playerZ) <= 2;
+    }
 
     private boolean isProtectedPosition(BlockPos pos) {
         if ((groundProtection.get() && !mc.player.isOnGround())
@@ -807,7 +817,7 @@ public class Deleter extends Module {
                     if (!允许存入挖掘表(scanBlock))  continue;
 
                     if (
-                        MeshMine.get()
+                        MeshMine.get() && !isPlayerSurrounding(scanPos)
                     ) {
                         boolean hasNeighbourInBlocks = false;
                         outer: for (Vec3i offset : faceNeighbours) {
@@ -1120,4 +1130,5 @@ public class Deleter extends Module {
         CacheAndAir,
         CacheAndAirAndFluid,
     }
+
 }
