@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer.CRUD;
+package com.kkllffaa.meteor_litematica_printer.Modules.CRUD;
 
 import java.util.ArrayList;
 import java.util.Comparator;
