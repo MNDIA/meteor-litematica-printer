@@ -116,7 +116,7 @@ public class Deleter extends Module {
         .name("mesh-mining-mode")
         .description("Quickly probe blocks")
         .defaultValue(MeshMineMode.Cache)
-        .visible(MeshMine::get)
+        .visible(() -> TriggerMode.get() == 触发模式.自动半径全部 && MeshMine.get())
         .build()
     );
 
