@@ -335,11 +335,11 @@ public class Printer extends Module {
 			int remainingTicks = fadeEntry.getLeft();
 			float alphaRatio = (float) remainingTicks / fadeTime.get();
 			int alpha = (int) (alphaRatio * colour.get().a);
-			Color renderColor = new Color(colour.get().r, colour.get().g, colour.get().b, alpha);
+			Color sideColor = new Color(colour.get().r, colour.get().g, colour.get().b, alpha);
 
 			BlockPos blockPos = fadeEntry.getRight();
-			
-			event.renderer.box(blockPos, renderColor, null, ShapeMode.Sides, 0);
+
+			event.renderer.box(blockPos, sideColor, null, ShapeMode.Sides, 0);
 		});
 	}
 
