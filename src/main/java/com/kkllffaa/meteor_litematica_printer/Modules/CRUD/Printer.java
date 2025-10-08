@@ -45,6 +45,8 @@ public class Printer extends Module {
     private final SettingGroup sgRendering = settings.createGroup("Rendering");
 
 	private final SettingGroup sgCache = settings.createGroup("Cache");
+
+	//region General settings
 	private final Setting<Integer> printing_range = sgGeneral.add(new IntSetting.Builder()
 			.name("printing-range")
 			.description("The block place range.")
@@ -88,6 +90,9 @@ public class Printer extends Module {
 			.visible(()-> firstAlgorithm.get().applySecondSorting)
 			.build()
 	);
+	//endregion
+
+	//region Whitelist settings
 
     private final Setting<Boolean> whitelistenabled = sgWhitelist.add(new BoolSetting.Builder()
 			.name("whitelist-enabled")
@@ -102,6 +107,8 @@ public class Printer extends Module {
 			.visible(whitelistenabled::get)
 			.build()
 	);
+	//endregion
+	//region Rendering settings
 
     private final Setting<Boolean> renderBlocks = sgRendering.add(new BoolSetting.Builder()
         .name("render-placed-blocks")
@@ -127,11 +134,11 @@ public class Printer extends Module {
         .visible(renderBlocks::get)
         .build()
     );
+// endregion
 
 
 
-
-
+//region Cache settings
 
 	private final Setting<Boolean> enableCache = sgCache.add(new BoolSetting.Builder()
 			.name("enable-cache")
@@ -156,7 +163,7 @@ public class Printer extends Module {
 			.max(10).sliderMax(10)
 			.visible(enableCache::get)
 			.build());
-
+//endregion
 
 
 
@@ -324,9 +331,15 @@ public class Printer extends Module {
 
 	@EventHandler
 	private void onRender(Render3DEvent event) {
-		placed_fade.forEach(s -> {
-			Color color = new Color(colour.get().r, colour.get().g, colour.get().b, (int) (((float)s.getLeft() / (float) fadeTime.get()) * colour.get().a));
-			event.renderer.box(s.getRight(), color, null, ShapeMode.Sides, 0);
+		placed_fade.forEach(fadeEntry -> {
+			int remainingTicks = fadeEntry.getLeft();
+			float alphaRatio = (float) remainingTicks / fadeTime.get();
+			int alpha = (int) (alphaRatio * colour.get().a);
+			Color renderColor = new Color(colour.get().r, colour.get().g, colour.get().b, alpha);
+
+			BlockPos blockPos = fadeEntry.getRight();
+			
+			event.renderer.box(blockPos, renderColor, null, ShapeMode.Sides, 0);
 		});
 	}
 
