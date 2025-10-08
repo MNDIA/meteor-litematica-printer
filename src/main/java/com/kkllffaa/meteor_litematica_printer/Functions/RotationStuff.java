@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.Functions;
 
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.hit.HitResult;

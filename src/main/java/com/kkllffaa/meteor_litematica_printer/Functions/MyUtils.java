@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer;
+package com.kkllffaa.meteor_litematica_printer.Functions;
 
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;

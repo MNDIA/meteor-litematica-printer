@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.MyUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;

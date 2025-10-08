@@ -29,13 +29,13 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.MyUtils;
-import com.kkllffaa.meteor_litematica_printer.Rotation;
-import com.kkllffaa.meteor_litematica_printer.MyUtils.SafetyFaceMode;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.Rotation;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
 
+import static com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import static meteordevelopment.meteorclient.utils.world.BlockUtils.canPlace;
 import static meteordevelopment.meteorclient.utils.world.BlockUtils.isClickable;
-import static com.kkllffaa.meteor_litematica_printer.MyUtils.*;
 
 
 

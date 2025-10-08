@@ -20,6 +20,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -27,8 +28,8 @@ import java.util.Objects;
 
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.MyUtils;
-import com.kkllffaa.meteor_litematica_printer.MyUtils.*;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 
 
 public class Deleter extends Module {
@@ -940,7 +941,15 @@ public class Deleter extends Module {
             上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             tick = 0;
 
-            ToAttackBlocks.stream().limit(Attacks).forEach(MyBlock::mine);
+            ToAttackBlocks.stream()
+                .sorted(Comparator.comparingDouble(b -> {
+                    BlockPos playerPos = mc.player.getBlockPos();
+                    return Math.abs(b.blockPos.getX() - playerPos.getX()) + 
+                           Math.abs(b.blockPos.getY() - playerPos.getY()) + 
+                           Math.abs(b.blockPos.getZ() - playerPos.getZ());
+                }))
+                .limit(Attacks)
+                .forEach(MyBlock::mine);
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
