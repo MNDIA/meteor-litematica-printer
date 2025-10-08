@@ -25,6 +25,7 @@ import static com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import java.util.List;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
 
 
@@ -117,7 +118,7 @@ public class InteractSettings extends Module {
             return 0;
         }
 
-        if (onlyInteractOnLook.get() && !isPlayerYawPitchInAFaceOfBlock(pos, face)) {
+        if (onlyInteractOnLook.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(pos, face)) {
             return 0;
         }
 		

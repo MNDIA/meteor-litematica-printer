@@ -40,49 +40,7 @@ public class MyUtils {
 	public static InteractSettings InteractSettingsModule = new InteractSettings();
 
 
-	//region 方块锚点到方块面四顶点的偏移常量Vec3d[4]
-	private static final Vec3d[] FACE_OFFSETS_UP = {
-			new Vec3d(0, 1, 0),
-			new Vec3d(1, 1, 0),
-			new Vec3d(1, 1, 1),
-			new Vec3d(0, 1, 1)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_DOWN = {
-			new Vec3d(0, 0, 0),
-			new Vec3d(1, 0, 0),
-			new Vec3d(1, 0, 1),
-			new Vec3d(0, 0, 1)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_NORTH = {
-			new Vec3d(0, 0, 0),
-			new Vec3d(1, 0, 0),
-			new Vec3d(1, 1, 0),
-			new Vec3d(0, 1, 0)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_SOUTH = {
-			new Vec3d(0, 0, 1),
-			new Vec3d(1, 0, 1),
-			new Vec3d(1, 1, 1),
-			new Vec3d(0, 1, 1)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_EAST = {
-			new Vec3d(1, 0, 0),
-			new Vec3d(1, 0, 1),
-			new Vec3d(1, 1, 1),
-			new Vec3d(1, 1, 0)
-	};
-
-	private static final Vec3d[] FACE_OFFSETS_WEST = {
-			new Vec3d(0, 0, 0),
-			new Vec3d(0, 0, 1),
-			new Vec3d(0, 1, 1),
-			new Vec3d(0, 1, 0)
-	};
-	//endregion
+	
 
 	//region 方块锚点到方块面四顶点的偏移常量Vec3d[4]，稍微外扩0.05
 	private static final Vec3d[] FACE_OFFSETS_UP_OUT = {
@@ -127,50 +85,6 @@ public class MyUtils {
 			new Vec3d(-0.05, 0.95, 0.05)
 	};
 	//endregion
-
-	// 玩家角度对准方块的面
-	public static boolean isPlayerYawPitchInAFaceOfBlock(BlockPos blockPos, Direction direction) {
-
-		ClientPlayerEntity player = mc.player;
-		if (player == null)
-			return false;
-
-		Vec3d playerEye = new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()),
-				player.getZ());
-		float playerYaw = Rotation.normalizeYaw(player.getYaw());
-		float playerPitch = player.getPitch();
-		Vec3d[] offsets = switch (direction) {
-			case UP -> FACE_OFFSETS_UP;
-			case DOWN -> FACE_OFFSETS_DOWN;
-			case NORTH -> FACE_OFFSETS_NORTH;
-			case SOUTH -> FACE_OFFSETS_SOUTH;
-			case EAST -> FACE_OFFSETS_EAST;
-			case WEST -> FACE_OFFSETS_WEST;
-		};
-		float yaws[] = new float[4];
-		float pitchs[] = new float[4];
-		for (int i = 0; i < offsets.length; i++) {
-			Vec3d offset = offsets[i];
-			Vec3d point = new Vec3d(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
-			Rotation rot = RotationStuff.calcRotationFromVec3d(playerEye, point);
-			yaws[i] = Rotation.normalizeYaw(rot.getYaw() - playerYaw);
-			pitchs[i] = rot.getPitch() - playerPitch;
-		}
-		boolean pitchInRange = CoverZero(pitchs[0], pitchs[1]) ||
-				CoverZero(pitchs[0], pitchs[2]) ||
-				CoverZero(pitchs[0], pitchs[3]) ||
-				CoverZero(pitchs[1], pitchs[2]) ||
-				CoverZero(pitchs[1], pitchs[3]) ||
-				CoverZero(pitchs[2], pitchs[3]);
-		boolean yawInRange = CoverZero(yaws[0], yaws[1]) ||
-				CoverZero(yaws[0], yaws[2]) ||
-				CoverZero(yaws[0], yaws[3]) ||
-				CoverZero(yaws[1], yaws[2]) ||
-				CoverZero(yaws[1], yaws[3]) ||
-				CoverZero(yaws[2], yaws[3]);
-
-		return yawInRange && pitchInRange;
-	}
 
 	// 方块的面不穿墙
 	public static boolean isAFaceOutVisibleOfBlock(BlockPos blockPos, Direction direction) {
@@ -426,16 +340,6 @@ public class MyUtils {
 			default -> null; // For corner rails
 		};
 	}
-
-	//region 数学工具
-	static boolean isInRangeBetweenValues(float subject, float min, float max) {
-		return subject > min && subject < max;
-	}
-	
-	private static boolean CoverZero(float yaw1, float yaw2) {
-		return (Float.floatToIntBits(yaw1) ^ Float.floatToIntBits(yaw2)) < 0 && Math.abs(yaw2 - yaw1) < 180;
-	}
-	//endregion
 
 	private static int usedSlot = -1;
 	

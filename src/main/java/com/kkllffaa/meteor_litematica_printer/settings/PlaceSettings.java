@@ -29,6 +29,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MathUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.Rotation;
@@ -696,7 +697,7 @@ public class PlaceSettings extends Module {
 					}
 				}
 			}
-			if (onlyPlaceOnLookFace.get() && !isPlayerYawPitchInAFaceOfBlock(neighbour, face)) {
+			if (onlyPlaceOnLookFace.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(neighbour, face)) {
 				continue;
 			}
 			Item item = required.getBlock().asItem();
@@ -818,19 +819,19 @@ public class PlaceSettings extends Module {
 			return null;
 		}
 		float pitch = player.getPitch();
-		if (MathUtils.isInRangeOfValue(pitch, 90, angleRangeForDirectionProtection.get())) {
+		if (MathUtils.isNearValue(pitch, 90, angleRangeForDirectionProtection.get())) {
 			return Direction.DOWN;
-		} else if (MathUtils.isInRangeOfValue(pitch, -90, angleRangeForDirectionProtection.get())) {
+		} else if (MathUtils.isNearValue(pitch, -90, angleRangeForDirectionProtection.get())) {
 			return Direction.UP;
-		} else if (MathUtils.isInRangeOfValue(pitch, 0, angleRangeForDirectionProtection.get())) {
+		} else if (MathUtils.isNearValue(pitch, 0, angleRangeForDirectionProtection.get())) {
 			float yaw = Rotation.normalizeYaw(player.getYaw());
-			if (MathUtils.isInRangeOfValue(yaw, 90, angleRangeForDirectionProtection.get())) {
+			if (MathUtils.isNearValue(yaw, 90, angleRangeForDirectionProtection.get())) {
 				return Direction.WEST;
-			} else if (MathUtils.isInRangeOfValue(yaw, 0, angleRangeForDirectionProtection.get())) {
+			} else if (MathUtils.isNearValue(yaw, 0, angleRangeForDirectionProtection.get())) {
 				return Direction.SOUTH;
-			} else if (MathUtils.isInRangeOfValue(yaw, -90, angleRangeForDirectionProtection.get())) {
+			} else if (MathUtils.isNearValue(yaw, -90, angleRangeForDirectionProtection.get())) {
 				return Direction.EAST;
-			} else if (MathUtils.isInRangeOfValue(yaw, 180, angleRangeForDirectionProtection.get()) || MathUtils.isInRangeOfValue(yaw, -180, angleRangeForDirectionProtection.get())) {
+			} else if (MathUtils.isNearValue(yaw, 180, angleRangeForDirectionProtection.get()) || MathUtils.isNearValue(yaw, -180, angleRangeForDirectionProtection.get())) {
 				return Direction.NORTH;
 			} else {
 				return null;
