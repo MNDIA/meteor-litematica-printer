@@ -676,7 +676,7 @@ public class PlaceSettings extends Module {
 			// 确定了face 邻居坐标 点击位置
 
 			// 距离保护
-			if (hitPos.distanceTo(getPlayerEyePos(player)) > placeRange.get()) {
+			if (hitPos.distanceTo(getPlayerEye(player)) > placeRange.get()) {
 				continue;
 			}
 

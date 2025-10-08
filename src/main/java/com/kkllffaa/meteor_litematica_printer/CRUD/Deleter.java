@@ -797,7 +797,7 @@ public class Deleter extends Module {
         }
     }
     private void scanBlocks() {
-        Vec3d centerPos = MyUtils.getPlayerEyePos(mc.player);
+        Vec3d centerPos = MyUtils.getPlayerEye(mc.player);
         double radius = getHandDistance();
 
         int minX = (int) (Math.floor(centerPos.x - radius )+ 0.01);

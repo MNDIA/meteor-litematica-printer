@@ -186,7 +186,7 @@ public class MyUtils {
 			case WEST -> FACE_OFFSETS_WEST_OUT;
 		};
 
-		Vec3d playerEye = getPlayerEyePos(player);
+		Vec3d playerEye = getPlayerEye(player);
 		for (Vec3d offset : offsets) {
 			Vec3d point = new Vec3d(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
 			if (isLineOfSightClear(playerEye, point)) {
@@ -201,7 +201,7 @@ public class MyUtils {
 		ClientPlayerEntity player = mc.player;
 		if (player == null)
 			return false;
-		Vec3d playerEye = getPlayerEyePos(player);
+		Vec3d playerEye = getPlayerEye(player);
 		return isLineOfSightClear(playerEye, point);
 	}
 
@@ -288,7 +288,7 @@ public class MyUtils {
 				if (player == null)
 					yield null;
 				// Get player eye position
-				Vec3d eyePos = getPlayerEyePos(player);
+				Vec3d eyePos = getPlayerEye(player);
 
 				// Get block center position
 				Vec3d blockCenter = new Vec3d(
@@ -331,7 +331,7 @@ public class MyUtils {
 	}
 
 
-	public static @NotNull Vec3d getPlayerEyePos(@NotNull ClientPlayerEntity player) {
+	public static @NotNull Vec3d getPlayerEye(@NotNull ClientPlayerEntity player) {
 		return new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()), player.getZ());
 	}
 

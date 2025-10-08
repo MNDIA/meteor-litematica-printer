@@ -127,7 +127,7 @@ public class InteractSettings extends Module {
 		if (player.isSneaking()){
 			return 0;
 		}
-        if (getPlayerEyePos(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
+        if (getPlayerEye(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
             return 0;
         }
 
