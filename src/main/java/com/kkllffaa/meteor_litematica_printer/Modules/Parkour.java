@@ -37,31 +37,44 @@ public class Parkour extends Module {
         super(Addon.TOOLSCATEGORY, "parkour", "Automatically jumps at the edges of blocks.");
     }
 
-    private boolean needControlJump = false;
+    private boolean isForcedJumping = false;
 
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         long window = mc.getWindow().getHandle();
         int keyCode = mc.options.jumpKey.getDefaultKey().getCode();
-        boolean keyboardJumpPressed = GLFW.glfwGetKey(window, keyCode) == GLFW.GLFW_PRESS;
-        if (needControlJump){
+        boolean isPhysicalJumpKeyActive = GLFW.glfwGetKey(window, keyCode) == GLFW.GLFW_PRESS;
+        if (isForcedJumping){
             mc.options.jumpKey.setPressed(true);
         }else{
-            mc.options.jumpKey.setPressed(keyboardJumpPressed);
+            if (isPhysicalJumpKeyActive) {
+                if (isLostControl()) {
+                    mc.options.jumpKey.setPressed(false);
+                } else {
+                    mc.options.jumpKey.setPressed(true);
+                }
+            }else{
+                mc.options.jumpKey.setPressed(false);
+            }
         }
     }
 
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
+        if (isLostControl()) {
+            isForcedJumping = false;
+            return;
+        }
+
         if (!mc.player.isOnGround() || mc.options.jumpKey.isPressed()||
         mc.player.isSneaking() || mc.options.sneakKey.isPressed()) {
-            needControlJump = false;
+            isForcedJumping = false;
         } else {
             double horizontalSpeed = Math.sqrt(mc.player.getVelocity().x * mc.player.getVelocity().x + mc.player.getVelocity().z * mc.player.getVelocity().z);
             if (horizontalSpeed < minSpeed.get()) {
-                needControlJump = false;
+                isForcedJumping = false;
             } else {
                 Box box = mc.player.getBoundingBox();
                 Box adjustedBox = box.offset(0, -0.5, 0).expand(-edgeDistance.get(), 0, -edgeDistance.get());
@@ -69,12 +82,17 @@ public class Parkour extends Module {
                 Stream<VoxelShape> blockCollisions = Streams.stream(mc.world.getBlockCollisions(mc.player, adjustedBox));
 
                 if (blockCollisions.findAny().isPresent()) {
-                    needControlJump = false;
+                    isForcedJumping = false;
                 } else {
-                    needControlJump = true;
+                    isForcedJumping = true;
                 }
             }
         }
 
+    }
+
+
+    private boolean isLostControl() {
+        return mc.cameraEntity != mc.player || mc.currentScreen != null;
     }
 }
