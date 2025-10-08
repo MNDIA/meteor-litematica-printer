@@ -90,10 +90,10 @@ public class InteractSettings extends Module {
 			.visible(enableInteraction::get)
             .build());
 
-	private final Setting<Double> maxInteractionDistance = sgGeneral.add(new DoubleSetting.Builder()
-			.name("max-interaction-distance")
-			.description("Maximum distance to interact with blocks.")
-			.defaultValue(5.5)
+	private final Setting<Double> maxDistanceToBlockCenter = sgGeneral.add(new DoubleSetting.Builder()
+			.name("max-distance-to-block-center")
+			.description("Maximum distance to the block center.")
+			.defaultValue(5.9)
 			.min(0.0)
 			.max(10.0)
 			.visible(enableInteraction::get)
@@ -128,7 +128,7 @@ public class InteractSettings extends Module {
 		if (player.isSneaking()){
 			return 0;
 		}
-        if (getPlayerEye(player).distanceTo(Vec3d.ofCenter(pos)) > maxInteractionDistance.get()) {
+        if (BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(pos) > maxDistanceToBlockCenter.get()) {
             return 0;
         }
 

@@ -308,13 +308,13 @@ public class Deleter extends Module {
         .build()
     );
 
-    private final Setting<Double> maxDistance = sgProtection.add(new DoubleSetting.Builder()
-        .name("max-distance")
+    private final Setting<Double> maxDistanceToBlockCenter = sgProtection.add(new DoubleSetting.Builder()
+        .name("max-distance-to-block-center")
         .description("Maximum distance from player to mine blocks.")
-        .defaultValue(5.49999)
+        .defaultValue(5.9)
         .min(1.0)
         .max(1024.0)
-        .sliderRange(1.0, 8.0)
+        .sliderRange(1.0, 6.0)
         .visible(() -> distanceProtection.get() == DistanceMode.Max)
         .build()
     );
@@ -512,7 +512,7 @@ public class Deleter extends Module {
     }
 
     private double getHandDistance() {
-        return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistance.get();
+        return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistanceToBlockCenter.get();
     }
 
     private boolean isOutOfDistance(BlockPos Pos) {

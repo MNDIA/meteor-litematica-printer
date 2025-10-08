@@ -6,8 +6,6 @@ import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.block.*;
-import net.minecraft.block.enums.BedPart;
-import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.Item;
@@ -244,27 +242,11 @@ public class MyUtils {
 		return false;
 	}
 
-
 	public static @NotNull Vec3d getPlayerEye(@NotNull ClientPlayerEntity player) {
 		return new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()), player.getZ());
 	}
 
-	public static boolean isMultiStructurePlacementAllowed(BlockState required) {
-		if (required.contains(Properties.BED_PART)) {
-			BedPart bedPart = required.get(Properties.BED_PART);
-			if (bedPart == BedPart.HEAD) {
-				return false;
-			}
-		}
-		
-		if (required.contains(Properties.DOUBLE_BLOCK_HALF)) {
-			DoubleBlockHalf doubleBlockHalf = required.get(Properties.DOUBLE_BLOCK_HALF);
-			if (doubleBlockHalf == DoubleBlockHalf.UPPER) {
-				return false; 
-			}
-		}
-		return true;
-	}
+
 
     public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, SettingColor sideColorToUse, SettingColor lineColorToUse) {
             VoxelShape shape = mc.world.getBlockState(blockPos).getOutlineShape(mc.world, blockPos);

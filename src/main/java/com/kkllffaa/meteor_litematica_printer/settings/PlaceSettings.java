@@ -11,6 +11,8 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 
 import net.minecraft.block.*;
+import net.minecraft.block.enums.BedPart;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -87,10 +89,10 @@ public class PlaceSettings extends Module {
 			.visible(enableAddList::get)
 			.build());
 
-	private final Setting<Double> placeRange = sgGeneral.add(new DoubleSetting.Builder()
-			.name("place-range")
+	private final Setting<Double> placeRangeToHitPos = sgGeneral.add(new DoubleSetting.Builder()
+			.name("place-range-to-hit-pos")
 			.description("The block place range.")
-			.defaultValue(5.5)
+			.defaultValue(5.49)
 			.min(1).sliderMin(1)
 			.max(7).sliderMax(7)
 			.build()
@@ -677,7 +679,7 @@ public class PlaceSettings extends Module {
 			// 确定了face 邻居坐标 点击位置
 
 			// 距离保护
-			if (hitPos.distanceTo(getPlayerEye(player)) > placeRange.get()) {
+			if (hitPos.distanceTo(getPlayerEye(player)) > placeRangeToHitPos.get()) {
 				continue;
 			}
 
@@ -915,4 +917,22 @@ public class PlaceSettings extends Module {
 		}
 	}
 
+
+
+	private static boolean isMultiStructurePlacementAllowed(BlockState required) {
+		if (required.contains(Properties.BED_PART)) {
+			BedPart bedPart = required.get(Properties.BED_PART);
+			if (bedPart == BedPart.HEAD) {
+				return false;
+			}
+		}
+		
+		if (required.contains(Properties.DOUBLE_BLOCK_HALF)) {
+			DoubleBlockHalf doubleBlockHalf = required.get(Properties.DOUBLE_BLOCK_HALF);
+			if (doubleBlockHalf == DoubleBlockHalf.UPPER) {
+				return false; 
+			}
+		}
+		return true;
+	}
 }

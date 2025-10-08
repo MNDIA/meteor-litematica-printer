@@ -4,7 +4,6 @@ import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 import meteordevelopment.meteorclient.utils.Utils;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
@@ -18,18 +17,17 @@ public class BlockPosUtils {
                Math.abs(pos1.getZ() - pos2.getZ());
     }
 
-    public static double getDistanceFromPosCenterToPlayerEyes(Vec3i pos) {
-        ClientPlayerEntity player = mc.player;
-        if (player == null) return Double.MAX_VALUE;
-        return  Utils.distance(
-            player.getX(), 
-            player.getY() + player.getEyeHeight(player.getPose()), 
-            player.getZ(), 
-            pos.getX() + 0.5, 
-            pos.getY() + 0.5, 
-            pos.getZ() + 0.5
-        );
-    }
+	public static double getDistanceFromPosCenterToPlayerEyes(Vec3i pos) {
+		if (mc.player == null) return Double.MAX_VALUE;
+		// 等价MyUtils.getPlayerEye(player).distanceTo(Vec3d.ofCenter(pos));
+		return Utils.distance(
+				mc.player.getX(),
+				mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()),
+				mc.player.getZ(),
+				pos.getX() + 0.5,
+				pos.getY() + 0.5,
+				pos.getZ() + 0.5);
+	}
 
     //region 方块锚点到方块面(四顶点)的偏移常量Vec3d[4]
     private static final Vec3d[] FACE_OFFSETS_UP = {
