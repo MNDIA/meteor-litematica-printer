@@ -848,9 +848,6 @@ public class Deleter extends Module {
         return !isAirOrFluid(state);
     }
     private boolean 允许存入挖掘表(Block block){
-        if (TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get() && OreBlocksForChannel.get().contains(block)) {
-            return true;
-        }
         if (BlockListMode.get() == ListMode.Whitelist && !whiteListBlocks.get().contains(block))
             return false;
         if (BlockListMode.get() == ListMode.Blacklist && blackListBlocks.get().contains(block))
