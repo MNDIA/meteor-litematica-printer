@@ -1171,7 +1171,7 @@ public class Deleter extends Module {
             else attackBlock();
         }
 
-        public void scan() {
+        public void detect() {
             attackBlock();
         }
 
