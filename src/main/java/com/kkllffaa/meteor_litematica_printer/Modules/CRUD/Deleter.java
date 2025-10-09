@@ -1077,18 +1077,19 @@ public class Deleter extends Module {
                 tick++;
                 return;
             }
-            上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             tick = 0;
-
-            if (!(Attacks == 0 && 本tick需要挖掘的一个硬砖 != null)) {
+            
+            if (上一次间隔挖掘的一个硬砖 != null && Attacks !=0) {
                 mc.interactionManager.cancelBlockBreaking();
             }
+            
             ToAttackBlocks.stream()
-                .limit(Attacks)
-                .forEach(MyBlock::mine);
+            .limit(Attacks)
+            .forEach(MyBlock::mine);
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
+            上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
         }
 
     }
