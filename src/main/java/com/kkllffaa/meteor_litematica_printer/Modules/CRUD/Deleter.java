@@ -1057,6 +1057,8 @@ public class Deleter extends Module {
                 List<MyBlock> HardBlocks = FliterBlocks.stream()
                 .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
                 .toList();
+
+                
                 本tick需要挖掘的一个硬砖 = HardBlocks.stream()
                         .filter(b -> b.state == MyBlock.State.Mining)
                         .findFirst()
@@ -1106,7 +1108,7 @@ public class Deleter extends Module {
         private Block originalBlock;
         private long startTime = 0;
         private long finishTime = 0;
-        public boolean detected = false;
+        // public boolean detected = false;
         public State state = State.ToMine;
         private static enum State {
             ToMine,
@@ -1173,7 +1175,7 @@ public class Deleter extends Module {
             this.startTime = 0;
             this.finishTime = 0;
             this.state = State.ToMine;
-            this.detected = false;
+            // this.detected = false;
         }
 
         public boolean shouldRemove() {
@@ -1188,11 +1190,11 @@ public class Deleter extends Module {
             else updateBlockBreakingProgress();
         }
 
-        public void detect() {
-            detected = true;
-            //TODO:探测
+        // public void detect() {
+        //     detected = true;
+        //     //TODO:探测
             
-        }
+        // }
 
         private void updateBlockBreakingProgress() {
             BlockUtils.breakBlock(blockPos, showSwing.get());
