@@ -1045,18 +1045,18 @@ public class Deleter extends Module {
             .toList();
             
             int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
-            int Detects = 0;
-            MyBlock 本tick需要挖掘的一个硬砖 = null;
 
-           
+            
+            // List<MyBlock> ToDetectBlocks = HardBlocks.stream()
+            // .filter(b -> b.detected == false && b.state == MyBlock.State.ToMine)
+            // .toList();
+            // int Detects = ToDetectBlocks.size();
+            
+            MyBlock 本tick需要挖掘的一个硬砖 = null;
             if (Attacks < maxBlocksPerTick.get()) {
                 List<MyBlock> HardBlocks = FliterBlocks.stream()
-                        .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
-                        .toList();
-                List<MyBlock> ToDetectBlocks = HardBlocks.stream()
-                        .filter(b -> b.detected == false)
-                        .toList();
-
+                .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
+                .toList();
                 本tick需要挖掘的一个硬砖 = HardBlocks.stream()
                         .filter(b -> b.state == MyBlock.State.Mining)
                         .findFirst()
@@ -1083,6 +1083,11 @@ public class Deleter extends Module {
             ToAttackBlocks.stream()
             .limit(Attacks)
             .forEach(MyBlock::mine);
+
+            // ToDetectBlocks.stream()
+            // .limit(Detects)
+            // .forEach(MyBlock::detect);
+
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
@@ -1184,6 +1189,9 @@ public class Deleter extends Module {
         }
 
         public void detect() {
+            detected = true;
+            //TODO:探测
+            
         }
 
         private void updateBlockBreakingProgress() {
