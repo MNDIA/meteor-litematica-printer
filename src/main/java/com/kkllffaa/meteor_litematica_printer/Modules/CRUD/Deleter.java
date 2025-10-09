@@ -1041,7 +1041,7 @@ public class Deleter extends Module {
             .toList();
             
             List<MyBlock> ToAttackBlocks = FliterBlocks.stream()
-            .filter(b -> b.state == MyBlock.State.ToMine && BlockUtils.canInstaBreak(b.blockPos))
+            .filter(b -> BlockUtils.canInstaBreak(b.blockPos))
             .toList();
             
             int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
@@ -1079,9 +1079,6 @@ public class Deleter extends Module {
             }
             tick = 0;
             
-            if (上一次间隔挖掘的一个硬砖 != null && Attacks !=0) {
-                mc.interactionManager.cancelBlockBreaking();
-            }
             
             ToAttackBlocks.stream()
             .limit(Attacks)
@@ -1187,8 +1184,6 @@ public class Deleter extends Module {
         }
 
         public void detect() {
-            mc.interactionManager.cancelBlockBreaking();
-            BlockUtils.breakBlock(blockPos, showSwing.get());
         }
 
         private void updateBlockBreakingProgress() {
