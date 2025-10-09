@@ -340,7 +340,7 @@ public class Deleter extends Module {
 
 
     private final Setting<ProtectMode> standProtectionMode = sgProtection.add(new EnumSetting.Builder<ProtectMode>()
-        .name("stand-reference")
+        .name("stand-protection")
         .description("Reference system for standing protection.")
         .defaultValue(ProtectMode.ReferencePlayerY)
         .build()
@@ -356,7 +356,7 @@ public class Deleter extends Module {
     );
 
     private final Setting<ProtectMode> heightProtectionMode = sgProtection.add(new EnumSetting.Builder<ProtectMode>()
-        .name("height-reference")
+        .name("height-protection")
         .description("Reference system for height protection.")
         .defaultValue(ProtectMode.Off)
         .build()
