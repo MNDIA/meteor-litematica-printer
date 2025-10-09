@@ -540,7 +540,7 @@ public class Deleter extends Module {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
     
-    private static final double 速度阈值 = 0.01;
+    private static final double 速度阈值 = 0.6;
     private boolean isPlayerSurrounding(BlockPos pos) {
         BlockPos playerPos = mc.player.getBlockPos();
         int playerY = playerPos.getY();
