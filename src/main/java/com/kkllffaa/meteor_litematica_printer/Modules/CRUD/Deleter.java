@@ -568,8 +568,7 @@ public class Deleter extends Module {
             if (OreY > playerY) {
                 XZ半径 = switch (XZ半径) {
                     case 1 -> 1;
-                    case 2 -> 2;
-                    default -> 3;
+                    default -> 2;
                 };
             } 
 
