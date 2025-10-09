@@ -29,9 +29,9 @@ public class Parkour extends Module {
 
     private final Setting<Double> minSpeed = sgGeneral.add(new DoubleSetting.Builder()
             .name("min-speed")
-            .description("Minimum horizontal speed required to trigger automatic jumping.")
-            .range(0.0, 12.0)
-            .defaultValue(4)
+            .description("Minimum horizontal speed required to trigger automatic jumping.(block/tick)")
+            .range(0.0, 0.39285)
+            .defaultValue(0.085)
             .build());
 
     public Parkour() {
