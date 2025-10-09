@@ -864,16 +864,7 @@ public class Deleter extends Module {
         }
     }
     private void scanBlocks() {
-        List<Vec3i> OreBlocks = null;
-        Vec3i playerPos = null;
-        if (OreChannel.get()) {
-            playerPos = mc.player.getBlockPos();
-            OreBlocks = blocks.stream()
-            .filter(b -> OreBlocksForChannel.get().contains(b.originalBlock))
-            .map(b -> (Vec3i) b.blockPos)
-            .toList();
-            
-        }
+       
         Vec3d centerPos = MyUtils.getPlayerEye(mc.player);
         double radius = getHandDistance();
 
@@ -883,6 +874,29 @@ public class Deleter extends Module {
         int maxY = (int) (Math.floor(centerPos.y + radius )+ 0.01);
         int minZ = (int) (Math.floor(centerPos.z - radius )+ 0.01);
         int maxZ = (int) (Math.floor(centerPos.z + radius )+ 0.01);
+
+
+
+        Vec3i playerPos = null;
+        List<Vec3i> OreBlocks = null;
+        if (OreChannel.get()) {
+            playerPos = mc.player.getBlockPos();
+
+            OreBlocks = new ArrayList<>();
+            for (int x = minX; x <= maxX; x++) {
+                for (int y = minY; y <= maxY; y++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        BlockPos scanPos = new BlockPos(x, y, z);
+                        BlockState scanState = mc.world.getBlockState(scanPos);
+                        Block scanBlock = scanState.getBlock();
+                        if (OreBlocksForChannel.get().contains(scanBlock)) {
+                            OreBlocks.add(scanPos);
+                        }
+                    }
+                }
+            }
+            
+        }
 
         for (int x = minX; x <= maxX; x++) {
             for (int y = minY; y <= maxY; y++) {
