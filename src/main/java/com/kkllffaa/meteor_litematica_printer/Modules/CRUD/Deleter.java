@@ -14,8 +14,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.Item;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -1036,8 +1034,10 @@ public class Deleter extends Module {
             int totalDelay = delay.get() + randomDelay;
             
             
+            BlockPos playerPos = mc.player.getBlockPos();
             List<MyBlock> FliterBlocks = blocks.stream()
             .filter(b -> b.state == MyBlock.State.ToMine || b.state == MyBlock.State.Mining)
+            .sorted(Comparator.comparingInt(b -> BlockPosUtils.getManhattanDistance(b.blockPos, playerPos)))
             .toList();
             
             List<MyBlock> ToAttackBlocks = FliterBlocks.stream()
@@ -1045,11 +1045,29 @@ public class Deleter extends Module {
             .toList();
             
             int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
-            
-            MyBlock 本tick需要挖掘的一个硬砖 = Attacks < maxBlocksPerTick.get() ? FliterBlocks.stream()
-                .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
-                .findFirst()
-                .orElse(null) : null;
+            int Detects = 0;
+            MyBlock 本tick需要挖掘的一个硬砖 = null;
+
+           
+            if (Attacks < maxBlocksPerTick.get()) {
+                List<MyBlock> HardBlocks = FliterBlocks.stream()
+                        .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
+                        .toList();
+                List<MyBlock> ToDetectBlocks = HardBlocks.stream()
+                        .filter(b -> b.detected == false)
+                        .toList();
+                        
+                本tick需要挖掘的一个硬砖 = HardBlocks.stream()
+                        .filter(b -> b.state == MyBlock.State.Mining)
+                        .findFirst()
+                        .orElse(null);
+                if (本tick需要挖掘的一个硬砖 == null) {
+                    本tick需要挖掘的一个硬砖 = HardBlocks.stream()
+                            .filter(b -> b.state == MyBlock.State.ToMine)
+                            .findFirst()
+                            .orElse(null);
+                }
+            }
 
             boolean 挖掘的是同一个硬砖 = 本tick需要挖掘的一个硬砖 != null && 上一次间隔挖掘的一个硬砖 != null
                     && 本tick需要挖掘的一个硬砖.blockPos.equals(上一次间隔挖掘的一个硬砖.blockPos);
@@ -1062,11 +1080,9 @@ public class Deleter extends Module {
             上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             tick = 0;
 
-            BlockPos playerPos = mc.player.getBlockPos();
             ToAttackBlocks.stream()
-                .sorted(Comparator.comparingInt(b -> BlockPosUtils.getManhattanDistance(b.blockPos, playerPos)))
                 .limit(Attacks)
-                .forEach(MyBlock::mineWithAttack);
+                .forEach(MyBlock::mine);
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
@@ -1084,6 +1100,7 @@ public class Deleter extends Module {
         private Block originalBlock;
         private long startTime = 0;
         private long finishTime = 0;
+        public boolean detected = false;
         public State state = State.ToMine;
         private static enum State {
             ToMine,
@@ -1150,6 +1167,7 @@ public class Deleter extends Module {
             this.startTime = 0;
             this.finishTime = 0;
             this.state = State.ToMine;
+            this.detected = false;
         }
 
         public boolean shouldRemove() {
@@ -1163,25 +1181,13 @@ public class Deleter extends Module {
             if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
             else updateBlockBreakingProgress();
         }
-        public void mineWithAttack() {
-            if (startTime == 0) {
-                startTime = System.currentTimeMillis();
-            }
-            if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::attackBlock);
-            else attackBlock();
-        }
 
         public void detect() {
-            attackBlock();
+             mc.interactionManager.cancelBlockBreaking();
+            BlockUtils.breakBlock(blockPos, showSwing.get());
         }
 
         private void updateBlockBreakingProgress() {
-            BlockUtils.breakBlock(blockPos, showSwing.get());
-        }
-        private void attackBlock(){
-            if (mc.interactionManager.isBreakingBlock()) {
-                mc.interactionManager.cancelBlockBreaking();
-            }
             BlockUtils.breakBlock(blockPos, showSwing.get());
         }
        
