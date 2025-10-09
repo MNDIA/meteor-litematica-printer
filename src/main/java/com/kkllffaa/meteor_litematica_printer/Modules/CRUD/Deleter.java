@@ -14,6 +14,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.Item;
+import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -1047,7 +1049,7 @@ public class Deleter extends Module {
             ToAttackBlocks.stream()
                 .sorted(Comparator.comparingInt(b -> BlockPosUtils.getManhattanDistance(b.blockPos, playerPos)))
                 .limit(Attacks)
-                .forEach(MyBlock::mine);
+                .forEach(MyBlock::mineWithAttack);
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
@@ -1144,9 +1146,33 @@ public class Deleter extends Module {
             if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
             else updateBlockBreakingProgress();
         }
+        public void mineWithAttack() {
+            if (startTime == 0) {
+                startTime = System.currentTimeMillis();
+            }
+            if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::AttackBlock);
+            else AttackBlock();
+        }
 
         private void updateBlockBreakingProgress() {
             BlockUtils.breakBlock(blockPos, showSwing.get());
+        }
+     
+        private void AttackBlock() {
+            if (!BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos)))
+                return;
+
+            // Creating new instance of block pos because minecraft assigns the parameter to
+            // a field, and we don't want it to change when it has been stored in a field
+            // somewhere
+            BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
+            mc.interactionManager.attackBlock(pos, BlockUtils.getDirection(blockPos));
+
+            if (showSwing.get())
+                mc.player.swingHand(Hand.MAIN_HAND);
+            else
+                mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+
         }
 
         public void render(Render3DEvent event) {
