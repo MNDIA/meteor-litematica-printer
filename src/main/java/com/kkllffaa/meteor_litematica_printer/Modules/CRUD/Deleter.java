@@ -1078,16 +1078,25 @@ public class Deleter extends Module {
                 .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
                 .toList();
 
+                if (TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()) {
+                    List<MyBlock> Ores = HardBlocks.stream()
+                            .filter(b -> OreBlocksForChannel.get().contains(b.originalBlock))
+                            .toList();
+                    本tick需要挖掘的一个硬砖 = Ores.stream()
+                            .filter(b -> b.state == MyBlock.State.Mining)
+                            .findFirst()
+                            .orElseGet(() -> Ores.stream()
+                                    .findFirst()
+                                    .orElse(null));
+                }
 
-                本tick需要挖掘的一个硬砖 = HardBlocks.stream()
-                        .filter(b -> b.state == MyBlock.State.Mining)
-                        .findFirst()
-                        .orElse(null);
                 if (本tick需要挖掘的一个硬砖 == null) {
                     本tick需要挖掘的一个硬砖 = HardBlocks.stream()
-                            .filter(b -> b.state == MyBlock.State.ToMine)
+                            .filter(b -> b.state == MyBlock.State.Mining)
                             .findFirst()
-                            .orElse(null);
+                            .orElseGet(() -> HardBlocks.stream()
+                                    .findFirst()
+                                    .orElse(null));
                 }
             }
 
