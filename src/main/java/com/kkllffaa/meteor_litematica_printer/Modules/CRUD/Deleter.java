@@ -540,14 +540,34 @@ public class Deleter extends Module {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
     
+    private static final double 速度阈值 = 0.01;
     private boolean isPlayerSurrounding(BlockPos pos) {
         BlockPos playerPos = mc.player.getBlockPos();
         int playerY = playerPos.getY();
         int playerX = playerPos.getX();
         int playerZ = playerPos.getZ();
-        return pos.getY() >= playerY && pos.getY() <= playerY + 1 &&
-               Math.abs(pos.getX() - playerX) <= 2 &&
-               Math.abs(pos.getZ() - playerZ) <= 2;
+        
+        Vec3d velocity = mc.player.getVelocity();
+        
+        int xMin = playerX - 1;
+        int xMax = playerX + 1;
+        int zMin = playerZ - 1;
+        int zMax = playerZ + 1;
+        int yMin = playerY;
+        int yMax = playerY + 1;
+        
+        if (velocity.x > 速度阈值) xMax += 1;
+        else if (velocity.x < -速度阈值) xMin -= 1;
+        
+        if (velocity.z > 速度阈值) zMax += 1;
+        else if (velocity.z < -速度阈值) zMin -= 1;
+        
+        if (velocity.y > 速度阈值) yMax += 1;
+        else if (velocity.y < -速度阈值) yMin -= 1;
+        
+        return pos.getY() >= yMin && pos.getY() <= yMax &&
+               pos.getX() >= xMin && pos.getX() <= xMax &&
+               pos.getZ() >= zMin && pos.getZ() <= zMax;
     }
     
     private boolean 无视网格挖掘和站立保护(Vec3i pos, List<Vec3i> OreBlocks, Vec3i PlayerPos) {
