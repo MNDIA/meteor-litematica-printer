@@ -87,7 +87,7 @@ public class Deleter extends Module {
     private final Setting<List<Block>> whiteListBlocks = sgGeneral.add(new BlockListSetting.Builder()
         .name("white-blocks")
         .description("Which blocks to mine.")
-        .defaultValue(Blocks.NETHERITE_BLOCK)
+        .defaultValue(Blocks.NETHERRACK)
         .visible(() -> BlockListMode.get() == ListMode.Whitelist)
         .build()
     );
@@ -122,6 +122,24 @@ public class Deleter extends Module {
         .build()
     );
 
+    private final Setting<Boolean> OreChannel = sgGeneral.add(new BoolSetting.Builder()
+        .name("ore-channel")
+        .description("打通路径")
+        .defaultValue(false)
+        .visible(() -> TriggerMode.get() == 触发模式.自动半径全部)
+        .build()
+    );
+   private final Setting<List<Block>> OreBlocksForChannel = sgGeneral.add(new BlockListSetting.Builder()
+        .name("ore-blocks-for-channel")
+        .description("玩家高度到矿物的垂直路径不做网格挖掘(打通路径).")
+        .defaultValue(
+            Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE, 
+            Blocks.DEEPSLATE_LAPIS_ORE, Blocks.DEEPSLATE_EMERALD_ORE, Blocks.DEEPSLATE_COAL_ORE, 
+            Blocks.ANCIENT_DEBRIS
+        )
+        .visible(() -> TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get())
+        .build()
+    );
     private final Setting<Integer> depth = sgGeneral.add(new IntSetting.Builder()
         .name("depth")
         .description("Amount of iterations used to scan for similar blocks.")
@@ -319,30 +337,28 @@ public class Deleter extends Module {
         .build()
     );
 
-    private final Setting<Boolean> heightProtection = sgProtection.add(new BoolSetting.Builder()
-        .name("height-protection")
-        .description("Prevent mining blocks outside specified height range.")
-        .defaultValue(false)
+
+
+    private final Setting<ProtectMode> standProtectionMode = sgProtection.add(new EnumSetting.Builder<ProtectMode>()
+        .name("stand-reference")
+        .description("Reference system for standing protection.")
+        .defaultValue(ProtectMode.ReferencePlayerY)
         .build()
     );
-
-    private final Setting<HeightReferenceMode> heightReferenceMode = sgProtection.add(new EnumSetting.Builder<HeightReferenceMode>()
-        .name("height-reference")
-        .description("Reference system for height protection.")
-        .defaultValue(HeightReferenceMode.Player)
-        .visible(heightProtection::get)
-        .build()
-    );
-
-    
-    private final Setting<Integer> 排除高度 = sgProtection.add(new IntSetting.Builder()
-        .name("exclude-height")
-        .description("No digging height, you need to stand on top.")
+    private final Setting<Integer> 站立高度 = sgProtection.add(new IntSetting.Builder()
+        .name("stand-height")
+        .description("Height you need to stand on top.")
         .defaultValue(-1)
         .min(-64)
         .max(320)
-        .sliderRange(-20, 20)
-        .visible(heightProtection::get)
+        .visible(() -> standProtectionMode.get() == ProtectMode.ReferenceWorldY)
+        .build()
+    );
+
+    private final Setting<ProtectMode> heightProtectionMode = sgProtection.add(new EnumSetting.Builder<ProtectMode>()
+        .name("height-reference")
+        .description("Reference system for height protection.")
+        .defaultValue(ProtectMode.Off)
         .build()
     );
 
@@ -353,7 +369,7 @@ public class Deleter extends Module {
         .min(-64)
         .max(320)
         .sliderRange(-20, 20)
-        .visible(heightProtection::get)
+        .visible(() -> heightProtectionMode.get() != ProtectMode.Off)
         .build()
     );
 
@@ -364,7 +380,7 @@ public class Deleter extends Module {
         .min(-64)
         .max(320)
         .sliderRange(-20, 20)
-        .visible(heightProtection::get)
+        .visible(() -> heightProtectionMode.get() != ProtectMode.Off)
         .build()
     );
 
@@ -488,6 +504,8 @@ public class Deleter extends Module {
         .defaultValue(false)
         .build()
     );
+
+    
     //endregion
 
 
@@ -531,13 +549,55 @@ public class Deleter extends Module {
                Math.abs(pos.getX() - playerX) <= 2 &&
                Math.abs(pos.getZ() - playerZ) <= 2;
     }
+    
+    private boolean 无视网格挖掘和站立保护(Vec3i pos, List<Vec3i> OreBlocks, Vec3i PlayerPos) {
+        int playerY= PlayerPos.getY();
+        int posY = pos.getY();
+        int posX = pos.getX();
+        int posZ = pos.getZ();
+
+        for (Vec3i Ore : OreBlocks) {
+            int OreY= Ore.getY();
+            int OreX= Ore.getX();
+            int OreZ= Ore.getZ();
+            int minY = Math.min(playerY, OreY);
+            int maxY = Math.max(playerY, OreY);
+
+            int XZ半径 = Math.abs(posY - OreY)+1;
+            if (OreY > playerY) {
+                XZ半径 = switch (XZ半径) {
+                    case 1 -> 1;
+                    case 2 -> 2;
+                    default -> 3;
+                };
+            } 
+
+            if (minY <= posY && posY <= maxY && Math.abs(posX - OreX) <= XZ半径 && Math.abs(posZ - OreZ) <= XZ半径) {
+                return true;
+            }   
+        }
+        return false;
+
+
+    }
+    private boolean isStandBlock(BlockPos pos) {
+        ProtectMode standProtectionStatus = standProtectionMode.get();
+        if (standProtectionStatus == ProtectMode.Off) {
+            return false;
+        }
+        if (standProtectionStatus == ProtectMode.ReferencePlayerY) {
+            return pos.getY() == mc.player.getBlockPos().getY() - 1;
+        } else {
+            return pos.getY() == 站立高度.get();
+        }
+    }
 
     private boolean isProtectedPosition(BlockPos pos) {
         if ((groundProtection.get() && !mc.player.isOnGround())
-        ||(widthProtection.get() && !isWithinWidthRange(pos))
-        ||(heightProtection.get() && !isWithinHeightRange(pos))
-        ||(regionProtection.get() && !isWithinRegion(pos))
-        ||(directionalProtection.get() && !isWithinDirectionalRange(pos))
+        ||(!isWithinWidthRange(pos))
+        ||(!isWithinHeightRange(pos))
+        ||(!isWithinRegion(pos))
+        ||(!isWithinDirectionalRange(pos))
         ) {
             return true;
         }
@@ -587,26 +647,24 @@ public class Deleter extends Module {
 
     //region ProtectionChecks
 
-
     private boolean isWithinHeightRange(BlockPos pos) {
-        int referenceY;
-        
-        if (heightReferenceMode.get() == HeightReferenceMode.Player) {
-            // Use player's Y position as reference
+        ProtectMode heightProtectionStatus = heightProtectionMode.get();
+        if (heightProtectionStatus == ProtectMode.Off) {
+            return true;
+        }
+        int referenceY = 0;
+        if (heightProtectionStatus == ProtectMode.ReferencePlayerY) {
             referenceY = mc.player.getBlockPos().getY();
-        } else {
-            // Use world coordinates (Y=0 as reference)
-            referenceY = 0;
         }
         
-        int blockY = pos.getY();
-        int relativeHeight = blockY - referenceY;
+        int relativeHeight = pos.getY() - referenceY;
         
-        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get() && relativeHeight != 排除高度.get();
+        return relativeHeight >= minHeight.get() && relativeHeight <= maxHeight.get();
     }
 
 
     private boolean isWithinRegion(BlockPos pos) {
+        if (!regionProtection.get()) return true;
         // Calculate min and max coordinates from the two corner points
         int minX = Math.min(region1X.get(), region2X.get());
         int maxX = Math.max(region1X.get(), region2X.get());
@@ -624,6 +682,7 @@ public class Deleter extends Module {
 
 
     private boolean isWithinDirectionalRange(BlockPos pos) {
+        if (!directionalProtection.get()) return true;
         // Get player position and yaw
         double playerX = mc.player.getX();
         double playerZ = mc.player.getZ();
@@ -671,6 +730,7 @@ public class Deleter extends Module {
 
     //region WidthProtection
     private boolean isWithinWidthRange(BlockPos pos) {
+        if (!widthProtection.get()) return true;
         if (mc.player == null) return false;
         
         // Get player position
@@ -759,6 +819,9 @@ public class Deleter extends Module {
     //endregion
 
     private boolean 允许存入挖掘表(BlockPos pos){
+        return !isOutOfDistance(pos) && !isStandBlock(pos) && !isProtectedPosition(pos);
+    }
+    private boolean 允许存入挖掘表分支(BlockPos pos){
         return !isOutOfDistance(pos) && !isProtectedPosition(pos);
     }
     private boolean 允许存入挖掘表(BlockState state){
@@ -797,6 +860,16 @@ public class Deleter extends Module {
         }
     }
     private void scanBlocks() {
+        List<Vec3i> OreBlocks = null;
+        Vec3i playerPos = null;
+        if (OreChannel.get()) {
+            playerPos = mc.player.getBlockPos();
+            OreBlocks = blocks.stream()
+            .filter(b -> OreBlocksForChannel.get().contains(b.originalBlock))
+            .map(b -> (Vec3i) b.blockPos)
+            .toList();
+            
+        }
         Vec3d centerPos = MyUtils.getPlayerEye(mc.player);
         double radius = getHandDistance();
 
@@ -811,12 +884,20 @@ public class Deleter extends Module {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos scanPos = new BlockPos(x, y, z);
-                    
-                    if (!允许存入挖掘表(scanPos))  continue;
+
+                    if (!允许存入挖掘表分支(scanPos))  continue;
                     BlockState scanState = mc.world.getBlockState(scanPos);
                     if (!允许存入挖掘表(scanState))  continue;
                     Block scanBlock = scanState.getBlock();
                     if (!允许存入挖掘表(scanBlock))  continue;
+
+                    if(OreBlocks!=null && playerPos != null && 无视网格挖掘和站立保护(scanPos, OreBlocks, playerPos)) {
+                        TryBlocksAdd(scanPos, scanBlock);
+                        continue;
+                    }
+
+
+                    if(isStandBlock(scanPos))  continue;
 
                     if (
                         MeshMine.get() && !isPlayerSurrounding(scanPos)
@@ -845,12 +926,13 @@ public class Deleter extends Module {
                                 }
                             }
                         }
-                        if (!hasNeighbourInBlocks) {
-                            TryBlocksAdd(scanPos, scanBlock);
+                        if (hasNeighbourInBlocks) {
+                            continue;
                         }
-                    } else {
-                        TryBlocksAdd(scanPos, scanBlock);
                     }
+                    
+                    TryBlocksAdd(scanPos, scanBlock);
+                    
                 }
             }
         }

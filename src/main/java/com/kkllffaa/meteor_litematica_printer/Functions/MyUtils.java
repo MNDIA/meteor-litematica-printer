@@ -194,9 +194,10 @@ public class MyUtils {
         Auto,
         Max,
     }
-    public static enum HeightReferenceMode {
-        Player,
-        World
+    public static enum ProtectMode {
+		Off,
+        ReferencePlayerY,
+        ReferenceWorldY
     }
 	public static enum ListMode {
         Whitelist,
