@@ -32,6 +32,12 @@ public class InteractSettings extends Module {
 	public InteractSettings() {
 		super(Addon.SETTINGSCATEGORY, "InteractSettings", "Module to configure settings.");
 	}
+	
+	@Override
+	public void onActivate(){
+		this.toggle();
+	}
+
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 

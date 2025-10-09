@@ -48,7 +48,10 @@ public class PlaceSettings extends Module {
 	public PlaceSettings() {
 		super(Addon.SETTINGSCATEGORY, "PlaceSettings", "Module to configure settings.");
 	}
-
+	@Override
+	public void onActivate(){
+		this.toggle();
+	}
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
 	private final SettingGroup sgClickFace = settings.createGroup("Click Face");
