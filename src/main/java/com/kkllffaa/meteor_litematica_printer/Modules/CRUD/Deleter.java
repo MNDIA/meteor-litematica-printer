@@ -551,6 +551,7 @@ public class Deleter extends Module {
     }
     
     private boolean 无视网格挖掘和站立保护(Vec3i pos, List<Vec3i> OreBlocks, Vec3i PlayerPos) {
+        if (PlayerPos == null || OreBlocks == null || OreBlocks.isEmpty()) return false;
         int playerY= PlayerPos.getY();
         int posY = pos.getY();
         int posX = pos.getX();
