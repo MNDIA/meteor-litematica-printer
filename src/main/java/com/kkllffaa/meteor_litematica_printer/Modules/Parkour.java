@@ -8,6 +8,7 @@ import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.shape.VoxelShape;
@@ -93,6 +94,6 @@ public class Parkour extends Module {
 
 
     private boolean isLostControl() {
-        return mc.cameraEntity != mc.player || mc.currentScreen != null;
+        return mc.cameraEntity != mc.player || mc.currentScreen != null || Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.render.Freecam.class);
     }
 }
