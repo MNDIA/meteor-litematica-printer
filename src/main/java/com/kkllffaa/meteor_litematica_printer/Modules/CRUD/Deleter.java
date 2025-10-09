@@ -129,7 +129,14 @@ public class Deleter extends Module {
         .visible(() -> TriggerMode.get() == 触发模式.自动半径全部)
         .build()
     );
-   private final Setting<List<Block>> OreBlocksForChannel = sgGeneral.add(new BlockListSetting.Builder()
+    private final Setting<OreMode> 矿物挖掘模式 = sgGeneral.add(new EnumSetting.Builder<OreMode>()
+        .name("ore-mode")
+        .description("矿物挖掘模式")
+        .defaultValue(OreMode.强制不挖掘)
+        .visible(() -> TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get())
+        .build()
+    );
+    private final Setting<List<Block>> OreBlocksForChannel = sgGeneral.add(new BlockListSetting.Builder()
         .name("ore-blocks-for-channel")
         .description("玩家高度到矿物的垂直路径不做网格挖掘(打通路径).")
         .defaultValue(
@@ -848,6 +855,19 @@ public class Deleter extends Module {
         return !isAirOrFluid(state);
     }
     private boolean 允许存入挖掘表(Block block){
+        if(TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()){
+            switch (矿物挖掘模式.get()){
+                case 强制挖掘 -> {
+                    if (OreBlocksForChannel.get().contains(block)) return true;
+                }
+                case 强制不挖掘 -> {
+                    if (OreBlocksForChannel.get().contains(block)) return false;
+                }
+                case 遵循黑白名单 -> {
+
+                }
+            }
+        }
         if (BlockListMode.get() == ListMode.Whitelist && !whiteListBlocks.get().contains(block))
             return false;
         if (BlockListMode.get() == ListMode.Blacklist && blackListBlocks.get().contains(block))
@@ -1058,7 +1078,7 @@ public class Deleter extends Module {
                 .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
                 .toList();
 
-                
+
                 本tick需要挖掘的一个硬砖 = HardBlocks.stream()
                         .filter(b -> b.state == MyBlock.State.Mining)
                         .findFirst()
@@ -1279,7 +1299,11 @@ public class Deleter extends Module {
         自动半径全部,
         手动相连同类,
     }
-
+    public static enum OreMode {
+        遵循黑白名单,
+        强制挖掘,
+        强制不挖掘,
+    }
 
     public static enum MeshMineMode{
         Cache,
