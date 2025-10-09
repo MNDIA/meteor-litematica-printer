@@ -547,7 +547,7 @@ public class Deleter extends Module {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
     
-    private static final double 速度阈值 = 0.0001;
+    private static final double 速度阈值 = 0.019;
     private boolean isPlayerSurrounding(BlockPos pos) {
         Vec3d playerPos = mc.player.getPos();
         double playerX = playerPos.x;
