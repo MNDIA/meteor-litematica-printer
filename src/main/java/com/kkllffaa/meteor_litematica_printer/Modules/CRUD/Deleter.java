@@ -1024,7 +1024,7 @@ public class Deleter extends Module {
             .toList();
             
             List<MyBlock> ToAttackBlocks = FliterBlocks.stream()
-            .filter(b -> b.state == MyBlock.State.ToMine && BlockUtils.canInstaBreak(b.blockPos))
+            .filter(b -> BlockUtils.canInstaBreak(b.blockPos))
             .toList();
             
             int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
@@ -1049,7 +1049,7 @@ public class Deleter extends Module {
             ToAttackBlocks.stream()
                 .sorted(Comparator.comparingInt(b -> BlockPosUtils.getManhattanDistance(b.blockPos, playerPos)))
                 .limit(Attacks)
-                .forEach(MyBlock::mineWithAttack);
+                .forEach(MyBlock::mine);
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
@@ -1146,35 +1146,11 @@ public class Deleter extends Module {
             if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
             else updateBlockBreakingProgress();
         }
-        public void mineWithAttack() {
-            if (startTime == 0) {
-                startTime = System.currentTimeMillis();
-            }
-            if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::AttackBlock);
-            else AttackBlock();
-        }
 
         private void updateBlockBreakingProgress() {
             BlockUtils.breakBlock(blockPos, showSwing.get());
         }
-     
-        private void AttackBlock() {
-            if (!BlockUtils.canBreak(blockPos, mc.world.getBlockState(blockPos)))
-                return;
-
-            // Creating new instance of block pos because minecraft assigns the parameter to
-            // a field, and we don't want it to change when it has been stored in a field
-            // somewhere
-            BlockPos pos = blockPos instanceof BlockPos.Mutable ? new BlockPos(blockPos) : blockPos;
-            mc.interactionManager.attackBlock(pos, BlockUtils.getDirection(blockPos));
-
-            if (showSwing.get())
-                mc.player.swingHand(Hand.MAIN_HAND);
-            else
-                mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-
-        }
-
+       
         public void render(Render3DEvent event) {
             ColorScheme color = null;
             switch (state){
