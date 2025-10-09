@@ -1056,7 +1056,7 @@ public class Deleter extends Module {
                 List<MyBlock> ToDetectBlocks = HardBlocks.stream()
                         .filter(b -> b.detected == false)
                         .toList();
-                        
+
                 本tick需要挖掘的一个硬砖 = HardBlocks.stream()
                         .filter(b -> b.state == MyBlock.State.Mining)
                         .findFirst()
@@ -1080,6 +1080,9 @@ public class Deleter extends Module {
             上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             tick = 0;
 
+            if (!(Attacks == 0 && 本tick需要挖掘的一个硬砖 != null)) {
+                mc.interactionManager.cancelBlockBreaking();
+            }
             ToAttackBlocks.stream()
                 .limit(Attacks)
                 .forEach(MyBlock::mine);
@@ -1183,7 +1186,7 @@ public class Deleter extends Module {
         }
 
         public void detect() {
-             mc.interactionManager.cancelBlockBreaking();
+            mc.interactionManager.cancelBlockBreaking();
             BlockUtils.breakBlock(blockPos, showSwing.get());
         }
 
