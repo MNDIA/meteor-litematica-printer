@@ -819,10 +819,10 @@ public class Deleter extends Module {
     //endregion
 
     private boolean 允许存入挖掘表(BlockPos pos){
+        if(TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()){
+            return !isOutOfDistance(pos) && !isProtectedPosition(pos);
+        }
         return !isOutOfDistance(pos) && !isStandBlock(pos) && !isProtectedPosition(pos);
-    }
-    private boolean 允许存入挖掘表分支(BlockPos pos){
-        return !isOutOfDistance(pos) && !isProtectedPosition(pos);
     }
     private boolean 允许存入挖掘表(BlockState state){
         return !isAirOrFluid(state);
@@ -885,19 +885,21 @@ public class Deleter extends Module {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos scanPos = new BlockPos(x, y, z);
 
-                    if (!允许存入挖掘表分支(scanPos))  continue;
+                    if (!允许存入挖掘表(scanPos))  continue;
                     BlockState scanState = mc.world.getBlockState(scanPos);
                     if (!允许存入挖掘表(scanState))  continue;
                     Block scanBlock = scanState.getBlock();
                     if (!允许存入挖掘表(scanBlock))  continue;
 
-                    if(OreBlocks!=null && playerPos != null && 无视网格挖掘和站立保护(scanPos, OreBlocks, playerPos)) {
-                        TryBlocksAdd(scanPos, scanBlock);
-                        continue;
+                    if(OreChannel.get()) {
+                        if (无视网格挖掘和站立保护(scanPos, OreBlocks, playerPos)){
+                            TryBlocksAdd(scanPos, scanBlock);
+                            continue;
+                        }
+                        if(isStandBlock(scanPos))  continue;
                     }
 
 
-                    if(isStandBlock(scanPos))  continue;
 
                     if (
                         MeshMine.get() && !isPlayerSurrounding(scanPos)
