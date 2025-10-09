@@ -557,11 +557,11 @@ public class Deleter extends Module {
         Vec3d velocity = mc.player.getVelocity();
         
         int xMin = (int) Math.floor(playerX - 0.4);
-        int xMax = (int) Math.ceil(playerX + 0.4);
+        int xMax = (int) Math.floor(playerX + 0.4);
         int zMin = (int) Math.floor(playerZ - 0.4);
-        int zMax = (int) Math.ceil(playerZ + 0.4);
+        int zMax = (int) Math.floor(playerZ + 0.4);
         int yMin = (int) Math.floor(playerY + 0.001);
-        int yMax = (int) Math.ceil(playerY + 0.999);
+        int yMax = (int) Math.floor(playerY + 1.001);
         
         if (velocity.x > 速度阈值) xMax += 1;
         else if (velocity.x < -速度阈值) xMin -= 1;
