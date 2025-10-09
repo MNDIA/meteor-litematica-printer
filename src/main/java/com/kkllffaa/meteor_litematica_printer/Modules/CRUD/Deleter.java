@@ -547,21 +547,21 @@ public class Deleter extends Module {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
     
-    private static final double 速度阈值 = 0.6;
+    private static final double 速度阈值 = 0.0001;
     private boolean isPlayerSurrounding(BlockPos pos) {
-        Vec3i playerPos = mc.player.getBlockPos();
-        int playerY = playerPos.getY();
-        int playerX = playerPos.getX();
-        int playerZ = playerPos.getZ();
+        Vec3d playerPos = mc.player.getPos();
+        double playerX = playerPos.x;
+        double playerY = playerPos.y;
+        double playerZ = playerPos.z;
         
         Vec3d velocity = mc.player.getVelocity();
         
-        int xMin = playerX - 1;
-        int xMax = playerX + 1;
-        int zMin = playerZ - 1;
-        int zMax = playerZ + 1;
-        int yMin = playerY;
-        int yMax = playerY + 1;
+        int xMin = (int) Math.floor(playerX - 0.4);
+        int xMax = (int) Math.ceil(playerX + 0.4);
+        int zMin = (int) Math.floor(playerZ - 0.4);
+        int zMax = (int) Math.ceil(playerZ + 0.4);
+        int yMin = (int) Math.floor(playerY + 0.001);
+        int yMax = (int) Math.ceil(playerY + 0.999);
         
         if (velocity.x > 速度阈值) xMax += 1;
         else if (velocity.x < -速度阈值) xMin -= 1;
