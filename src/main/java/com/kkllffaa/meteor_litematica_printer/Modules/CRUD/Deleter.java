@@ -1103,6 +1103,7 @@ public class Deleter extends Module {
             boolean 挖掘的是同一个硬砖 = 本tick需要挖掘的一个硬砖 != null && 上一次间隔挖掘的一个硬砖 != null
                     && 本tick需要挖掘的一个硬砖.blockPos.equals(上一次间隔挖掘的一个硬砖.blockPos);
 
+            上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
                     
             if (tick < totalDelay && Attacks == 0 && !挖掘的是同一个硬砖) {
                 tick++;
@@ -1122,7 +1123,6 @@ public class Deleter extends Module {
             if (本tick需要挖掘的一个硬砖 != null) {
                 本tick需要挖掘的一个硬砖.mine();
             }
-            上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
         }
 
     }
