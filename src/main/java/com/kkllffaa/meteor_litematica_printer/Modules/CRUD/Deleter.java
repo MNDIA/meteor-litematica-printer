@@ -6,6 +6,8 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.player.AutoTool;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
@@ -158,7 +160,7 @@ public class Deleter extends Module {
 
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay")
-        .description("Delay between mining blocks(非立即破坏的砖挖掘后切换目标).")
+        .description("Delay before mining the next non-instant block.")
         .defaultValue(5)
         .min(0)
         .sliderRange(0, 20)
@@ -524,7 +526,8 @@ public class Deleter extends Module {
 
     private final List<BlockPos> foundBlockPos = new ArrayList<>();
 
-    private int 冷却 = 0;
+    private int 硬砖前摇 = 0;
+    private int 硬砖后摇 = 0;
     private MyBlock 上一冷却刻挖掘的一个硬砖 = null;
     
     private BlockPos lastPlayerPos = null;
@@ -1098,27 +1101,36 @@ public class Deleter extends Module {
             boolean 能连续挖掘硬砖 = Attacks < 1;
             
             if (能连续挖掘硬砖 && 要挖同一个硬砖) {
-                冷却 = 0;
+                硬砖后摇 = 0;
             }
 
-            if (冷却 > 0) {
-                冷却--;
+            if (硬砖后摇 > 0) {
+                硬砖后摇--;
                 return;
             } 
-            上一冷却刻挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             
             ToAttackBlocks.stream()
             .limit(Attacks)
             .forEach(MyBlock::mine);
+            if (!能连续挖掘硬砖){
+                硬砖前摇 = delay.get() + randomDelayMode.get().getTheDelay();
+                
+            }
+            
+            if(硬砖前摇>0){
+                硬砖前摇--;
+                return;
+            }
             
             // ToDetectBlocks.stream()
             // .limit(Detects)
             // .forEach(MyBlock::detect);
             
+            上一冷却刻挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             if (本tick需要挖掘的一个硬砖 != null){
                 本tick需要挖掘的一个硬砖.mine();
-
-                冷却 = delay.get() + randomDelayMode.get().getTheDelay();
+                
+                硬砖后摇 = 5;
             }
             
         }
@@ -1219,12 +1231,18 @@ public class Deleter extends Module {
         }
 
         public boolean canInstaBreak() {
-            if (mc.player.isCreative()) return true;
-            BlockState state = mc.world.getBlockState(blockPos);
-            for (int slot = 0; slot < 9; slot++) {
-                if (BlockUtils.getBreakDelta(slot, state) >= 1) return true;
+            if (Modules.get().isActive(AutoTool.class)) {
+                if (mc.player.isCreative())
+                    return true;
+                BlockState state = mc.world.getBlockState(blockPos);
+                for (int slot = 0; slot < 9; slot++) {
+                    if (BlockUtils.getBreakDelta(slot, state) >= 1)
+                        return true;
+                }
+                return false;
+            }else{
+                return BlockUtils.canInstaBreak(blockPos);
             }
-            return false;
         }
 
         // public void detect() {
