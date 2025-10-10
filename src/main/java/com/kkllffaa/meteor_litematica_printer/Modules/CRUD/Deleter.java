@@ -158,7 +158,7 @@ public class Deleter extends Module {
 
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay")
-        .description("Delay between mining blocks(非立即破坏的单一砖挖掘之间切换目标).")
+        .description("Delay between mining blocks(非立即破坏的砖挖掘后切换目标).")
         .defaultValue(5)
         .min(0)
         .sliderRange(0, 20)
@@ -545,7 +545,7 @@ public class Deleter extends Module {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
     
-    private static final double 速度阈值 = 0.0099;
+    private static final double 速度阈值 = 0.009;
     private boolean isPlayerSurrounding(BlockPos pos) {
         Vec3d playerPos = mc.player.getPos();
         double playerX = playerPos.x;
