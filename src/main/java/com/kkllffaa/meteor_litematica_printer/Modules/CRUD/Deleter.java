@@ -1112,9 +1112,9 @@ public class Deleter extends Module {
             ToAttackBlocks.stream()
             .limit(Attacks)
             .forEach(MyBlock::mine);
+            
             if (!能连续挖掘硬砖){
                 硬砖前摇 = delay.get() + randomDelayMode.get().getTheDelay();
-                
             }
             
             if(硬砖前摇>0){
