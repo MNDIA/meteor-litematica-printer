@@ -22,7 +22,6 @@ import net.minecraft.util.math.Vec3i;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.Objects;
 
@@ -527,7 +526,6 @@ public class Deleter extends Module {
 
     private int 冷却 = 0;
     private MyBlock 上一冷却刻挖掘的一个硬砖 = null;
-    private static final Random random = new Random();
     
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
@@ -1094,8 +1092,6 @@ public class Deleter extends Module {
                                     .orElse(null));
                 }
             }
-                    
-            
             
             boolean 在挖同一个硬砖 = 上一冷却刻挖掘的一个硬砖 != null && 本tick需要挖掘的一个硬砖 != null
                 && 本tick需要挖掘的一个硬砖.blockPos.equals(上一冷却刻挖掘的一个硬砖.blockPos);
@@ -1121,9 +1117,7 @@ public class Deleter extends Module {
             if (本tick需要挖掘的一个硬砖 != null){
                 本tick需要挖掘的一个硬砖.mine();
 
-                int[] randomDelays = randomDelayMode.get().delays;
-                int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
-                冷却 = delay.get() + randomDelay;
+                冷却 = delay.get() + randomDelayMode.get().getTheDelay();
             }
             
         }

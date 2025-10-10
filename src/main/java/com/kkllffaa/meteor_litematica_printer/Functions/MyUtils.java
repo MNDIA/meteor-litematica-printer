@@ -18,6 +18,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
+import java.util.Random;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
@@ -176,14 +177,20 @@ public class MyUtils {
 		PlayerPosition, // 射线方向
 		None
 	}
-    public static enum RandomDelayMode {
-        None(new int[]{0}),    
+    
+    private static final Random random = new Random();
+	public static enum RandomDelayMode {
+        None(null),    
         Fast(new int[]{0, 0, 1}),     
         Balanced(new int[]{0, 0, 0, 0, 1, 1, 1, 2, 2, 3}), 
         Slow(new int[]{0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 5, 6}),      
         Variable(new int[]{0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 
-        public final int[] delays;
+        private final int[] delays;
+		public int getTheDelay(){
+			if (this == None) return 0;
+			return delays[random.nextInt(delays.length)];
+		}
 
         RandomDelayMode(int[] delays) {
             this.delays = delays;
