@@ -526,7 +526,7 @@ public class Deleter extends Module {
     private final List<BlockPos> foundBlockPos = new ArrayList<>();
 
     private int tick = 0;
-    private MyBlock 上一次间隔挖掘的一个硬砖 = null;
+    private MyBlock 上一Tick挖掘的一个硬砖 = null;
     private static final Random random = new Random();
     
     private BlockPos lastPlayerPos = null;
@@ -1099,30 +1099,33 @@ public class Deleter extends Module {
                                     .orElse(null));
                 }
             }
-
-            boolean 挖掘的是同一个硬砖 = 本tick需要挖掘的一个硬砖 != null && 上一次间隔挖掘的一个硬砖 != null
-                    && 本tick需要挖掘的一个硬砖.blockPos.equals(上一次间隔挖掘的一个硬砖.blockPos);
-
-            上一次间隔挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
                     
-            if (tick < totalDelay && Attacks == 0 && !挖掘的是同一个硬砖) {
-                tick++;
-                return;
-            }
-            tick = 0;
-            
-            
             ToAttackBlocks.stream()
             .limit(Attacks)
             .forEach(MyBlock::mine);
-
+            
             // ToDetectBlocks.stream()
             // .limit(Detects)
             // .forEach(MyBlock::detect);
 
-            if (本tick需要挖掘的一个硬砖 != null) {
-                本tick需要挖掘的一个硬砖.mine();
+            if (本tick需要挖掘的一个硬砖 == null) {
+                tick = 0;
+                上一Tick挖掘的一个硬砖 = null;
+                return;
             }
+            boolean 两Tick在挖同一个硬砖 = 上一Tick挖掘的一个硬砖 != null
+                && 本tick需要挖掘的一个硬砖.blockPos.equals(上一Tick挖掘的一个硬砖.blockPos);
+            boolean 有夹杂可瞬挖的硬砖 = Attacks > 0;
+            上一Tick挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
+
+            if (tick < totalDelay && !(两Tick在挖同一个硬砖 && !有夹杂可瞬挖的硬砖)) {
+                tick++;
+                return;
+            }   
+            tick = 0;
+
+            本tick需要挖掘的一个硬砖.mine();
+            
         }
 
     }
