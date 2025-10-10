@@ -8,6 +8,7 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.render.Xray;
 import meteordevelopment.meteorclient.systems.modules.world.InfinityMiner;
 import meteordevelopment.meteorclient.utils.Utils;
+import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
@@ -177,7 +178,16 @@ public class AutoTool extends Module {
 
         if (bestSlot != -1 && (bestScore > getScore(useSlotStack, blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack -> !shouldStopUsing(itemStack)) || shouldStopUsing(useSlotStack) || !isTool(useSlotStack))) {
             if (bestSlot != useSlotIndex) {
-                InvUtils.quickSwap().fromHotbar(useSlotIndex).to(bestSlot);
+                InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
+                if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
+                    info("Cursor not empty, trying to put back to original slot");
+                    FindItemResult emptySlot = InvUtils.findEmpty();
+                    if (emptySlot.found()) {
+                        InvUtils.click().slot(emptySlot.slot());
+                    } else {
+                        InvUtils.click().slot(bestSlot);
+                    }
+                }
             }
             InvUtils.swap(useSlotIndex, true);
         }

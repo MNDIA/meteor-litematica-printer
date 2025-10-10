@@ -50,16 +50,16 @@ public class AutoFix extends Module {
         if (InvUtils.testInOffHand(itemStack -> !needFix(itemStack))) {
             FindItemResult result = InvUtils.find(itemStack -> needFix(itemStack), 0, 35);
             if (result.found()) {
-                InvUtils.quickSwap().fromOffhand().to(result.slot());
-
-                // InvUtils.move().from(result.slot()).toOffhand();
-                // if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
-                //     FindItemResult emptySlot = InvUtils.findEmpty();
-                //     if (emptySlot.found()) {
-                //         InvUtils.click().slot(emptySlot.slot());
-                //     } else {
-                //     }
-                // }
+                InvUtils.move().from(result.slot()).toOffhand();
+                if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
+                    FindItemResult emptySlot = InvUtils.findEmpty();
+                    if (emptySlot.found()) {
+                        InvUtils.click().slot(emptySlot.slot());
+                    } else {
+                        InvUtils.click().slot(result.slot());
+                        info("No empty slot found, put back to original slot");
+                    }
+                }
             }
         }
     }
