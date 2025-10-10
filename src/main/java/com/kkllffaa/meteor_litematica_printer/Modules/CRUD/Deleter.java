@@ -1054,7 +1054,7 @@ public class Deleter extends Module {
             .toList();
             
             List<MyBlock> ToAttackBlocks = FliterBlocks.stream()
-            .filter(b -> BlockUtils.canInstaBreak(b.blockPos))
+            .filter(b -> b.canInstaBreak())
             .toList();
             
             int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
@@ -1068,7 +1068,7 @@ public class Deleter extends Module {
             MyBlock 本tick需要挖掘的一个硬砖 = null;
             if (Attacks < maxBlocksPerTick.get()) {
                 List<MyBlock> HardBlocks = FliterBlocks.stream()
-                .filter(b -> !BlockUtils.canInstaBreak(b.blockPos))
+                .filter(b -> !b.canInstaBreak())
                 .toList();
 
                 if (TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()) {
@@ -1124,6 +1124,7 @@ public class Deleter extends Module {
         }
 
     }
+
 
     @EventHandler
     private void onRender(Render3DEvent event) {
@@ -1217,6 +1218,15 @@ public class Deleter extends Module {
             else updateBlockBreakingProgress();
         }
 
+        public boolean canInstaBreak() {
+            if (mc.player.isCreative()) return true;
+            BlockState state = mc.world.getBlockState(blockPos);
+            for (int slot = 0; slot < 9; slot++) {
+                if (BlockUtils.getBreakDelta(slot, state) >= 1) return true;
+            }
+            return false;
+        }
+
         // public void detect() {
         //     detected = true;
         //     //TODO:探测
@@ -1299,6 +1309,7 @@ public class Deleter extends Module {
     public String getInfoString() {
         return BlockListMode.get().toString();
     }
+
 
 
 
