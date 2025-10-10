@@ -1092,23 +1092,26 @@ public class Deleter extends Module {
                                     .orElse(null));
                 }
             }
-            ToAttackBlocks.stream()
-            .limit(Attacks)
-            .forEach(MyBlock::mine);
             
             boolean 要挖同一个硬砖 = 上一冷却刻挖掘的一个硬砖 != null && 本tick需要挖掘的一个硬砖 != null
                 && 本tick需要挖掘的一个硬砖.blockPos.equals(上一冷却刻挖掘的一个硬砖.blockPos);
             boolean 能连续挖掘硬砖 = Attacks < 1;
             
-            if (能连续挖掘硬砖 && 要挖同一个硬砖) {
-                冷却 = 0;
+            if (能连续挖掘硬砖) {
+                if (要挖同一个硬砖) {
+                    冷却 = 0;
+                }
             }
+
             if (冷却 > 0) {
                 冷却--;
                 return;
             } 
             上一冷却刻挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             
+            ToAttackBlocks.stream()
+            .limit(Attacks)
+            .forEach(MyBlock::mine);
             
             // ToDetectBlocks.stream()
             // .limit(Detects)
@@ -1117,7 +1120,7 @@ public class Deleter extends Module {
             if (本tick需要挖掘的一个硬砖 != null){
                 本tick需要挖掘的一个硬砖.mine();
 
-                冷却 = delay.get() + randomDelayMode.get().getTheDelay();
+                冷却 = 5;
             }
             
         }
