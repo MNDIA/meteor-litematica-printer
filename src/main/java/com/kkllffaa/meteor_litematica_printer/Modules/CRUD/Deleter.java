@@ -1093,11 +1093,11 @@ public class Deleter extends Module {
                 }
             }
             
-            boolean 在挖同一个硬砖 = 上一冷却刻挖掘的一个硬砖 != null && 本tick需要挖掘的一个硬砖 != null
+            boolean 要挖同一个硬砖 = 上一冷却刻挖掘的一个硬砖 != null && 本tick需要挖掘的一个硬砖 != null
                 && 本tick需要挖掘的一个硬砖.blockPos.equals(上一冷却刻挖掘的一个硬砖.blockPos);
-            boolean 有夹杂可瞬挖的硬砖 = Attacks > 0;
+            boolean 能连续挖掘硬砖 = Attacks < 1;
             
-            if (在挖同一个硬砖 && !有夹杂可瞬挖的硬砖) {
+            if (能连续挖掘硬砖 && 要挖同一个硬砖) {
                 冷却 = 0;
             }
             if (冷却 > 0) {
