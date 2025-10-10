@@ -525,8 +525,8 @@ public class Deleter extends Module {
 
     private final List<BlockPos> foundBlockPos = new ArrayList<>();
 
-    private int tick = 0;
-    private MyBlock 上一Tick挖掘的一个硬砖 = null;
+    private int 冷却 = 0;
+    private MyBlock 上一冷却刻挖掘的一个硬砖 = null;
     private static final Random random = new Random();
     
     private BlockPos lastPlayerPos = null;
@@ -1049,11 +1049,6 @@ public class Deleter extends Module {
         });
 
         if (!blocks.isEmpty()) {
-            int[] randomDelays = randomDelayMode.get().delays;
-            int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
-            int totalDelay = delay.get() + randomDelay;
-            
-            
             BlockPos playerPos = mc.player.getBlockPos();
             List<MyBlock> FliterBlocks = blocks.stream()
             .filter(b -> b.state == MyBlock.State.ToMine || b.state == MyBlock.State.Mining)
@@ -1100,6 +1095,21 @@ public class Deleter extends Module {
                 }
             }
                     
+            
+            
+            boolean 在挖同一个硬砖 = 上一冷却刻挖掘的一个硬砖 != null && 本tick需要挖掘的一个硬砖 != null
+                && 本tick需要挖掘的一个硬砖.blockPos.equals(上一冷却刻挖掘的一个硬砖.blockPos);
+            boolean 有夹杂可瞬挖的硬砖 = Attacks > 0;
+            
+            if (在挖同一个硬砖 && !有夹杂可瞬挖的硬砖) {
+                冷却 = 0;
+            }
+            if (冷却 > 0) {
+                冷却--;
+                return;
+            } 
+            上一冷却刻挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
+            
             ToAttackBlocks.stream()
             .limit(Attacks)
             .forEach(MyBlock::mine);
@@ -1107,24 +1117,14 @@ public class Deleter extends Module {
             // ToDetectBlocks.stream()
             // .limit(Detects)
             // .forEach(MyBlock::detect);
+            
+            if (本tick需要挖掘的一个硬砖 != null){
+                本tick需要挖掘的一个硬砖.mine();
 
-            if (本tick需要挖掘的一个硬砖 == null) {
-                tick = 0;
-                上一Tick挖掘的一个硬砖 = null;
-                return;
+                int[] randomDelays = randomDelayMode.get().delays;
+                int randomDelay = randomDelays[random.nextInt(randomDelays.length)];
+                冷却 = delay.get() + randomDelay;
             }
-            boolean 两Tick在挖同一个硬砖 = 上一Tick挖掘的一个硬砖 != null
-                && 本tick需要挖掘的一个硬砖.blockPos.equals(上一Tick挖掘的一个硬砖.blockPos);
-            boolean 有夹杂可瞬挖的硬砖 = Attacks > 0;
-            上一Tick挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
-
-            if (tick < totalDelay && !(两Tick在挖同一个硬砖 && !有夹杂可瞬挖的硬砖)) {
-                tick++;
-                return;
-            }   
-            tick = 0;
-
-            本tick需要挖掘的一个硬砖.mine();
             
         }
 
