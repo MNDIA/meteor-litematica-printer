@@ -1092,6 +1092,9 @@ public class Deleter extends Module {
                                     .orElse(null));
                 }
             }
+            ToAttackBlocks.stream()
+            .limit(Attacks)
+            .forEach(MyBlock::mine);
             
             boolean 要挖同一个硬砖 = 上一冷却刻挖掘的一个硬砖 != null && 本tick需要挖掘的一个硬砖 != null
                 && 本tick需要挖掘的一个硬砖.blockPos.equals(上一冷却刻挖掘的一个硬砖.blockPos);
@@ -1106,9 +1109,6 @@ public class Deleter extends Module {
             } 
             上一冷却刻挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             
-            ToAttackBlocks.stream()
-            .limit(Attacks)
-            .forEach(MyBlock::mine);
             
             // ToDetectBlocks.stream()
             // .limit(Detects)
