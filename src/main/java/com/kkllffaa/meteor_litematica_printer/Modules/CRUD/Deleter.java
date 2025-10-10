@@ -1097,10 +1097,8 @@ public class Deleter extends Module {
                 && 本tick需要挖掘的一个硬砖.blockPos.equals(上一冷却刻挖掘的一个硬砖.blockPos);
             boolean 能连续挖掘硬砖 = Attacks < 1;
             
-            if (能连续挖掘硬砖) {
-                if (要挖同一个硬砖) {
-                    冷却 = 0;
-                }
+            if (能连续挖掘硬砖 && 要挖同一个硬砖) {
+                冷却 = 0;
             }
 
             if (冷却 > 0) {
@@ -1120,7 +1118,7 @@ public class Deleter extends Module {
             if (本tick需要挖掘的一个硬砖 != null){
                 本tick需要挖掘的一个硬砖.mine();
 
-                冷却 = 5;
+                冷却 = delay.get() + randomDelayMode.get().getTheDelay();
             }
             
         }
