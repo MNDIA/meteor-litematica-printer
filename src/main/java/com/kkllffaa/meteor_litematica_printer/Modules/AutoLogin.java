@@ -36,6 +36,12 @@ public class AutoLogin extends Module {
         .sliderMax(60)
         .build()
     );
+    private final Setting<Boolean> INFO = sgGeneral.add(new BoolSetting.Builder()
+        .name("info")
+        .description("Show info messages when auto login is triggered.")
+        .defaultValue(false)
+        .build()
+    );
 
     private long lastLoginTime = 0;
 
@@ -64,7 +70,9 @@ public class AutoLogin extends Module {
                         String command = parts[1].trim();
                         ChatUtils.sendPlayerMsg(command);
                         lastLoginTime = currentTime;
-                        info("Auto-logged in for %s with command: %s", playerName, command);
+                        if (INFO.get()){
+                            info("%s with command: %s", playerName, command);
+                        }
                         break;
                     }
                 }
