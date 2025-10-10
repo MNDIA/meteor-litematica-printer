@@ -5,9 +5,6 @@ import com.kkllffaa.meteor_litematica_printer.Addon;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 
-import javax.sound.midi.*;
-import java.io.File;
-import java.util.*;
 
 
 public class MidiParser extends Module {
@@ -46,6 +43,7 @@ public class MidiParser extends Module {
             return;
         }
         info("Parsing MIDI file: " + path);
+        //TODO: Implement MIDI parsing 
        
     }
 
