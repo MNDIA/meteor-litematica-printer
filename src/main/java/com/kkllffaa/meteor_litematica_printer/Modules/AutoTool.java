@@ -139,7 +139,11 @@ public class AutoTool extends Module {
             busyTick = switchBackDelay.get();
         }
         if (busyTick == 0) {
-            InvUtils.swapBack();
+            if(useSlot.get() - 1 == mc.player.getInventory().getSelectedSlot()){
+                InvUtils.swapBack();
+            }else{
+                InvUtils.previousSlot = -1;
+            }
             busyTick = -1;
         }
         if (busyTick > 0) {
