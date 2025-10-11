@@ -57,7 +57,7 @@ public class AutoFix extends Module {
                         InvUtils.click().slot(emptySlot.slot());
                     } else {
                         InvUtils.click().slot(result.slot());
-                        info("No empty slot found, put back to original slot");
+                        warning("No empty slot found, put back to original slot");
                     }
                 }
             }

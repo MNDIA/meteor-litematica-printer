@@ -172,28 +172,54 @@ public class AutoTool extends Module {
             if (listMode.get() == ListMode.Blacklist && blacklist.get().contains(itemStack.getItem())) continue;
 
             double score = getScore(itemStack, blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack2 -> !shouldStopUsing(itemStack2));
-            if (score < 0) continue;
             
             if (score > bestScore) {
                 bestScore = score;
                 bestSlot = i;
             }
         }
+        if (bestSlot == -1) {
+            ItemStack cursorStack = mc.player.currentScreenHandler.getCursorStack();
+            if (!cursorStack.isEmpty()
+            &&!(listMode.get() == ListMode.Whitelist && !whitelist.get().contains(cursorStack.getItem()))
+            &&!(listMode.get() == ListMode.Blacklist && blacklist.get().contains(cursorStack.getItem()))
+            ) {
+                double score = getScore(cursorStack, blockState, silkTouchForEnderChest.get(),
+                        fortuneForOresCrops.get(), prefer.get(), itemStack2 -> !shouldStopUsing(itemStack2));
+                if (score > bestScore) {
+                        bestScore = score;
+                        bestSlot = -2;
+                }
+            }
+        }
 
         if (bestSlot != -1 && bestScore > getScore(mc.player.getMainHandStack(), blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack -> !shouldStopUsing(itemStack))) {
             if (bestSlot != mc.player.getInventory().getSelectedSlot()) {
+
                 if (SlotUtils.isHotbar(bestSlot)) {
                     useSlotIndex = bestSlot;
                 } else {
                     useSlotIndex = useSlot.get() - 1;
-                    InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
-                    if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
-                        FindItemResult emptySlot = InvUtils.findEmpty();
-                        if (emptySlot.found()) {
-                            InvUtils.click().slot(emptySlot.slot());
-                        } else {
-                            InvUtils.click().slot(bestSlot);
-                            info("No empty slot found, put back to original slot");
+                    if (bestSlot == -2) {
+                        InvUtils.click().slot(useSlotIndex);
+                        if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
+                            FindItemResult emptySlot = InvUtils.findEmpty();
+                            if (emptySlot.found()) {
+                                InvUtils.click().slot(emptySlot.slot());
+                            } else {
+                                warning("No empty slot found");
+                            }
+                        }
+                    } else {
+                        InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
+                        if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
+                            FindItemResult emptySlot = InvUtils.findEmpty();
+                            if (emptySlot.found()) {
+                                InvUtils.click().slot(emptySlot.slot());
+                            } else {
+                                InvUtils.click().slot(bestSlot);
+                                warning("No empty slot found, put back to original slot");
+                            }
                         }
                     }
                 }
