@@ -114,7 +114,7 @@ public class AutoTool extends Module {
     );
     //endregion
 
-    private int tick=0;
+    private int tick = -1;
 
     public AutoTool() {
         super(Addon.TOOLSCATEGORY, "auto-tool-in-one-slot", "Automatically switches to the most effective tool when performing an action.");
@@ -140,8 +140,9 @@ public class AutoTool extends Module {
         if (mc.options.attackKey.isPressed()) {
             tick = switchBackDelay.get();
         }
-        if (tick < 1) {
+        if (tick == 0) {
             InvUtils.swapBack();
+            tick = -1;
         }
 
     }
