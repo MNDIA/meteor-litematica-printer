@@ -222,7 +222,7 @@ public class BlockPosUtils {
 	// endregion
 
 
-	// 依据保护规则选择仅一个合适的面
+	// 选择仅一个合适的面根据砖块相对玩家的位置
 	public static @Nullable Direction getTheSafetyPositionFaceOrNull(@NotNull Vec3i pos) {
 		if (mc.player == null)
 			return null;
