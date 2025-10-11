@@ -135,6 +135,9 @@ public class AutoTool extends Module {
     private void onTick(TickEvent.Post event) {
         if (Modules.get().isActive(InfinityMiner.class)) return;
 
+        if (mc.interactionManager!=null && mc.interactionManager.isBreakingBlock()) {
+            busyTick = switchBackDelay.get();
+        }
         if (busyTick == 0) {
             InvUtils.swapBack();
             busyTick = -1;
