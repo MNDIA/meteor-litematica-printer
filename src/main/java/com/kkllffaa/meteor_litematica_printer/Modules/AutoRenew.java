@@ -76,6 +76,8 @@ public class AutoRenew extends Module {
                     if (emptySlot.found()) {
                         InvUtils.click().slot(emptySlot.slot());
                     } else {
+                        InvUtils.click().slot(bestSlot);
+                        info("No empty slot found, put back to original slot");
                     }
                 }
             }

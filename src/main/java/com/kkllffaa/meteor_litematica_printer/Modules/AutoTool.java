@@ -175,25 +175,28 @@ public class AutoTool extends Module {
             }
         }
 
-        if (bestSlot != -1 && bestSlot != mc.player.getInventory().getSelectedSlot()) {
-            if (SlotUtils.isHotbar(bestSlot)) {
-                InvUtils.swap(bestSlot, true);
-            } else {
-                int useSlotIndex = useSlot.get() - 1;
-                InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
-                if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
-                    FindItemResult emptySlot = InvUtils.findEmpty();
-                    if (emptySlot.found()) {
-                        InvUtils.click().slot(emptySlot.slot());
-                    } else {
-                        InvUtils.click().slot(bestSlot);
-                        info("No empty slot found, put back to original slot");
+        if (bestSlot != -1 && bestScore > getScore(mc.player.getMainHandStack(), blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack -> !shouldStopUsing(itemStack))) {
+            if (bestSlot != mc.player.getInventory().getSelectedSlot()) {
+                if (SlotUtils.isHotbar(bestSlot)) {
+                    InvUtils.swap(bestSlot, true);
+                } else {
+                    int useSlotIndex = useSlot.get() - 1;
+                    InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
+                    if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
+                        FindItemResult emptySlot = InvUtils.findEmpty();
+                        if (emptySlot.found()) {
+                            InvUtils.click().slot(emptySlot.slot());
+                        } else {
+                            InvUtils.click().slot(bestSlot);
+                            info("No empty slot found, put back to original slot");
+                        }
                     }
+
+                    InvUtils.swap(useSlotIndex, true);
                 }
-
-                InvUtils.swap(useSlotIndex, true);
             }
-
+        }else{
+            //没有有耐久的工具
         }
         // Anti break
         ItemStack currentStack = mc.player.getMainHandStack();
