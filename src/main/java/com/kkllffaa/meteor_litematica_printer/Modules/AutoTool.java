@@ -115,7 +115,7 @@ public class AutoTool extends Module {
     );
     //endregion
 
-    private int tick = -1;
+    public static int busyTick = -1;
 
     public AutoTool() {
         super(Addon.TOOLSCATEGORY, "auto-tool-in-one-slot", "Automatically switches to the most effective tool when performing an action.");
@@ -136,14 +136,14 @@ public class AutoTool extends Module {
         if (Modules.get().isActive(InfinityMiner.class)) return;
 
         if (mc.options.attackKey.isPressed()) {
-            tick = switchBackDelay.get();
+            busyTick = switchBackDelay.get();
         }
-        if (tick == 0) {
+        if (busyTick == 0) {
             InvUtils.swapBack();
-            tick = -1;
+            busyTick = -1;
         }
-        if (tick > 0) {
-            tick--;
+        if (busyTick > 0) {
+            busyTick--;
         }
 
     }
