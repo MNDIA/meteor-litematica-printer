@@ -289,11 +289,14 @@ public class ESP extends Module {
         }
 
         ShapeMode shape = shapeMode.get();
+        ESPItemData itemData = null;
         if (entity instanceof ItemEntity itemEntity) {
             Item item = itemEntity.getStack().getItem();
-            ESPItemData itemData = itemConfigs.get().get(item);
+            itemData = itemConfigs.get().get(item);
             if (itemData == null) itemData = defaultItemConfig.get();
             shape = itemData.shapeMode;
+            lineColor.set(itemData.lineColor);
+            sideColor.set(itemData.sideColor);
         }
 
         if (mode.get() == Mode.Wireframe) {
@@ -316,9 +319,11 @@ public class ESP extends Module {
 
         // Draw tracers for items
         if (entity instanceof ItemEntity itemEntity && itemTracers.get()) {
-            Item item = itemEntity.getStack().getItem();
-            ESPItemData itemData = itemConfigs.get().get(item);
-            if (itemData == null) itemData = defaultItemConfig.get();
+            if (itemData == null) {
+                Item item = itemEntity.getStack().getItem();
+                itemData = itemConfigs.get().get(item);
+                if (itemData == null) itemData = defaultItemConfig.get();
+            }
             if (itemData.tracer) {
                 double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX());
                 double y = MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY()) + entity.getHeight() / 2;
@@ -368,6 +373,14 @@ public class ESP extends Module {
             if (color != null) {
                 lineColor.set(color);
                 sideColor.set(color).a((int) (sideColor.a * fillOpacity.get()));
+            }
+
+            if (entity instanceof ItemEntity itemEntity) {
+                Item item = itemEntity.getStack().getItem();
+                ESPItemData itemData = itemConfigs.get().get(item);
+                if (itemData == null) itemData = defaultItemConfig.get();
+                lineColor.set(itemData.lineColor);
+                sideColor.set(itemData.sideColor);
             }
 
             // Render

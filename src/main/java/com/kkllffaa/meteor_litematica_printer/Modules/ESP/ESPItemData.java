@@ -32,14 +32,12 @@ public class ESPItemData implements ICopyable<ESPItemData>, ISerializable<ESPIte
 
     @Override
     public WidgetScreen createScreen(GuiTheme theme, Item item, ItemDataSetting<ESPItemData> setting) {
-        // TODO: Implement screen if needed, for now return null
-        return null;
+        return new ESPItemDataScreen(theme, this, item, setting);
     }
 
     @Override
     public WidgetScreen createScreen(GuiTheme theme) {
-        // TODO: Implement screen if needed, for now return null
-        return null;
+        return new ESPItemDataScreen(theme, this, null, null);
     }
 
     @Override
