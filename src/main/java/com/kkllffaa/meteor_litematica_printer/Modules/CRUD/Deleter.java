@@ -7,7 +7,6 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import meteordevelopment.meteorclient.systems.modules.player.AutoTool;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
@@ -1112,7 +1111,7 @@ public class Deleter extends Module {
             ToAttackBlocks.stream()
             .limit(Attacks)
             .forEach(MyBlock::mine);
-            
+
             if (!能连续挖掘硬砖){
                 硬砖前摇 = delay.get() + randomDelayMode.get().getTheDelay();
             }
@@ -1231,7 +1230,16 @@ public class Deleter extends Module {
         }
 
         public boolean canInstaBreak() {
-            if (Modules.get().isActive(AutoTool.class)) {
+            if (Modules.get().isActive(com.kkllffaa.meteor_litematica_printer.Modules.AutoTool.class)) {
+                if (mc.player.isCreative())
+                    return true;
+                BlockState state = mc.world.getBlockState(blockPos);
+                for (int slot = 0; slot < 36; slot++) {
+                    if (BlockUtils.getBreakDelta(slot, state) >= 1)
+                        return true;
+                }
+                return false;
+            } else if (Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.player.AutoTool.class)) {
                 if (mc.player.isCreative())
                     return true;
                 BlockState state = mc.world.getBlockState(blockPos);

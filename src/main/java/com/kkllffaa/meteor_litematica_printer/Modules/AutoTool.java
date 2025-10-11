@@ -71,12 +71,12 @@ public class AutoTool extends Module {
         .build()
     );
 
-    private final Setting<Boolean> switchBack = sgGeneral.add(new BoolSetting.Builder()
-        .name("switch-back")
-        .description("Switches your hand to whatever was selected when releasing your attack key.")
-        .defaultValue(false)
+    private final Setting<Integer> switchBackDelay = sgGeneral.add((new IntSetting.Builder()
+        .name("switch-back-delay")
+        .description("Delay in ticks for switching tools back.")
+        .defaultValue(5)
         .build()
-    );
+    ));
 
     private final Setting<Integer> useSlot = sgGeneral.add(new IntSetting.Builder()
         .name("use-slot")
@@ -114,8 +114,7 @@ public class AutoTool extends Module {
     );
     //endregion
 
-    private boolean wasPressed;
-    private int bestSlot;
+    private int tick=0;
 
     public AutoTool() {
         super(Addon.TOOLSCATEGORY, "auto-tool-in-one-slot", "Automatically switches to the most effective tool when performing an action.");
@@ -135,14 +134,16 @@ public class AutoTool extends Module {
     private void onTick(TickEvent.Post event) {
         if (Modules.get().isActive(InfinityMiner.class)) return;
 
-        if (switchBack.get() && !mc.options.attackKey.isPressed() && wasPressed && InvUtils.previousSlot != -1) {
+        if (tick > 0) {
+            tick--;
+        }
+        if (mc.options.attackKey.isPressed()) {
+            tick = switchBackDelay.get();
+        }
+        if (tick < 1) {
             InvUtils.swapBack();
-            wasPressed = false;
-            return;
         }
 
-
-        wasPressed = mc.options.attackKey.isPressed();
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -159,7 +160,7 @@ public class AutoTool extends Module {
         ItemStack useSlotStack = mc.player.getInventory().getStack(useSlotIndex);
 
         double bestScore = -1;
-        bestSlot = -1;
+        int bestSlot = -1;
 
         for (int i = 0; i < 36; i++) {
             ItemStack itemStack = mc.player.getInventory().getStack(i);
@@ -180,18 +181,19 @@ public class AutoTool extends Module {
             if (bestSlot != useSlotIndex) {
                 InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
                 if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
-                    info("Cursor not empty, trying to put back to original slot");
                     FindItemResult emptySlot = InvUtils.findEmpty();
                     if (emptySlot.found()) {
                         InvUtils.click().slot(emptySlot.slot());
                     } else {
                         InvUtils.click().slot(bestSlot);
+                        info("No empty slot found, put back to original slot");
                     }
                 }
             }
-            InvUtils.swap(useSlotIndex, true);
         }
-
+        
+        InvUtils.swap(useSlotIndex, true);
+        
         // Anti break
         ItemStack currentStack = mc.player.getMainHandStack();
 
