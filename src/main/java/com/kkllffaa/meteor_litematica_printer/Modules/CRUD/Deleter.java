@@ -21,6 +21,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -528,6 +529,7 @@ public class Deleter extends Module {
     private int 硬砖前摇 = 0;
     private int 硬砖后摇 = 0;
     private MyBlock 上一冷却刻挖掘的一个硬砖 = null;
+    public static boolean isBusy = false;
     
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
@@ -876,13 +878,22 @@ public class Deleter extends Module {
         return true;
     }
 
-
+    @Override
+    public void onActivate() {
+        Collection<Module> allModules = Modules.get().getAll();
+        for (Module module : allModules) {
+            if (module instanceof Deleter && module != this && module.isActive()) {
+                module.toggle();
+            }
+        }
+    }
 
     @Override
     public void onDeactivate() {
         blocks.forEach(blockPool::free);
         blocks.clear();
         foundBlockPos.clear();
+        isBusy = false;
     }
 
 
@@ -1122,7 +1133,11 @@ public class Deleter extends Module {
                 
                 硬砖后摇 = 5;
             }
-            
+        }
+
+        if(blocks.stream().filter( b -> b.state == MyBlock.State.Mining || b.state == MyBlock.State.ToMine).count() == 0){
+            isBusy = false;
+
         }
 
     }
@@ -1211,6 +1226,7 @@ public class Deleter extends Module {
         }
 
         public void mine() {
+            isBusy = true;
             if (startTime == 0) {
                 startTime = System.currentTimeMillis();
             }

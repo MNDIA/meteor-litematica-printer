@@ -217,6 +217,9 @@ public class Printer extends Module {
 
 	@EventHandler
 	private void onTick(TickEvent.Post event) {
+		if (Deleter.isBusy){
+			return;
+		}
 		if (mc.player == null || mc.world == null) {
 			placed_fade.clear();
 			return;
