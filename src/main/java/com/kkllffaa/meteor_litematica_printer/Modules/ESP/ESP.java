@@ -27,6 +27,8 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import org.joml.Vector3d;
 
+import com.kkllffaa.meteor_litematica_printer.Addon;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -251,7 +253,7 @@ public class ESP extends Module {
     private int count;
 
     public ESP() {
-        super(Categories.Render, "esp", "Renders entities through walls.");
+        super(Addon.TOOLSCATEGORY, "esp", "Renders entities through walls.");
 
         RainbowColors.register(this::onTickRainbow);
     }
