@@ -253,7 +253,7 @@ public class ESP extends Module {
     private int count;
 
     public ESP() {
-        super(Addon.TOOLSCATEGORY, "esp", "Renders entities through walls.");
+        super(Addon.TOOLSCATEGORY, "esp-plus", "Renders entities through walls.");
 
         RainbowColors.register(this::onTickRainbow);
     }
