@@ -57,7 +57,7 @@ public class AutoLogin extends Module {
         if (messageString.contains(triggerMessage.get())) {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastLoginTime < cooldown.get() * 1000L) {
-                return; // Cooldown active, skip login
+                return;
             }
 
             if (mc.player != null) {

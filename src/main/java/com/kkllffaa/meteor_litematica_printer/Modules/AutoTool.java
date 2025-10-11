@@ -81,7 +81,7 @@ public class AutoTool extends Module {
 
     private final Setting<Integer> useSlot = sgGeneral.add(new IntSetting.Builder()
         .name("use-slot")
-        .description("The static hotbar slot to use.")
+        .description("the only one static hotbar slot to use.")
         .defaultValue(2)
         .range(1, 9)
         .sliderRange(1, 9)
@@ -119,7 +119,7 @@ public class AutoTool extends Module {
     private int useSlotIndex = useSlot.get() - 1;
 
     public AutoTool() {
-        super(Addon.TOOLSCATEGORY, "auto-tool-in-one-slot", "Automatically switches to the most effective tool when performing an action.");
+        super(Addon.TOOLSCATEGORY, "auto-tool-+", "Automatically switches to the most effective tool when performing an action.");
     }
     @Override
     public void onActivate() {

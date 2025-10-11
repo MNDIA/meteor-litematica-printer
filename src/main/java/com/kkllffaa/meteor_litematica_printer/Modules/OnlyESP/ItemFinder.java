@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer.Modules.ESP;
+package com.kkllffaa.meteor_litematica_printer.Modules.OnlyESP;
 
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
