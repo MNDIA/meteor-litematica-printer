@@ -63,10 +63,10 @@ public class ItemFinder extends Module {
         .defaultValue(
             new ESPBlockData(
                 ShapeMode.Lines,
-                new SettingColor(0, 255, 200),
-                new SettingColor(0, 255, 200, 25),
+                new SettingColor(0, 255, 0),
+                new SettingColor(0, 255, 0, 25),
                 true,
-                new SettingColor(0, 255, 200, 125)
+                new SettingColor(0, 255, 0, 125)
             )
         )
         .build()
