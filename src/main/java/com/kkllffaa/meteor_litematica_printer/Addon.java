@@ -23,14 +23,17 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(MyUtils.InteractSettingsModule);
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());
+
 		Modules.get().add(new AutoSwarm());
 		Modules.get().add(new AutoFix());
 		Modules.get().add(new AutoRenew());
-		Modules.get().add(new Parkour());
 		Modules.get().add(new AutoLogin());
 		Modules.get().add(new AutoTool());
-		Modules.get().add(new MidiParser());
+		Modules.get().add(new AutoEat());
+
 		Modules.get().add(new ItemFinder());
+		Modules.get().add(new Parkour());
+		Modules.get().add(new MidiParser());
 		
 	}
 
