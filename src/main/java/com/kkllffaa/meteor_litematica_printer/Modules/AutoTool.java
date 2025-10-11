@@ -134,15 +134,15 @@ public class AutoTool extends Module {
     private void onTick(TickEvent.Post event) {
         if (Modules.get().isActive(InfinityMiner.class)) return;
 
-        if (tick > 0) {
-            tick--;
-        }
         if (mc.options.attackKey.isPressed()) {
             tick = switchBackDelay.get();
         }
         if (tick == 0) {
             InvUtils.swapBack();
             tick = -1;
+        }
+        if (tick > 0) {
+            tick--;
         }
 
     }
