@@ -3,6 +3,7 @@ package com.kkllffaa.meteor_litematica_printer;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Modules.*;
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.ESP.ESP;
 
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Category;
@@ -29,6 +30,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new AutoLogin());
 		Modules.get().add(new AutoTool());
 		Modules.get().add(new MidiParser());
+		Modules.get().add(new ESP());
 		
 	}
 
