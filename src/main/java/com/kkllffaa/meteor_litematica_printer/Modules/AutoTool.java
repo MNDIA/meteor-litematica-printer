@@ -116,6 +116,7 @@ public class AutoTool extends Module {
     //endregion
 
     public static int busyTick = -1;
+    private int useSlotIndex = useSlot.get() - 1;
 
     public AutoTool() {
         super(Addon.TOOLSCATEGORY, "auto-tool-in-one-slot", "Automatically switches to the most effective tool when performing an action.");
@@ -139,7 +140,7 @@ public class AutoTool extends Module {
             busyTick = switchBackDelay.get();
         }
         if (busyTick == 0) {
-            if(useSlot.get() - 1 == mc.player.getInventory().getSelectedSlot()){
+            if(useSlotIndex == mc.player.getInventory().getSelectedSlot()){
                 InvUtils.swapBack();
             }else{
                 InvUtils.previousSlot = -1;
@@ -182,9 +183,9 @@ public class AutoTool extends Module {
         if (bestSlot != -1 && bestScore > getScore(mc.player.getMainHandStack(), blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack -> !shouldStopUsing(itemStack))) {
             if (bestSlot != mc.player.getInventory().getSelectedSlot()) {
                 if (SlotUtils.isHotbar(bestSlot)) {
-                    InvUtils.swap(bestSlot, true);
+                    useSlotIndex = bestSlot;
                 } else {
-                    int useSlotIndex = useSlot.get() - 1;
+                    useSlotIndex = useSlot.get() - 1;
                     InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
                     if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
                         FindItemResult emptySlot = InvUtils.findEmpty();
@@ -195,9 +196,8 @@ public class AutoTool extends Module {
                             info("No empty slot found, put back to original slot");
                         }
                     }
-                    
-                    InvUtils.swap(useSlotIndex, true);
                 }
+                InvUtils.swap(useSlotIndex, true);
             }
         }else{
             //没有有耐久的工具
