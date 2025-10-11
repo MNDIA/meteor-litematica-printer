@@ -303,7 +303,13 @@ public class MyUtils {
 			}
 			mc.getNetworkHandler().sendPacket(new CreativeInventoryActionC2SPacket(36 + slot, item.getDefaultStack()));
 			InvUtils.swap(slot, returnHand);
-			return true;
+			if (action.get()) {
+				usedSlot = mc.player.getInventory().getSelectedSlot();
+				return true;
+			} else {
+				InvUtils.swap(selectedSlot, returnHand);
+				return false;
+			}
 		} else
 			return false;
 	}
