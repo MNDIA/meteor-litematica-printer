@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.systems.modules.render.blockesp.ESPBlockDa
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.render.NametagUtils;
+import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.WireframeEntityRenderer;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
@@ -106,20 +107,29 @@ public class ItemFinder extends Module {
         }
     }
 
-    private void drawBoundingBox(Render3DEvent event, ItemEntity entity) {
-        ESPBlockData renderData = getItemColorData(entity);
+    private void drawBoundingBox(Render3DEvent event, ItemEntity itemEntity) {
+        ESPBlockData renderData = getItemColorData(itemEntity);
         if (renderData == null) return;
 
         count++;
         if (mode.get() == Mode.Wireframe) {
-            WireframeEntityRenderer.render(event, entity, 1, renderData.sideColor, renderData.lineColor, renderData.shapeMode);
+            WireframeEntityRenderer.render(event, itemEntity, 1, renderData.sideColor, renderData.lineColor, renderData.shapeMode);
         } else if (mode.get() == Mode.Box) {
-            double x = MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX()) - entity.getX();
-            double y = MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY()) - entity.getY();
-            double z = MathHelper.lerp(event.tickDelta, entity.lastRenderZ, entity.getZ()) - entity.getZ();
+            double x = MathHelper.lerp(event.tickDelta, itemEntity.lastRenderX, itemEntity.getX()) - itemEntity.getX();
+            double y = MathHelper.lerp(event.tickDelta, itemEntity.lastRenderY, itemEntity.getY()) - itemEntity.getY();
+            double z = MathHelper.lerp(event.tickDelta, itemEntity.lastRenderZ, itemEntity.getZ()) - itemEntity.getZ();
 
-            Box box = entity.getBoundingBox();
+            Box box = itemEntity.getBoundingBox();
             event.renderer.box(x + box.minX, y + box.minY, z + box.minZ, x + box.maxX, y + box.maxY, z + box.maxZ, renderData.sideColor, renderData.lineColor, renderData.shapeMode, 0);
+        }
+        TryRenderTracer(event, itemEntity, renderData);
+    }
+
+    private void TryRenderTracer(Render3DEvent event, ItemEntity itemEntity, ESPBlockData renderData) {
+        if (renderData.tracer) {
+            event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z,
+                itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(),
+                renderData.tracerColor);
         }
     }
 
