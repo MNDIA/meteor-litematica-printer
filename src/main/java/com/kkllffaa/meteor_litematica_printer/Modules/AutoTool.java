@@ -135,9 +135,6 @@ public class AutoTool extends Module {
     private void onTick(TickEvent.Post event) {
         if (Modules.get().isActive(InfinityMiner.class)) return;
 
-        if (mc.options.attackKey.isPressed()) {
-            busyTick = switchBackDelay.get();
-        }
         if (busyTick == 0) {
             InvUtils.swapBack();
             busyTick = -1;
@@ -191,7 +188,7 @@ public class AutoTool extends Module {
                             info("No empty slot found, put back to original slot");
                         }
                     }
-
+                    
                     InvUtils.swap(useSlotIndex, true);
                 }
             }
@@ -200,10 +197,12 @@ public class AutoTool extends Module {
         }
         // Anti break
         ItemStack currentStack = mc.player.getMainHandStack();
-
+        
         if (shouldStopUsing(currentStack) && isTool(currentStack)) {
             mc.options.attackKey.setPressed(false);
             event.cancel();
+        }else{
+            busyTick = switchBackDelay.get();
         }
     }
 
