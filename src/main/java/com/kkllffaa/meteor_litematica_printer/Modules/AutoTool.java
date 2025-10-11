@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.systems.modules.world.InfinityMiner;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
+import meteordevelopment.meteorclient.utils.player.SlotUtils;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
@@ -152,34 +153,33 @@ public class AutoTool extends Module {
         if (Modules.get().isActive(InfinityMiner.class)) return;
         if (mc.player.isCreative()) return;
 
-        // Get blockState
         BlockState blockState = mc.world.getBlockState(event.blockPos);
         if (!BlockUtils.canBreak(event.blockPos, blockState)) return;
 
         // Check if we should switch to a better tool
-        int useSlotIndex = useSlot.get() - 1;
-        ItemStack useSlotStack = mc.player.getInventory().getStack(useSlotIndex);
-
         double bestScore = -1;
         int bestSlot = -1;
-
+        
         for (int i = 0; i < 36; i++) {
             ItemStack itemStack = mc.player.getInventory().getStack(i);
-
+            
             if (listMode.get() == ListMode.Whitelist && !whitelist.get().contains(itemStack.getItem())) continue;
             if (listMode.get() == ListMode.Blacklist && blacklist.get().contains(itemStack.getItem())) continue;
 
             double score = getScore(itemStack, blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack2 -> !shouldStopUsing(itemStack2));
             if (score < 0) continue;
-
+            
             if (score > bestScore) {
                 bestScore = score;
                 bestSlot = i;
             }
         }
 
-        if (bestSlot != -1 && (bestScore > getScore(useSlotStack, blockState, silkTouchForEnderChest.get(), fortuneForOresCrops.get(), prefer.get(), itemStack -> !shouldStopUsing(itemStack)) || shouldStopUsing(useSlotStack) || !isTool(useSlotStack))) {
-            if (bestSlot != useSlotIndex) {
+        if (bestSlot != -1 && bestSlot != mc.player.getInventory().getSelectedSlot()) {
+            if (SlotUtils.isHotbar(bestSlot)) {
+                InvUtils.swap(bestSlot, true);
+            } else {
+                int useSlotIndex = useSlot.get() - 1;
                 InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex);
                 if (!mc.player.currentScreenHandler.getCursorStack().isEmpty()) {
                     FindItemResult emptySlot = InvUtils.findEmpty();
@@ -190,11 +190,11 @@ public class AutoTool extends Module {
                         info("No empty slot found, put back to original slot");
                     }
                 }
+
+                InvUtils.swap(useSlotIndex, true);
             }
+
         }
-        
-        InvUtils.swap(useSlotIndex, true);
-        
         // Anti break
         ItemStack currentStack = mc.player.getMainHandStack();
 
