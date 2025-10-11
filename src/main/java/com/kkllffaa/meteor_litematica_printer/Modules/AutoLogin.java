@@ -17,7 +17,7 @@ public class AutoLogin extends Module {
     private final Setting<String> triggerMessage = sgGeneral.add(new StringSetting.Builder()
         .name("trigger-message")
         .description("The message that triggers the auto login.")
-        .defaultValue("Please login with \"/login <password>\"")
+        .defaultValue("Please login with")
         .build()
     );
 

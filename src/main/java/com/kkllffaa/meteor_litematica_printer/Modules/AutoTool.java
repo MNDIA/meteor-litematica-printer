@@ -75,7 +75,8 @@ public class AutoTool extends Module {
     private final Setting<Integer> switchBackDelay = sgGeneral.add((new IntSetting.Builder()
         .name("switch-back-delay")
         .description("Delay in ticks for switching tools back.")
-        .defaultValue(5)
+        .defaultValue(15)
+        .range(0, 100)
         .build()
     ));
 

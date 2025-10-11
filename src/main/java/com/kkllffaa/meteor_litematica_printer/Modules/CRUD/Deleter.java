@@ -117,7 +117,7 @@ public class Deleter extends Module {
     private final Setting<MeshMineMode> meshMineMode = sgGeneral.add(new EnumSetting.Builder<MeshMineMode>()
         .name("mesh-mining-mode")
         .description("Quickly probe blocks")
-        .defaultValue(MeshMineMode.Cache)
+        .defaultValue(MeshMineMode.CacheAndAir)
         .visible(() -> TriggerMode.get() == 触发模式.自动半径全部 && MeshMine.get())
         .build()
     );
@@ -138,7 +138,7 @@ public class Deleter extends Module {
     );
     private final Setting<List<Block>> OreBlocksForChannel = sgGeneral.add(new BlockListSetting.Builder()
         .name("ore-blocks-for-channel")
-        .description("玩家高度到矿物的垂直路径不做网格挖掘(打通路径).")
+        .description("玩家到矿物的垂直路径不做网格挖掘(打通路径).")
         .defaultValue(
             Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE, 
             Blocks.DEEPSLATE_LAPIS_ORE, Blocks.DEEPSLATE_EMERALD_ORE, Blocks.DEEPSLATE_COAL_ORE, 
@@ -160,7 +160,7 @@ public class Deleter extends Module {
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay")
         .description("Delay before mining the next non-instant block.")
-        .defaultValue(5)
+        .defaultValue(10)
         .min(0)
         .sliderRange(0, 20)
         .build()
@@ -176,9 +176,9 @@ public class Deleter extends Module {
     private final Setting<Integer> maxBlocksPerTick = sgGeneral.add(new IntSetting.Builder()
         .name("max-blocks-per-tick")
         .description("Maximum blocks per tick.")
-        .defaultValue(9)
-        .min(1)
-        .max(1024)
+        .defaultValue(20)
+        .sliderRange(1, 30)
+        .range(1, 1024)
         .build()
     );
 
@@ -302,8 +302,8 @@ public class Deleter extends Module {
     private final Setting<Double> 挖掘回弹时间 = sgProtection.add(new DoubleSetting.Builder()
         .name("mining-rebound-time")
         .description("Duration in seconds to keep mined positions in cache for rebound protection.")
-        .defaultValue(2)
-        .min(0.5).sliderMin(0.5)
+        .defaultValue(1.7)
+        .min(0.06).sliderMin(0.5)
         .max(15).sliderMax(15)
         .build()
     );
@@ -318,9 +318,9 @@ public class Deleter extends Module {
     private final Setting<Double> 挖掘超时时间 = sgProtection.add(new DoubleSetting.Builder()
         .name("mining-timeout-duration")
         .description("Maximum duration in seconds to spend mining a single block before skipping it.")
-        .defaultValue(2.0)
+        .defaultValue(9.0)
         .min(0.5)
-        .max(30.0)
+        .max(1024.0)
         .sliderRange(0.5, 15.0)
         .visible(启用挖掘超时保护::get)
         .build()
@@ -329,7 +329,7 @@ public class Deleter extends Module {
     private final Setting<DistanceMode> distanceProtection = sgProtection.add(new EnumSetting.Builder<DistanceMode>()
         .name("distance-protection")
         .description("Prevent mining blocks that are too far or too close to the player.")
-        .defaultValue(DistanceMode.Auto)
+        .defaultValue(DistanceMode.Max)
         .build()
     );
 
@@ -353,9 +353,9 @@ public class Deleter extends Module {
         .build()
     );
     private final Setting<Integer> 站立高度 = sgProtection.add(new IntSetting.Builder()
-        .name("stand-height")
+        .name("below-your-foot")
         .description("Height you need to stand on top.")
-        .defaultValue(-1)
+        .defaultValue(62)
         .min(-64)
         .max(320)
         .visible(() -> standProtectionMode.get() == ProtectMode.ReferenceWorldY)
@@ -532,8 +532,8 @@ public class Deleter extends Module {
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
 
-    public Deleter() {
-        super(Addon.CRUDCATEGORY, "block-deleter", "Deletes all nearby blocks with this type");
+    public Deleter(String name) {
+        super(Addon.CRUDCATEGORY, name, "Deletes all nearby blocks with this type");
     }
 
     private double getHandDistance() {
@@ -591,10 +591,10 @@ public class Deleter extends Module {
             int minY = Math.min(playerY, OreY);
             int maxY = Math.max(playerY, OreY);
 
-            int XZ半径 = Math.abs(posY - OreY)+1;
+            int XZ半径 = Math.abs(posY - OreY);
             if (OreY > playerY) {
                 XZ半径 = switch (XZ半径) {
-                    case 1 -> 1;
+                    case 0 -> 1;
                     default -> 2;
                 };
             } 
@@ -1061,12 +1061,6 @@ public class Deleter extends Module {
             
             int Attacks = Math.min(ToAttackBlocks.size(), maxBlocksPerTick.get());
 
-            
-            // List<MyBlock> ToDetectBlocks = HardBlocks.stream()
-            // .filter(b -> b.detected == false && b.state == MyBlock.State.ToMine)
-            // .toList();
-            // int Detects = ToDetectBlocks.size();
-            
             MyBlock 本tick需要挖掘的一个硬砖 = null;
             if (Attacks < maxBlocksPerTick.get()) {
                 List<MyBlock> HardBlocks = FliterBlocks.stream()
@@ -1121,9 +1115,6 @@ public class Deleter extends Module {
                 return;
             }
             
-            // ToDetectBlocks.stream()
-            // .limit(Detects)
-            // .forEach(MyBlock::detect);
             
             上一冷却刻挖掘的一个硬砖 = 本tick需要挖掘的一个硬砖;
             if (本tick需要挖掘的一个硬砖 != null){
@@ -1147,7 +1138,6 @@ public class Deleter extends Module {
         private Block originalBlock;
         private long startTime = 0;
         private long finishTime = 0;
-        // public boolean detected = false;
         public State state = State.ToMine;
         private static enum State {
             ToMine,
@@ -1214,7 +1204,6 @@ public class Deleter extends Module {
             this.startTime = 0;
             this.finishTime = 0;
             this.state = State.ToMine;
-            // this.detected = false;
         }
 
         public boolean shouldRemove() {
@@ -1252,12 +1241,6 @@ public class Deleter extends Module {
                 return BlockUtils.canInstaBreak(blockPos);
             }
         }
-
-        // public void detect() {
-        //     detected = true;
-        //     //TODO:探测
-            
-        // }
 
         private void updateBlockBreakingProgress() {
             BlockUtils.breakBlock(blockPos, showSwing.get());
@@ -1342,6 +1325,7 @@ public class Deleter extends Module {
     public static enum 触发模式 {
         自动半径全部,
         手动相连同类,
+        litematica
     }
     public static enum OreMode {
         遵循黑白名单,
