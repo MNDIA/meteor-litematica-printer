@@ -2,8 +2,6 @@ package com.kkllffaa.meteor_litematica_printer.Functions;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
-import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
 
 
@@ -223,9 +221,7 @@ public class BlockPosUtils {
 
 
 	// 选择仅一个合适的面根据砖块相对玩家的位置
-	public static @Nullable Direction getTheSafetyPositionFaceOrNull(@NotNull Vec3i pos) {
-		if (mc.player == null)
-			return null;
+	public static @NotNull Direction getDirectionFromPlayerPosition(@NotNull Vec3i pos) {
 		Vec3d eyePos = getPlayerEye(mc.player);
 
 		Vec3d blockCenter = Vec3d.ofCenter(pos);

@@ -9,7 +9,7 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.Rotations;
-
+import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -33,7 +33,6 @@ import javax.annotation.Nullable;
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MathUtils;
-import com.kkllffaa.meteor_litematica_printer.Functions.MeteorCopy;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.Rotation;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
@@ -691,8 +690,8 @@ public class PlaceSettings extends Module {
 			SafetyFaceMode safetyPlaceFaceModeValue = safetyPlaceFaceMode.get();
 			if (safetyPlaceFaceModeValue != SafetyFaceMode.None) {
 				Direction SafeFace = switch (safetyPlaceFaceModeValue) {
-					case SafetyFaceMode.PlayerRotation -> MeteorCopy.getDirection(pos);
-					case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getTheSafetyPositionFaceOrNull(pos);
+					case SafetyFaceMode.PlayerRotation -> BlockUtils.getDirection(pos);
+					case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getDirectionFromPlayerPosition(pos);
 					case SafetyFaceMode.None -> null;//dead code
 				};
 				if (face != SafeFace) continue;

@@ -7,7 +7,7 @@ import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
-
+import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
@@ -23,7 +23,6 @@ import java.util.List;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
-import com.kkllffaa.meteor_litematica_printer.Functions.MeteorCopy;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
 
 
@@ -112,29 +111,26 @@ public class InteractSettings extends Module {
         if (!enableInteraction.get()) {
             return 0;
         }
+		ClientPlayerEntity player = mc.player;
+		ClientPlayerInteractionManager interactionManager = mc.interactionManager;
+		if (player == null || interactionManager == null) return 0;
+		if (player.isSneaking()){
+			return 0;
+		}
+		if (BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(pos) > maxDistanceToBlockCenter.get()) {
+			return 0;
+		}
         Direction SafeFace = switch (safetyInteractFaceMode.get()) {
             case SafetyFaceMode.None -> Direction.UP;
-			case SafetyFaceMode.PlayerRotation -> MeteorCopy.getDirection(pos);
-            case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getTheSafetyPositionFaceOrNull(pos);
+			case SafetyFaceMode.PlayerRotation -> BlockUtils.getDirection(pos);
+            case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getDirectionFromPlayerPosition(pos);
         };
-        if (SafeFace == null) {
-            return 0;
-        }
 
         if (onlyInteractOnLook.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(pos, SafeFace)) {
             return 0;
         }
 		
-        ClientPlayerEntity player = mc.player;
-        ClientPlayerInteractionManager interactionManager = mc.interactionManager;
-        if (player == null || interactionManager == null) return 0;
 
-		if (player.isSneaking()){
-			return 0;
-		}
-        if (BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(pos) > maxDistanceToBlockCenter.get()) {
-            return 0;
-        }
 
         Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         for (int i = 0; i < count; i++) {

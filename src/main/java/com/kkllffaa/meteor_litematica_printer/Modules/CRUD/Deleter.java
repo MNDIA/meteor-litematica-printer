@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
+import meteordevelopment.meteorclient.utils.world.BlockUtils.SwingMode;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -197,10 +198,10 @@ public class Deleter extends Module {
     //endregion
 
     //region Render
-    private final Setting<Boolean> showSwing = sgRender.add(new BoolSetting.Builder()
+    private final Setting<SwingMode> Swing = sgRender.add(new EnumSetting.Builder<SwingMode>()
         .name("show-swing")
         .description("Swing hand client-side.")
-        .defaultValue(false)
+        .defaultValue(SwingMode.None)
         .build()
     );
 
@@ -1308,7 +1309,7 @@ public class Deleter extends Module {
         }
 
         private void updateBlockBreakingProgress() {
-            BlockUtils.breakBlock(blockPos, showSwing.get());
+            BlockUtils.breakBlock(blockPos, Swing.get(),() -> BlockPosUtils.getDirectionFromPlayerPosition(blockPos));
         }
        
         public void render(Render3DEvent event) {
