@@ -33,6 +33,11 @@ import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 
+import fi.dy.masa.litematica.data.DataManager;
+import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
+import fi.dy.masa.litematica.world.SchematicWorldHandler;
+import fi.dy.masa.litematica.world.WorldSchematic;
+
 
 public class Deleter extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -896,9 +901,9 @@ public class Deleter extends Module {
         isBusy = false;
     }
 
-
+   
     private void 自动半径加入挖掘表() {
-        if ( TriggerMode.get() != 触发模式.自动半径全部) return;
+        if (TriggerMode.get() == 触发模式.手动相连同类) return;
         BlockPos currentPlayerPos = mc.player.getBlockPos();
         
         boolean playerMoved = lastPlayerPos == null || !lastPlayerPos.equals(currentPlayerPos);
@@ -907,23 +912,25 @@ public class Deleter extends Module {
         if (playerMoved || continuousScanTimer > 10) {
             lastPlayerPos = currentPlayerPos.toImmutable();
             continuousScanTimer = 0;
-            scanBlocks();
+
+            Vec3d centerPos = MyUtils.getPlayerEye(mc.player);
+            double radius = getHandDistance();
+
+            int minX = (int) (Math.floor(centerPos.x - radius) + 0.01);
+            int maxX = (int) (Math.floor(centerPos.x + radius) + 0.01);
+            int minY = (int) (Math.floor(centerPos.y - radius) + 0.01);
+            int maxY = (int) (Math.floor(centerPos.y + radius) + 0.01);
+            int minZ = (int) (Math.floor(centerPos.z - radius) + 0.01);
+            int maxZ = (int) (Math.floor(centerPos.z + radius) + 0.01);
+            if (TriggerMode.get() == 触发模式.自动半径全部) {
+                scanWorld(minX, maxX, minY, maxY, minZ, maxZ);
+            }else{
+                scanWorldAndLitemetica(minX, maxX, minY, maxY, minZ, maxZ);
+            }
         }
     }
-    private void scanBlocks() {
-       
-        Vec3d centerPos = MyUtils.getPlayerEye(mc.player);
-        double radius = getHandDistance();
 
-        int minX = (int) (Math.floor(centerPos.x - radius )+ 0.01);
-        int maxX = (int) (Math.floor(centerPos.x + radius )+ 0.01);
-        int minY = (int) (Math.floor(centerPos.y - radius )+ 0.01);
-        int maxY = (int) (Math.floor(centerPos.y + radius )+ 0.01);
-        int minZ = (int) (Math.floor(centerPos.z - radius )+ 0.01);
-        int maxZ = (int) (Math.floor(centerPos.z + radius )+ 0.01);
-
-
-
+    private void scanWorld(int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
         Vec3i playerPos = null;
         List<Vec3i> OreBlocks = null;
         if (OreChannel.get()) {
@@ -1004,7 +1011,49 @@ public class Deleter extends Module {
             }
         }
     }
+    private void scanWorldAndLitemetica(int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
+        WorldSchematic worldSchematic = SchematicWorldHandler.getSchematicWorld();
+        if (worldSchematic == null) return;
 
+        SchematicPlacement placement = DataManager.getSchematicPlacementManager().getSelectedSchematicPlacement();
+        if (placement == null) return;
+
+        BlockPos origin = placement.getOrigin();
+        Vec3i size = placement.getSchematic().getMetadata().getEnclosingSize();
+        if (origin == null || size == null) return;
+
+        int schematicMinX = origin.getX();
+        int schematicMaxX = origin.getX() + size.getX() - 1;
+        int schematicMinY = origin.getY();
+        int schematicMaxY = origin.getY() + size.getY() - 1;
+        int schematicMinZ = origin.getZ();
+        int schematicMaxZ = origin.getZ() + size.getZ() - 1;
+
+        int interMinX = Math.max(minX, schematicMinX);
+        int interMaxX = Math.min(maxX, schematicMaxX);
+        int interMinY = Math.max(minY, schematicMinY);
+        int interMaxY = Math.min(maxY, schematicMaxY);
+        int interMinZ = Math.max(minZ, schematicMinZ);
+        int interMaxZ = Math.min(maxZ, schematicMaxZ);
+
+        if (interMinX > interMaxX || interMinY > interMaxY || interMinZ > interMaxZ) return;
+
+        for (int x = interMinX; x <= interMaxX; x++) {
+            for (int y = interMinY; y <= interMaxY; y++) {
+                for (int z = interMinZ; z <= interMaxZ; z++) {
+                    BlockPos worldPos = new BlockPos(x, y, z);
+                    BlockPos schematicPos = worldPos.subtract(origin);
+                    BlockState worldState = mc.world.getBlockState(worldPos);
+                    BlockState schematicState = worldSchematic.getBlockState(schematicPos);
+                    Block schematicBlock = schematicState.getBlock();
+                    Block worldBlock = worldState.getBlock();
+                    if (schematicBlock != worldBlock && 允许存入挖掘表(worldPos) && 允许存入挖掘表(worldState) && 允许存入挖掘表(worldBlock)) {
+                        TryBlocksAdd(worldPos, worldBlock);
+                    }
+                }
+            }
+        }
+    }
     @EventHandler
     private void onStartBreakingBlock(StartBreakingBlockEvent event) {
         if (!isActive() || TriggerMode.get() != 触发模式.手动相连同类) return;
@@ -1341,7 +1390,7 @@ public class Deleter extends Module {
     public static enum 触发模式 {
         自动半径全部,
         手动相连同类,
-        litematica
+        litematica,
     }
     public static enum OreMode {
         遵循黑白名单,
