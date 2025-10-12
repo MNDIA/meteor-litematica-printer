@@ -43,7 +43,6 @@ public class MidiParser extends Module {
             return;
         }
         info("Parsing MIDI file: " + path);
-        //TODO: Implement MIDI parsing 
        
     }
 
