@@ -4,6 +4,7 @@ package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.events.world.TickEvent;
+import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
 import meteordevelopment.orbit.EventHandler;
@@ -27,6 +28,8 @@ public class BreakSettings extends Module {
 	public void onActivate(){
 		this.toggle();
 	}
+    
+	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
 
     
