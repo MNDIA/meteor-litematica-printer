@@ -1382,7 +1382,7 @@ public class Deleter extends Module {
 
     @Override
     public String getInfoString() {
-        return BlockListMode.get().toString();
+        return TriggerMode.get().toString() + " " + blocks.size() + " blocks";
     }
 
 
