@@ -25,8 +25,8 @@ import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.kkllffaa.meteor_litematica_printer.settings.InteractSettings;
-import com.kkllffaa.meteor_litematica_printer.settings.PlaceSettings;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.InteractSettings;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings;
 
 
 public class MyUtils {

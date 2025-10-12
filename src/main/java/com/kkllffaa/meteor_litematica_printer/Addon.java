@@ -1,9 +1,10 @@
 package com.kkllffaa.meteor_litematica_printer;
 
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
-import com.kkllffaa.meteor_litematica_printer.Modules.*;
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.*;
-import com.kkllffaa.meteor_litematica_printer.Modules.OnlyESP.ItemFinder;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.Executer.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.Tools.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.Tools.OnlyESP.*;
 
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.systems.modules.Category;
@@ -13,7 +14,7 @@ import net.minecraft.item.Items;
 
 public class Addon extends MeteorAddon {
 	public static final Category CRUDCATEGORY = new Category("EXCRUD", new ItemStack(Items.PINK_CARPET));
-	public static final Category SETTINGSCATEGORY = new Category("EXSettings", new ItemStack(Items.PINK_CARPET));
+	public static final Category SettingsForCRUD = new Category("EXSettings", new ItemStack(Items.PINK_CARPET));
 	public static final Category TOOLSCATEGORY = new Category("EXTools", new ItemStack(Items.PINK_CARPET));
 	
 	@Override
@@ -49,7 +50,7 @@ public class Addon extends MeteorAddon {
 	@Override
 	public void onRegisterCategories() {
 		Modules.registerCategory(CRUDCATEGORY);
-		Modules.registerCategory(SETTINGSCATEGORY);
+		Modules.registerCategory(SettingsForCRUD);
 		Modules.registerCategory(TOOLSCATEGORY);
 	}
 }

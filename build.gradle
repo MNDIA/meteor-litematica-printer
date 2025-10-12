@@ -28,8 +28,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     // Meteor
-    // modImplementation "meteordevelopment:meteor-client:${project.minecraft_version}-SNAPSHOT"
-    implementation files('meteor-client-1.21.8-local-all.jar')
+    modImplementation "meteordevelopment:meteor-client:${project.minecraft_version}-SNAPSHOT"
 
     //litematica
     modImplementation "com.github.sakura-ryoko:litematica:${project.minecraft_version}-${project.litematica_version}"
