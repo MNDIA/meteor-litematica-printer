@@ -13,8 +13,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 
 public class Addon extends MeteorAddon {
-	public static final Category CRUD = new Category("EXCRUD", new ItemStack(Items.PINK_CARPET));
-	public static final Category SettingsForCRUD = new Category("EXSettings", new ItemStack(Items.PINK_CARPET));
+	public static final Category CRUD = new Category("CRUD", new ItemStack(Items.PINK_CARPET));
+	public static final Category SettingsForCRUD = new Category("SetForCRUD", new ItemStack(Items.PINK_CARPET));
 	public static final Category TOOLS = new Category("EXTools", new ItemStack(Items.PINK_CARPET));
 	
 	@Override
@@ -53,8 +53,8 @@ public class Addon extends MeteorAddon {
 
 	@Override
 	public void onRegisterCategories() {
+		Modules.registerCategory(TOOLS);
 		Modules.registerCategory(CRUD);
 		Modules.registerCategory(SettingsForCRUD);
-		Modules.registerCategory(TOOLS);
 	}
 }
