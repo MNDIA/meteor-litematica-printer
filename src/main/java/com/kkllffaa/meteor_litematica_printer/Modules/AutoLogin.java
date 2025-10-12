@@ -28,54 +28,45 @@ public class AutoLogin extends Module {
         .defaultValue("Please login with")
         .build()
     );
+    private final Setting<List<String>> loginCommands = sgGeneral.add(new StringListSetting.Builder()
+    .name("login-commands")
+    .description("List of player name to command mappings. Format: player:/login password")
+    .defaultValue(new java.util.ArrayList<>())
+    .build()
+    );
+    
     private final Setting<String> successMessage = sgGeneral.add(new StringSetting.Builder()
         .name("success-message")
         .description("The message that indicates a successful login.")
-        .defaultValue("Login successful")
+        .defaultValue("Login suc")
         .build()
     );
-    private final Setting<List<String>> loginCommands = sgGeneral.add(new StringListSetting.Builder()
-        .name("login-commands")
-        .description("List of player name to command mappings. Format: player:/login password")
-        .defaultValue(new java.util.ArrayList<>())
-        .build()
+    
+    private final Setting<String> 菜单入口物品包含名字 = sgGeneral.add(new StringSetting.Builder()
+    .name("menu-item-name-keyword")
+    .description("The string that the item name must contain to be used after login.")
+    .defaultValue("")
+    .build()
     );
-
-    private final Setting<Integer> cooldown = sgGeneral.add(new IntSetting.Builder()
-        .name("cooldown")
-        .description("Cooldown time in seconds between login attempts.")
-        .defaultValue(5)
-        .min(0)
-        .sliderMax(60)
-        .build()
+    
+    private final Setting<String> 服务器入口物品包含名字 = sgGeneral.add(new StringSetting.Builder()
+    .name("server-item-name-keyword")
+    .description("The string that the item name in the GUI must contain to be clicked.")
+    .defaultValue("")
+    .build()
     );
+    
     private final Setting<Boolean> INFO = sgGeneral.add(new BoolSetting.Builder()
         .name("info")
         .description("Show info messages when auto login is triggered.")
         .defaultValue(false)
         .build()
     );
-
-    private final Setting<String> itemNameContains = sgGeneral.add(new StringSetting.Builder()
-        .name("item-name-contains")
-        .description("The string that the item name must contain to be used after login.")
-        .defaultValue("右键前往服务器")
-        .build()
-    );
-
-    private final Setting<String> guiItemNameContains = sgGeneral.add(new StringSetting.Builder()
-        .name("gui-item-name-contains")
-        .description("The string that the item name in the GUI must contain to be clicked.")
-        .defaultValue("前往服务器")
-        .build()
-    );
-
-    private long lastLoginTime = 0;
-
+    
     public AutoLogin() {
         super(Addon.TOOLSCATEGORY, "auto-login", "Automatically logs in when receiving specific messages.");
     }
-
+    
     @Override
     public void info(String message, Object... args){
         if (INFO.get()){
@@ -88,18 +79,20 @@ public class AutoLogin extends Module {
             super.info(message);
         }
     }
+    
+    private enum State {
+        NONE,
+        输入命令,
+        使用菜单,
+    }
+    private State currentState = State.NONE;
 
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
         Text message = event.getMessage();
         String messageString = message.getString();
 
-        if (messageString.contains(triggerMessage.get())) {
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastLoginTime < cooldown.get() * 1000L) {
-                return;
-            }
-
+        if (messageString.contains(triggerMessage.get()) && currentState == State.NONE) {
             if (mc.player != null) {
                 String playerName = mc.player.getName().getString();
                 List<String> commandsList = loginCommands.get();
@@ -109,7 +102,7 @@ public class AutoLogin extends Module {
                     if (parts.length == 2 && parts[0].trim().equals(playerName)) {
                         String command = parts[1].trim();
                         ChatUtils.sendPlayerMsg(command);
-                        lastLoginTime = currentTime;
+                        currentState = State.输入命令;
                         info("%s with command: %s", playerName, command);
                         
                         break;
@@ -117,35 +110,39 @@ public class AutoLogin extends Module {
                 }
             }
         }
-        if (messageString.contains(successMessage.get())) {
+        if (messageString.contains(successMessage.get()) && currentState == State.输入命令) {
             // 使用背包里的特定名称的物品
-            String TargeItemName = itemNameContains.get();
-            if (!TargeItemName.isEmpty()) {
+            String 菜单入口物品关键字 = 菜单入口物品包含名字.get();
+            if (!菜单入口物品关键字.isEmpty()) {
+                currentState = State.使用菜单;
                 for (int slot = 0; slot < 9; slot++) {
                     ItemStack stack = mc.player.getInventory().getStack(slot);
-                    if (!stack.isEmpty() && stack.getName().getString().contains(TargeItemName)) {
+                    if (!stack.isEmpty() && stack.getName().getString().contains(菜单入口物品关键字)) {
                         InvUtils.swap(slot, false);
                         ActionResult result = mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
                         String resultMessage = result == SUCCESS ? "Used item successfully" :
                                                 result == FAIL ? "Failed to use item" :
                                                 result == PASS ? "Item usage passed" : "Unknown result";
-
+                                                
                         info("Used item: %s - %s", stack.getName().getString(), resultMessage);
                         
                         break;
                     }
                 }
+            }else{
+                currentState = State.NONE;
             }
         }
     }
 
     @EventHandler
     private void onOpenScreen(OpenScreenEvent event) {
-        if (event.screen instanceof GenericContainerScreen) {
-            String guiItemName = guiItemNameContains.get();
-            if (!guiItemName.isEmpty()) {
+        if (event.screen instanceof GenericContainerScreen && currentState == State.使用菜单) {
+            currentState = State.NONE;
+            String 服务器入口物品关键字 = 服务器入口物品包含名字.get();
+            if (!服务器入口物品关键字.isEmpty()) {
                 for (Slot slot : mc.player.currentScreenHandler.slots) {
-                    if (slot.hasStack() && slot.getStack().getName().getString().contains(guiItemName)) {
+                    if (slot.hasStack() && slot.getStack().getName().getString().contains(服务器入口物品关键字)) {
                         InvUtils.click().slotId(slot.id);
                         info("Clicked item in GUI: %s", slot.getStack().getName().getString());
                         break;
