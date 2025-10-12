@@ -1,11 +1,19 @@
 package com.kkllffaa.meteor_litematica_printer.Modules;
 
+import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
+import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.item.ItemStack;
+import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
+import static net.minecraft.util.ActionResult.*;
+import net.minecraft.util.Hand;
 
 import java.util.List;
 
@@ -20,7 +28,12 @@ public class AutoLogin extends Module {
         .defaultValue("Please login with")
         .build()
     );
-
+    private final Setting<String> successMessage = sgGeneral.add(new StringSetting.Builder()
+        .name("success-message")
+        .description("The message that indicates a successful login.")
+        .defaultValue("Login successful")
+        .build()
+    );
     private final Setting<List<String>> loginCommands = sgGeneral.add(new StringListSetting.Builder()
         .name("login-commands")
         .description("List of player name to command mappings. Format: player:/login password")
@@ -43,10 +56,37 @@ public class AutoLogin extends Module {
         .build()
     );
 
+    private final Setting<String> itemNameContains = sgGeneral.add(new StringSetting.Builder()
+        .name("item-name-contains")
+        .description("The string that the item name must contain to be used after login.")
+        .defaultValue("右键前往服务器")
+        .build()
+    );
+
+    private final Setting<String> guiItemNameContains = sgGeneral.add(new StringSetting.Builder()
+        .name("gui-item-name-contains")
+        .description("The string that the item name in the GUI must contain to be clicked.")
+        .defaultValue("前往服务器")
+        .build()
+    );
+
     private long lastLoginTime = 0;
 
     public AutoLogin() {
         super(Addon.TOOLSCATEGORY, "auto-login", "Automatically logs in when receiving specific messages.");
+    }
+
+    @Override
+    public void info(String message, Object... args){
+        if (INFO.get()){
+            super.info(message, args);
+        }
+    }
+    @Override
+    public void info(Text message) {
+        if (INFO.get()){
+            super.info(message);
+        }
     }
 
     @EventHandler
@@ -70,9 +110,44 @@ public class AutoLogin extends Module {
                         String command = parts[1].trim();
                         ChatUtils.sendPlayerMsg(command);
                         lastLoginTime = currentTime;
-                        if (INFO.get()){
-                            info("%s with command: %s", playerName, command);
-                        }
+                        info("%s with command: %s", playerName, command);
+                        
+                        break;
+                    }
+                }
+            }
+        }
+        if (messageString.contains(successMessage.get())) {
+            // 使用背包里的特定名称的物品
+            String TargeItemName = itemNameContains.get();
+            if (!TargeItemName.isEmpty()) {
+                for (int slot = 0; slot < 9; slot++) {
+                    ItemStack stack = mc.player.getInventory().getStack(slot);
+                    if (!stack.isEmpty() && stack.getName().getString().contains(TargeItemName)) {
+                        InvUtils.swap(slot, false);
+                        ActionResult result = mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+                        String resultMessage = result == SUCCESS ? "Used item successfully" :
+                                                result == FAIL ? "Failed to use item" :
+                                                result == PASS ? "Item usage passed" : "Unknown result";
+
+                        info("Used item: %s - %s", stack.getName().getString(), resultMessage);
+                        
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    private void onOpenScreen(OpenScreenEvent event) {
+        if (event.screen instanceof GenericContainerScreen) {
+            String guiItemName = guiItemNameContains.get();
+            if (!guiItemName.isEmpty()) {
+                for (Slot slot : mc.player.currentScreenHandler.slots) {
+                    if (slot.hasStack() && slot.getStack().getName().getString().contains(guiItemName)) {
+                        InvUtils.click().slotId(slot.id);
+                        info("Clicked item in GUI: %s", slot.getStack().getName().getString());
                         break;
                     }
                 }
