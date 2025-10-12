@@ -10,7 +10,7 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 public class MidiParser extends Module {
 
     public MidiParser() {
-        super(Addon.TOOLSCATEGORY, "midi-parser", "Parses MIDI files.");
+        super(Addon.TOOLS, "midi-parser", "Parses MIDI files.");
     }
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 

@@ -108,7 +108,7 @@ public class AutoEat extends Module {
     private boolean wasBaritone = false;
 
     public AutoEat() {
-        super(Addon.TOOLSCATEGORY, "auto-eat-+", "Automatically eats food.");
+        super(Addon.TOOLS, "auto-eat-+", "Automatically eats food.");
     }
     @Override
     public void onActivate() {

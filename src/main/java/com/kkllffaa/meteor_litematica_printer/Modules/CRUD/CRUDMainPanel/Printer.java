@@ -183,7 +183,7 @@ public class Printer extends Module {
     private final Map<BlockPos, Integer> pendingInteractions = new HashMap<>();
 
 	public Printer() {
-		super(Addon.CRUDCATEGORY, "litematica-printer", "Automatically prints open schematics");
+		super(Addon.CRUD, "litematica-printer", "Automatically prints open schematics");
 	}
 	private boolean isPositionCached(BlockPos pos) {
 		return enableCache.get() && positionCache.contains(pos);

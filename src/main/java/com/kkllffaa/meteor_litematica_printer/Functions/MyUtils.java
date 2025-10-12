@@ -25,13 +25,14 @@ import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.InteractSettings;
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*;
 
 
 public class MyUtils {
 	public static PlaceSettings PlaceSettingsModule = new PlaceSettings();
 	public static InteractSettings InteractSettingsModule = new InteractSettings();
+	public static ContainerSettings ContainerSettingsModule = new ContainerSettings();
+	public static BreakSettings BreakSettingsModule = new BreakSettings();
 
 
 	//yaw转换四方向

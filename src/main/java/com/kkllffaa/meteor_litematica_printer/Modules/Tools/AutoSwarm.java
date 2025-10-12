@@ -56,7 +56,7 @@ public class AutoSwarm extends Module {
     private long lastWorldChangeTime = 0;
 
     public AutoSwarm() {
-        super(Addon.TOOLSCATEGORY, "auto-swarm", "Automatically manages swarm instances.");
+        super(Addon.TOOLS, "auto-swarm", "Automatically manages swarm instances.");
     }
 
     @Override

@@ -41,7 +41,7 @@ public class AutoFix extends Module {
     );
 
     public AutoFix () {
-        super(Addon.TOOLSCATEGORY, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手");
+        super(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手");
     }
 
 

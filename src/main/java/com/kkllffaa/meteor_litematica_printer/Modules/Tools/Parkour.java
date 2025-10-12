@@ -35,7 +35,7 @@ public class Parkour extends Module {
             .build());
 
     public Parkour() {
-        super(Addon.TOOLSCATEGORY, "parkour", "Automatically jumps at the edges of blocks.");
+        super(Addon.TOOLS, "parkour", "Automatically jumps at the edges of blocks.");
     }
 
     private boolean isForcedJumping = false;

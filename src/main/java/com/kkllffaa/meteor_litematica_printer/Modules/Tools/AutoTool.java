@@ -120,7 +120,7 @@ public class AutoTool extends Module {
     private int useSlotIndex = useSlot.get() - 1;
 
     public AutoTool() {
-        super(Addon.TOOLSCATEGORY, "auto-tool-+", "Automatically switches to the most effective tool when performing an action.");
+        super(Addon.TOOLS, "auto-tool-+", "Automatically switches to the most effective tool when performing an action.");
     }
     @Override
     public void onActivate() {

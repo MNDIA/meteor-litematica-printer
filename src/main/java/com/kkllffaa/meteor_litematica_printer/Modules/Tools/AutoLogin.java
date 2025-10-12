@@ -64,7 +64,7 @@ public class AutoLogin extends Module {
     );
     
     public AutoLogin() {
-        super(Addon.TOOLSCATEGORY, "auto-login", "Automatically logs in when receiving specific messages.");
+        super(Addon.TOOLS, "auto-login", "Automatically logs in when receiving specific messages.");
     }
     
     @Override

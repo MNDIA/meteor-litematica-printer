@@ -90,7 +90,7 @@ public class ItemFinder extends Module {
     private int count;
 
     public ItemFinder() {
-        super(Addon.TOOLSCATEGORY, "esp-Item-Entity", "Renders items through walls.");
+        super(Addon.TOOLS, "esp-Item-Entity", "Renders items through walls.");
     }
 
     // Box

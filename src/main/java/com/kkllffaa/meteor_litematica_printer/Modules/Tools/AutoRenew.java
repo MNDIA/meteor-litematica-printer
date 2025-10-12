@@ -56,7 +56,7 @@ public class AutoRenew extends Module {
             .build());
 
     public AutoRenew() {
-        super(Addon.TOOLSCATEGORY, "auto-renew", "手持工具耐久度低于阈值时，从背包内替换同类物品");
+        super(Addon.TOOLS, "auto-renew", "手持工具耐久度低于阈值时，从背包内替换同类物品");
     }
 
     @EventHandler

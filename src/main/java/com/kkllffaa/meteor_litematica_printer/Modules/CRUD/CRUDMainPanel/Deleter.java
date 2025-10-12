@@ -7,6 +7,10 @@ import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.world.EChestFarmer;
+import meteordevelopment.meteorclient.systems.modules.world.HighwayBuilder;
+import meteordevelopment.meteorclient.systems.modules.world.Nuker;
+import meteordevelopment.meteorclient.systems.modules.world.VeinMiner;
 import meteordevelopment.meteorclient.utils.misc.Pool;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
@@ -542,9 +546,12 @@ public class Deleter extends Module {
     private int continuousScanTimer = 0;
 
     public Deleter(String name) {
-        super(Addon.CRUDCATEGORY, name, "Deletes blocks as you whish.");
+        super(Addon.CRUD, name, "Deletes blocks as you whish.");
     }
 
+    @SuppressWarnings("unchecked")
+    private static final Class<? extends Module>[] BlackModuleList = new Class[] {
+            EChestFarmer.class, HighwayBuilder.class, Nuker.class, VeinMiner.class };
     private double getHandDistance() {
         return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistanceToBlockCenter.get();
     }
@@ -887,6 +894,13 @@ public class Deleter extends Module {
 
     @Override
     public void onActivate() {
+        for (Class<? extends Module> klass : BlackModuleList) {
+                Module module = Modules.get().get(klass);
+                if (module.isActive()) {
+                    module.toggle();
+                }
+            }
+
         Collection<Module> allModules = Modules.get().getAll();
         for (Module module : allModules) {
             if (module instanceof Deleter && module != this && module.isActive()) {
