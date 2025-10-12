@@ -542,9 +542,6 @@ public class Deleter extends Module {
     public Deleter(String name) {
         super(Addon.CRUDCATEGORY, name, "Deletes all nearby blocks with this type");
     }
-    public Deleter() {
-        super(Addon.CRUDCATEGORY, "deleter", "Deletes all nearby blocks with this type");
-    }
 
     private double getHandDistance() {
         return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistanceToBlockCenter.get();
