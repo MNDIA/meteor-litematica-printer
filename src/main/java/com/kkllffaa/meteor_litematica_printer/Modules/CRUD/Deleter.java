@@ -541,7 +541,7 @@ public class Deleter extends Module {
     private int continuousScanTimer = 0;
 
     public Deleter(String name) {
-        super(Addon.CRUDCATEGORY, name, "Deletes all nearby blocks with this type");
+        super(Addon.CRUDCATEGORY, name, "Deletes blocks as you whish.");
     }
 
     private double getHandDistance() {
