@@ -1,16 +1,17 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings;
 
 
-import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.settings.EnumSetting;
-import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.settings.Setting;
+import meteordevelopment.meteorclient.settings.DoubleSetting;
+import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
+import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
+import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
@@ -21,6 +22,7 @@ import net.minecraft.util.math.Direction;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.DistanceMode;
 
 
 
@@ -59,6 +61,24 @@ public class BreakSettings extends Module {
         .build()
     );
 
+    private final Setting<DistanceMode> distanceProtection = sgGeneral.add(new EnumSetting.Builder<DistanceMode>()
+        .name("distance-protection")
+        .description("Prevent mining blocks that are too far to the player.")
+        .defaultValue(DistanceMode.Max)
+        .build()
+    );
+
+    private final Setting<Double> maxDistanceToBlockCenter = sgGeneral.add(new DoubleSetting.Builder()
+        .name("max-distance-to-block-center")
+        .description("Maximum distance from player to mine blocks.")
+        .defaultValue(5.9)
+        .min(1.0)
+        .max(1024.0)
+        .sliderRange(1.0, 6.0)
+        .visible(() -> distanceProtection.get() == DistanceMode.Max)
+        .build()
+    );
+
     
     public static boolean breaking;
     private static boolean breakingThisTick;
@@ -76,11 +96,12 @@ public class BreakSettings extends Module {
         }
     }
     public boolean canBreakByObjective(BlockPos blockPos){
-        return meteordevelopment.meteorclient.utils.world.BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos));
+        return BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos));
     }
 
+
     public void breakBlock(BlockPos blockPos) {
-        if (!canBreakByObjective(blockPos)) return;
+        // if (!canBreakByObjective(blockPos)) return;
 
         switch (instantRotation.get()) {
             case ActionMode.None -> breakBlockStep2(blockPos);
