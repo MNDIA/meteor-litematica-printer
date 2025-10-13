@@ -97,7 +97,7 @@ public class AutoLogin extends Module {
         使用菜单,
     }
     private State currentState = State.NONE;
-    private int delayTicks = 0;
+    private int 挂起操作Tick = 0;
 
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -125,51 +125,56 @@ public class AutoLogin extends Module {
         if (messageString.contains(successMessage.get()) && currentState == State.输入命令) {
             // 使用背包里的特定名称的物品
             String 菜单入口物品关键字 = 菜单入口物品包含名字.get();
-            if (!菜单入口物品关键字.isEmpty()) {
+            boolean 启用使用菜单入口物品 = !菜单入口物品关键字.isEmpty();
+            if (启用使用菜单入口物品) {
                 currentState = State.使用菜单;
-                for (int slot = 0; slot < 9; slot++) {
-                    ItemStack stack = mc.player.getInventory().getStack(slot);
-                    if (!stack.isEmpty() && stack.getName().getString().contains(菜单入口物品关键字)) {
-                        InvUtils.swap(slot, false);
-                        ActionResult result = mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-                        String resultMessage = result == SUCCESS ? "Used item successfully" :
-                                                result == FAIL ? "Failed to use item" :
-                                                result == PASS ? "Item usage passed" : "Unknown result";
-                                                
-                        info("Used item: %s - %s", stack.getName().getString(), resultMessage);
-                        
-                        break;
-                    }
-                }
+                使用菜单入口物品(菜单入口物品关键字);
             }else{
                 currentState = State.NONE;
             }
         }
     }
 
+
+
     @EventHandler
     private void onOpenScreen(OpenScreenEvent event) {
         if (event.screen instanceof GenericContainerScreen && currentState == State.使用菜单) {
-            currentState = State.NONE;
-            delayTicks = delayTicksSetting.get();
-            
+            挂起操作Tick = delayTicksSetting.get();
         }
     }
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (delayTicks > 0) {
-            delayTicks--;
-            if (delayTicks == 0) {
+        if (挂起操作Tick > 0) {
+            挂起操作Tick--;
+            if (挂起操作Tick == 0) {
+                currentState = State.NONE;
                 var name = 服务器入口物品包含名字.get();
-                if (!name.isEmpty()) {
-                    搜索点击入口物品(name);
+                boolean 启用搜索菜单并点击入口物品 = !name.isEmpty();
+                if (启用搜索菜单并点击入口物品) {
+                    搜索菜单并点击入口物品(name);
                 }
             }
         }
     }
-
-    private void 搜索点击入口物品(String 服务器入口物品关键字) {
+    private void 使用菜单入口物品(String 菜单入口物品关键字) {
+        for (int slot = 0; slot < 9; slot++) {
+            ItemStack stack = mc.player.getInventory().getStack(slot);
+            if (!stack.isEmpty() && stack.getName().getString().contains(菜单入口物品关键字)) {
+                InvUtils.swap(slot, false);
+                ActionResult result = mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+                String resultMessage = result == SUCCESS ? "Used item successfully" :
+                                        result == FAIL ? "Failed to use item" :
+                                        result == PASS ? "Item usage passed" : "Unknown result";
+                                        
+                info("Used item: %s - %s", stack.getName().getString(), resultMessage);
+                
+                break;
+            }
+        }
+    }
+    private void 搜索菜单并点击入口物品(String 服务器入口物品关键字) {
         var slots = mc.player.currentScreenHandler.slots;
         info("Looking for item with name containing: %s in %s slots", 服务器入口物品关键字, slots.size());
         for (Slot slot : slots) {
