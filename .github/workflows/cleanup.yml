@@ -1,15 +1,13 @@
 name: Cleanup Successful Workflow Runs
 
 on:
-  workflow_dispatch:  # 手动触发
-  schedule:
-    - cron: '0 0 * * 0'  # 每周日午夜运行（可选）
+  workflow_dispatch:
 
 jobs:
   cleanup:
     runs-on: ubuntu-latest
     permissions:
-      actions: write  # 确保有删除权限
+      actions: write 
 
     steps:
       - name: Checkout (optional)
