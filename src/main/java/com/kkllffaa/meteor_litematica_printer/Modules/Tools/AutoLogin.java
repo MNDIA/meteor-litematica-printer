@@ -173,12 +173,14 @@ public class AutoLogin extends Module {
         var slots = mc.player.currentScreenHandler.slots;
         info("Looking for item with name containing: %s in %s slots", 服务器入口物品关键字, slots.size());
         for (Slot slot : slots) {
-            String name = slot.getStack().getName().getString();
-            info("Found item in GUI: %s", name);
-            if (name.contains(服务器入口物品关键字)) {
-                InvUtils.click().slotId(slot.id);
-                info("Clicked item in GUI: %s", name);
-                break;
+            if (slot.hasStack()) {
+                String name = slot.getStack().getName().getString();
+                info("Found item in GUI: %s", name);
+                if (name.contains(服务器入口物品关键字)) {
+                    InvUtils.click().slotId(slot.id);
+                    info("Clicked item in GUI: %s", name);
+                    break;
+                }
             }
         }
     }
