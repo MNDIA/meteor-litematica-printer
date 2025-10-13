@@ -48,6 +48,7 @@ public class BreakSettings extends Module {
     @EventHandler(priority = EventPriority.LOWEST - 100)
     private static void onTickPost(TickEvent.Post event) {
         if (!breakingThisTick && breaking) {
+            meteordevelopment.meteorclient.utils.world.BlockUtils.breaking = false;
             breaking = false;
             if (MeteorClient.mc.interactionManager != null) MeteorClient.mc.interactionManager.cancelBlockBreaking();
         }
