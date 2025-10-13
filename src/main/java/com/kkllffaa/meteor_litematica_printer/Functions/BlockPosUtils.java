@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import static com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import meteordevelopment.meteorclient.utils.Utils;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -91,15 +90,12 @@ public class BlockPosUtils {
 	//endregion
 
     public static boolean isPlayerYawPitchInTheFaceOfBlock(Vec3i blockPos, Direction direction) {
-    
-    	ClientPlayerEntity player = mc.player;
-    	if (player == null)
-    		return false;
-    
-    	Vec3d playerEye = new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()),
-    			player.getZ());
-    	float playerYaw = Rotation.normalizeYaw(player.getYaw());
-    	float playerPitch = player.getPitch();
+    	if (mc.player == null) return false;
+
+    	Vec3d playerEye = new Vec3d(mc.player.getX(), mc.player.getY() + mc.player.getEyeHeight(mc.player.getPose()),
+    			mc.player.getZ());
+    	float playerYaw = Rotation.normalizeYaw(mc.player.getYaw());
+    	float playerPitch = mc.player.getPitch();
     	Vec3d[] offsets = switch (direction) {
     		case UP -> FACE_OFFSETS_UP;
     		case DOWN -> FACE_OFFSETS_DOWN;
@@ -233,10 +229,10 @@ public class BlockPosUtils {
 		double absZ = Math.abs(direction.z);
 
 		// Find which component is largest - this determines which face the ray hits
-		if (absX >= absY && absX >= absZ) {
+		if (absX > absY && absX > absZ) {
 			// Ray hits either EAST or WEST face
 			return direction.x > 0 ? Direction.WEST : Direction.EAST;
-		} else if (absY >= absX && absY >= absZ) {
+		} else if (absY > absX && absY > absZ) {
 			// Ray hits either UP or DOWN face
 			return direction.y > 0 ? Direction.DOWN : Direction.UP;
 		} else {
