@@ -9,6 +9,7 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 
 public class CRUDExecuter extends Module {
+    public static CRUDExecuter Instance = new CRUDExecuter();
     public CRUDExecuter() {
         super(Addon.SettingsForCRUD, "CRUDExecuter", "Execute CRUD operations in TickEvent.");
         this.toggle();

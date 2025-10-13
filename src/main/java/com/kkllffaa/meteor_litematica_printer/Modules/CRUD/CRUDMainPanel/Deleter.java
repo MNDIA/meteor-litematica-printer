@@ -37,7 +37,6 @@ import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.BreakSettings;
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.BreakSettings.SwingMode;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
@@ -203,12 +202,6 @@ public class Deleter extends Module {
     //endregion
 
     //region Render
-    private final Setting<SwingMode> Swing = sgRender.add(new EnumSetting.Builder<SwingMode>()
-        .name("show-swing")
-        .description("Swing hand client-side.")
-        .defaultValue(SwingMode.None)
-        .build()
-    );
 
     private final Setting<Boolean> renderToMine = sgRender.add(new BoolSetting.Builder()
         .name("render-to-mine")
@@ -1325,7 +1318,7 @@ public class Deleter extends Module {
         }
 
         private void updateBlockBreakingProgress() {
-            BreakSettings.breakBlock(blockPos, Swing.get(),() -> BlockPosUtils.getDirectionFromPlayerPosition(blockPos));
+            BreakSettings.Instance.breakBlock(blockPos);
         }
        
         public void render(Render3DEvent event) {

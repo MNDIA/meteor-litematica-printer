@@ -25,16 +25,9 @@ import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*;
 
 
 public class MyUtils {
-	public static PlaceSettings PlaceSettingsModule = new PlaceSettings();
-	public static InteractSettings InteractSettingsModule = new InteractSettings();
-	public static ContainerSettings ContainerSettingsModule = new ContainerSettings();
-	public static BreakSettings BreakSettingsModule = new BreakSettings();
-
-
 	//yaw转换四方向
 	private static @NotNull Direction ConvertToDirectionFromYaw(float yaw) {
 		yaw = Rotation.normalizeYaw(yaw);
@@ -176,7 +169,7 @@ public class MyUtils {
 	public static enum SafetyFaceMode {
 		PlayerRotation,
 		PlayerPosition, // 射线方向
-		None
+		None,
 	}
     
     private static final Random random = new Random();
@@ -315,16 +308,5 @@ public class MyUtils {
 			return false;
 	}
 
-	public static int calculateRequiredInteractions(BlockState targetState, BlockState currentState) {
-		return InteractSettingsModule.calculateRequiredInteractions(targetState, currentState);
-	}
-
-	public static int interactWithBlock(BlockPos pos, int count) {
-		return InteractSettingsModule.interactWithBlock(pos, count);
-	}
-
-	public static boolean placeBlock(BlockState required, BlockPos pos) {
-		return PlaceSettingsModule.placeBlock(required, pos);
-	}
 
 }

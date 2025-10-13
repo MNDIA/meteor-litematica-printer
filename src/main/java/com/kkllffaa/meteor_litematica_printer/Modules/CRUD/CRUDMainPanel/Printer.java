@@ -9,7 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.InteractSettings;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
@@ -251,8 +252,8 @@ public class Printer extends Module {
 		if (timer >= printing_delay.get()) {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
-				if (MyUtils.InteractSettingsModule.enableInteraction.get() && !pendingInteractions.containsKey(pos)) {
-					int requiredInteractions = MyUtils.calculateRequiredInteractions(required,
+				if (InteractSettings.Instance.enableInteraction.get() && !pendingInteractions.containsKey(pos)) {
+					int requiredInteractions = InteractSettings.Instance.calculateRequiredInteractions(required,
 							blockState);
 					if (requiredInteractions > 0) {
 						pendingInteractions.put(new BlockPos(pos), requiredInteractions);
@@ -294,7 +295,7 @@ public class Printer extends Module {
 					int remaining = entry.getValue();
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, blocksPerTick.get() - placed);
-						int did = MyUtils.interactWithBlock(pos, toDo);
+						int did = InteractSettings.Instance.interactWithBlock(pos, toDo);
 						if (did > 0){
 							timer = 0;
 						}
@@ -313,7 +314,7 @@ public class Printer extends Module {
 				for (BlockPos pos : toSort) {
 					BlockState state = worldSchematic.getBlockState(pos);
 
-					if (MyUtils.placeBlock(state, pos)) {
+					if (PlaceSettings.Instance.placeBlock(state, pos)) {
 						timer = 0;
 						placed++;
 						addToCache(pos);

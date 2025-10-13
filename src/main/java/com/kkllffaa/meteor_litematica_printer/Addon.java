@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer;
 
-import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.Executer.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.Executer.CRUDExecuter;
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.*;
 import com.kkllffaa.meteor_litematica_printer.Modules.Tools.*;
 import com.kkllffaa.meteor_litematica_printer.Modules.Tools.OnlyESP.*;
@@ -20,11 +20,11 @@ public class Addon extends MeteorAddon {
 	@Override
 	public void onInitialize() {
 		// Modules
-		Modules.get().add(MyUtils.PlaceSettingsModule);
-		Modules.get().add(MyUtils.InteractSettingsModule);
-		Modules.get().add(MyUtils.ContainerSettingsModule);
-		Modules.get().add(MyUtils.BreakSettingsModule);
-		Modules.get().add(new CRUDExecuter());
+		Modules.get().add(PlaceSettings.Instance);
+		Modules.get().add(InteractSettings.Instance);
+		Modules.get().add(ContainerSettings.Instance);
+		Modules.get().add(BreakSettings.Instance);
+		Modules.get().add(CRUDExecuter.Instance);
 
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());

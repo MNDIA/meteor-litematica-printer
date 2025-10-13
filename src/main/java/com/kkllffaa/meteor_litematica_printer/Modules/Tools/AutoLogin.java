@@ -13,8 +13,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import static net.minecraft.util.ActionResult.*;
 import net.minecraft.util.Hand;
 
 import java.util.List;

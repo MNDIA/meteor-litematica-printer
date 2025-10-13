@@ -44,6 +44,7 @@ import static meteordevelopment.meteorclient.utils.world.BlockUtils.isClickable;
 
 
 public class PlaceSettings extends Module {
+	public static PlaceSettings Instance = new PlaceSettings();
 	public PlaceSettings() {
 		super(Addon.SettingsForCRUD, "PlaceSettings", "Module to configure AtomicSettings.");
 		this.toggle();
