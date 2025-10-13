@@ -17,6 +17,9 @@
       "com.kkllffaa.meteor_litematica_printer.Addon"
     ]
   },
+  "mixins": [
+    "mixins/meteor_litematica_printer.json"
+  ],
   "depends": {
     "java": ">=21",
     "minecraft": ">=${mc_version}",
