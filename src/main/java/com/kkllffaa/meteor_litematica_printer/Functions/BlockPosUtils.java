@@ -108,27 +108,27 @@ public class BlockPosUtils {
     		case EAST -> FACE_OFFSETS_EAST;
     		case WEST -> FACE_OFFSETS_WEST;
     	};
-    	float yaws[] = new float[4];
-    	float pitchs[] = new float[4];
+    	float pointsYawRelative[] = new float[4];
+    	float pointsPitchRelative[] = new float[4];
     	for (int i = 0; i < offsets.length; i++) {
     		Vec3d offset = offsets[i];
     		Vec3d point = new Vec3d(blockPos.getX() + offset.x, blockPos.getY() + offset.y, blockPos.getZ() + offset.z);
-    		Rotation rot = RotationStuff.calcRotationFromVec3d(playerEye, point);
-    		yaws[i] = Rotation.normalizeYaw(rot.getYaw() - playerYaw);
-    		pitchs[i] = rot.getPitch() - playerPitch;
+    		Rotation pointRot = RotationStuff.calcRotationFromVec3d(playerEye, point);
+    		pointsYawRelative[i] = Rotation.normalizeYaw(pointRot.getYaw() - playerYaw);
+    		pointsPitchRelative[i] = pointRot.getPitch() - playerPitch;
     	}
-    	boolean pitchInRange = MathUtils.acuteAngleSpansZero(pitchs[0], pitchs[1]) ||
-    			MathUtils.acuteAngleSpansZero(pitchs[0], pitchs[2]) ||
-    			MathUtils.acuteAngleSpansZero(pitchs[0], pitchs[3]) ||
-    			MathUtils.acuteAngleSpansZero(pitchs[1], pitchs[2]) ||
-    			MathUtils.acuteAngleSpansZero(pitchs[1], pitchs[3]) ||
-    			MathUtils.acuteAngleSpansZero(pitchs[2], pitchs[3]);
-    	boolean yawInRange = MathUtils.acuteAngleSpansZero(yaws[0], yaws[1]) ||
-    			MathUtils.acuteAngleSpansZero(yaws[0], yaws[2]) ||
-    			MathUtils.acuteAngleSpansZero(yaws[0], yaws[3]) ||
-    			MathUtils.acuteAngleSpansZero(yaws[1], yaws[2]) ||
-    			MathUtils.acuteAngleSpansZero(yaws[1], yaws[3]) ||
-    			MathUtils.acuteAngleSpansZero(yaws[2], yaws[3]);
+    	boolean pitchInRange = MathUtils.acuteAngleSpansZero(pointsPitchRelative[0], pointsPitchRelative[1]) ||
+    			MathUtils.acuteAngleSpansZero(pointsPitchRelative[0], pointsPitchRelative[2]) ||
+    			MathUtils.acuteAngleSpansZero(pointsPitchRelative[0], pointsPitchRelative[3]) ||
+    			MathUtils.acuteAngleSpansZero(pointsPitchRelative[1], pointsPitchRelative[2]) ||
+    			MathUtils.acuteAngleSpansZero(pointsPitchRelative[1], pointsPitchRelative[3]) ||
+    			MathUtils.acuteAngleSpansZero(pointsPitchRelative[2], pointsPitchRelative[3]);
+    	boolean yawInRange = MathUtils.acuteAngleSpansZero(pointsYawRelative[0], pointsYawRelative[1]) ||
+    			MathUtils.acuteAngleSpansZero(pointsYawRelative[0], pointsYawRelative[2]) ||
+    			MathUtils.acuteAngleSpansZero(pointsYawRelative[0], pointsYawRelative[3]) ||
+    			MathUtils.acuteAngleSpansZero(pointsYawRelative[1], pointsYawRelative[2]) ||
+    			MathUtils.acuteAngleSpansZero(pointsYawRelative[1], pointsYawRelative[3]) ||
+    			MathUtils.acuteAngleSpansZero(pointsYawRelative[2], pointsYawRelative[3]);
     
     	return yawInRange && pitchInRange;
     }
