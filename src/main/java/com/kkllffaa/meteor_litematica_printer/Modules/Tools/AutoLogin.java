@@ -142,18 +142,16 @@ public class AutoLogin extends Module {
             currentState = State.NONE;
             String 服务器入口物品关键字 = 服务器入口物品包含名字.get();
             if (!服务器入口物品关键字.isEmpty()) {
-                var slots = ((net.minecraft.client.gui.screen.ingame.HandledScreen<?>) event.screen).getScreenHandler().slots;
+                var slots = mc.player.currentScreenHandler.slots;
                 info("Looking for item with name containing: %s in %s slots", 服务器入口物品关键字, slots.size());
                 for (Slot slot : slots) {
-                    if (slot.hasStack()) {
-                        String name =  slot.getStack().getName().getString();
-                        info("Found item in GUI: %s", name);
-                        if (name.contains(服务器入口物品关键字)) {
-                            InvUtils.click().slotId(slot.id);
-                            info("Clicked item in GUI: %s", name);
+                    String name = slot.getStack().getName().getString();
+                    info("Found item in GUI: %s", name);
+                    if (name.contains(服务器入口物品关键字)) {
+                        InvUtils.click().slotId(slot.id);
+                        info("Clicked item in GUI: %s", name);
                             break;
                         }
-                    }
                 }
             }
         }
