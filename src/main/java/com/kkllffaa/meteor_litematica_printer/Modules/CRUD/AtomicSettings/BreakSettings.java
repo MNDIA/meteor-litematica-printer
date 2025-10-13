@@ -48,7 +48,6 @@ public class BreakSettings extends Module {
     @EventHandler(priority = EventPriority.LOWEST - 100)
     private static void onTickPost(TickEvent.Post event) {
         if (!breakingThisTick && breaking) {
-            meteordevelopment.meteorclient.utils.world.BlockUtils.breaking = false;
             breaking = false;
             if (MeteorClient.mc.interactionManager != null) MeteorClient.mc.interactionManager.cancelBlockBreaking();
         }
@@ -76,7 +75,6 @@ public class BreakSettings extends Module {
             case SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
             case Normal -> MeteorClient.mc.player.swingHand(Hand.MAIN_HAND);
         }
-        meteordevelopment.meteorclient.utils.world.BlockUtils.breaking = true;
         breaking = true;
         breakingThisTick = true;
 
