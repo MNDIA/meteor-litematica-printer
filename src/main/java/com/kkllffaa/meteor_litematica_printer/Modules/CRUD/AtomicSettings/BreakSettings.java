@@ -22,6 +22,7 @@ import com.kkllffaa.meteor_litematica_printer.Addon;
 public class BreakSettings extends Module {
     public BreakSettings() {
 		super(Addon.SettingsForCRUD, "BreakSettings", "Module to configure AtomicSettings.");
+        this.toggle();
 	}
 
 	@Override

@@ -30,6 +30,7 @@ import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
 public class InteractSettings extends Module {
 	public InteractSettings() {
 		super(Addon.SettingsForCRUD, "InteractSettings", "Module to configure AtomicSettings.");
+		this.toggle();
 	}
 	
 	@Override
