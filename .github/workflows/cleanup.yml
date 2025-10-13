@@ -1,0 +1,54 @@
+name: Cleanup Successful Workflow Runs
+
+on:
+  workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: '0 0 * * 0'  # 每周日午夜运行（可选）
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write  # 确保有删除权限
+
+    steps:
+      - name: Checkout (optional)
+        uses: actions/checkout@v4
+
+      - name: Delete Successful Runs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            
+            // 获取所有成功的 runs（分页处理）
+            let runs = [];
+            let page = 1;
+            while (true) {
+              const response = await github.rest.actions.listWorkflowRunsForRepo({
+                owner,
+                repo,
+                status: 'success',  // 只获取成功的 runs
+                per_page: 100,
+                page,
+              });
+              runs.push(...response.data.workflow_runs);
+              if (response.data.workflow_runs.length < 100) break;
+              page++;
+            }
+            
+            const currentRunId = context.runId;
+            for (const run of runs) {
+              if (run.id !== currentRunId) {  // 避免删除自己
+                try {
+                  await github.rest.actions.deleteWorkflowRun({
+                    owner,
+                    repo,
+                    run_id: run.id,
+                  });
+                  console.log(`Deleted run: ${run.id}`);
+                } catch (error) {
+                  console.error(`Failed to delete run ${run.id}: ${error.message}`);
+                }
+              }
+            }
