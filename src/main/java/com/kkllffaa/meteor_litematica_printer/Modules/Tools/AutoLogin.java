@@ -93,53 +93,39 @@ public class AutoLogin extends Module {
     
     private enum State {
         NONE,
-        输入命令,
-        使用菜单,
+        输入了登录命令,
+        使用了菜单,
     }
     private State currentState = State.NONE;
     private int 挂起操作Tick = 0;
-
+    @EventHandler
+    private void onGameJoined(GameJoinedEvent event) {
+        currentState = State.NONE;
+    }
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
+        if (mc.player == null) return;
         Text message = event.getMessage();
         String messageString = message.getString();
 
-        if (messageString.contains(triggerMessage.get()) && currentState == State.NONE) {
-            if (mc.player != null) {
-                String playerName = mc.player.getName().getString();
-                List<String> commandsList = loginCommands.get();
-
-                for (String pair : commandsList) {
-                    String[] parts = pair.split(":", 2);
-                    if (parts.length == 2 && parts[0].trim().equals(playerName)) {
-                        String command = parts[1].trim();
-                        ChatUtils.sendPlayerMsg(command);
-                        currentState = State.输入命令;
-                        info("%s with command: %s", playerName, command);
-                        
-                        break;
-                    }
-                }
+        if (messageString.contains(triggerMessage.get())) {
+            if (currentState == State.NONE) {
+                输入登录命令();
             }
-        }
-        if (messageString.contains(successMessage.get()) && currentState == State.输入命令) {
-            // 使用背包里的特定名称的物品
-            String 菜单入口物品关键字 = 菜单入口物品包含名字.get();
-            boolean 启用使用菜单入口物品 = !菜单入口物品关键字.isEmpty();
-            if (启用使用菜单入口物品) {
-                currentState = State.使用菜单;
-                使用菜单入口物品(菜单入口物品关键字);
-            }else{
-                currentState = State.NONE;
+        } else if (messageString.contains(successMessage.get())) {
+            if (currentState == State.输入了登录命令) {
+                if (!菜单入口物品包含名字.get().isEmpty()){
+                    挂起操作Tick = delayTicksSetting.get();
+                }else{
+                    currentState = State.NONE;
+                }
             }
         }
     }
 
-
-
     @EventHandler
     private void onOpenScreen(OpenScreenEvent event) {
-        if (event.screen instanceof GenericContainerScreen && currentState == State.使用菜单) {
+        if (event.screen instanceof GenericContainerScreen && currentState == State.使用了菜单) {
             挂起操作Tick = delayTicksSetting.get();
         }
     }
@@ -149,19 +135,45 @@ public class AutoLogin extends Module {
         if (挂起操作Tick > 0) {
             挂起操作Tick--;
             if (挂起操作Tick == 0) {
-                currentState = State.NONE;
-                var name = 服务器入口物品包含名字.get();
-                boolean 启用搜索菜单并点击入口物品 = !name.isEmpty();
-                if (启用搜索菜单并点击入口物品) {
-                    搜索菜单并点击入口物品(name);
+
+                if (currentState == State.输入了登录命令) {
+                    使用菜单入口物品();
+                    currentState = State.使用了菜单;
+                    return;
+
+                }else if (currentState == State.使用了菜单){
+                    if (!服务器入口物品包含名字.get().isEmpty()) {
+                        搜索菜单并点击入口物品();
+                    }
+                    currentState = State.NONE;
+                    return;
                 }
+
+
+               
             }
         }
     }
-    private void 使用菜单入口物品(String 菜单入口物品关键字) {
+
+    private void 输入登录命令() {
+        String playerName = mc.player.getName().getString();
+        List<String> commandsList = loginCommands.get();
+
+        for (String pair : commandsList) {
+            String[] parts = pair.split(":", 2);
+            if (parts.length == 2 && parts[0].trim().equals(playerName)) {
+                String command = parts[1].trim();
+                ChatUtils.sendPlayerMsg(command);
+                currentState = State.输入了登录命令;
+                info("%s with command: %s", playerName, command);
+                return;
+            }
+        }
+    }
+    private void 使用菜单入口物品() {
         for (int slot = 0; slot < 9; slot++) {
             ItemStack stack = mc.player.getInventory().getStack(slot);
-            if (!stack.isEmpty() && stack.getName().getString().contains(菜单入口物品关键字)) {
+            if (!stack.isEmpty() && stack.getName().getString().contains(菜单入口物品包含名字.get())) {
                 InvUtils.swap(slot, false);
                 ActionResult result = mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
                 String resultMessage = result == SUCCESS ? "Used item successfully" :
@@ -174,14 +186,15 @@ public class AutoLogin extends Module {
             }
         }
     }
-    private void 搜索菜单并点击入口物品(String 服务器入口物品关键字) {
+
+    private void 搜索菜单并点击入口物品() {
         var slots = mc.player.currentScreenHandler.slots;
-        info("Looking for item with name containing: %s in %s slots", 服务器入口物品关键字, slots.size());
+        info("Looking for item with name containing: %s in %s slots", 服务器入口物品包含名字.get(), slots.size());
         for (Slot slot : slots) {
             if (slot.hasStack()) {
                 String name = slot.getStack().getName().getString();
                 info("Found item in GUI: %s", name);
-                if (name.contains(服务器入口物品关键字)) {
+                if (name.contains(服务器入口物品包含名字.get())) {
                     InvUtils.click().slotId(slot.id);
                     info("Clicked item in GUI: %s", name);
                     break;
@@ -190,8 +203,5 @@ public class AutoLogin extends Module {
         }
     }
 
-    @EventHandler
-    private void onGameJoined(GameJoinedEvent event) {
-        currentState = State.NONE;
-    }
+
 }
