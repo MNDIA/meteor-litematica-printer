@@ -142,6 +142,7 @@ public class AutoLogin extends Module {
             currentState = State.NONE;
             String 服务器入口物品关键字 = 服务器入口物品包含名字.get();
             if (!服务器入口物品关键字.isEmpty()) {
+                info("Looking for item with name containing: %s", 服务器入口物品关键字);
                 for (Slot slot : mc.player.currentScreenHandler.slots) {
                     if (slot.hasStack() && slot.getStack().getName().getString().contains(服务器入口物品关键字)) {
                         InvUtils.click().slotId(slot.id);
