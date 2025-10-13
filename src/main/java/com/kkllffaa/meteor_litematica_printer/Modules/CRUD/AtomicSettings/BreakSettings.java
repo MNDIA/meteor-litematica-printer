@@ -75,7 +75,7 @@ public class BreakSettings extends Module {
             case SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
             case Normal -> MeteorClient.mc.player.swingHand(Hand.MAIN_HAND);
         }
-
+        meteordevelopment.meteorclient.utils.world.BlockUtils.breaking = true;
         breaking = true;
         breakingThisTick = true;
 
