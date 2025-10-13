@@ -1,5 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.Tools;
 
+import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.settings.*;
@@ -150,5 +151,10 @@ public class AutoLogin extends Module {
                 }
             }
         }
+    }
+
+    @EventHandler
+    private void onGameJoined(GameJoinedEvent event) {
+        currentState = State.NONE;
     }
 }
