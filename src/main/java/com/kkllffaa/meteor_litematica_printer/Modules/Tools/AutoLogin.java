@@ -44,7 +44,7 @@ public class AutoLogin extends Module {
         .build()
     );
     
-    private final Setting<String> 菜单入口物品包含名字 = sgGeneral.add(new StringSetting.Builder()
+    private final Setting<String> 菜单物品包含名字 = sgGeneral.add(new StringSetting.Builder()
     .name("menu-item-name-keyword")
     .description("The string that the item name must contain to be used after login.")
     .defaultValue("")
@@ -114,7 +114,7 @@ public class AutoLogin extends Module {
             }
         } else if (messageString.contains(successMessage.get())) {
             if (currentState == State.输入了登录命令) {
-                if (!菜单入口物品包含名字.get().isEmpty()){
+                if (!菜单物品包含名字.get().isEmpty()){
                     挂起操作Tick = delayTicksSetting.get();
                 }else{
                     currentState = State.NONE;
@@ -137,7 +137,7 @@ public class AutoLogin extends Module {
             if (挂起操作Tick == 0) {
 
                 if (currentState == State.输入了登录命令) {
-                    使用菜单入口物品();
+                    打开菜单物品();
                     currentState = State.使用了菜单;
                     return;
 
@@ -170,26 +170,22 @@ public class AutoLogin extends Module {
             }
         }
     }
-    private void 使用菜单入口物品() {
+    private void 打开菜单物品() {
+        info("Looking for menu item with name containing: %s in hotbar", 菜单物品包含名字.get());
         for (int slot = 0; slot < 9; slot++) {
             ItemStack stack = mc.player.getInventory().getStack(slot);
-            if (!stack.isEmpty() && stack.getName().getString().contains(菜单入口物品包含名字.get())) {
+            if (!stack.isEmpty() && stack.getName().getString().contains(菜单物品包含名字.get())) {
                 InvUtils.swap(slot, false);
-                ActionResult result = mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
-                String resultMessage = result == SUCCESS ? "Used item successfully" :
-                                        result == FAIL ? "Failed to use item" :
-                                        result == PASS ? "Item usage passed" : "Unknown result";
-                                        
-                info("Used item: %s - %s", stack.getName().getString(), resultMessage);
-                
-                break;
+                mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
+                info("Used item: %s", stack.getName().getString());
+                return;
             }
         }
     }
 
     private void 搜索菜单并点击入口物品() {
         var slots = mc.player.currentScreenHandler.slots;
-        info("Looking for item with name containing: %s in %s slots", 服务器入口物品包含名字.get(), slots.size());
+        info("Looking for entry item with name containing: %s in %s slots", 服务器入口物品包含名字.get(), slots.size());
         for (Slot slot : slots) {
             if (slot.hasStack()) {
                 String name = slot.getStack().getName().getString();
@@ -197,7 +193,7 @@ public class AutoLogin extends Module {
                 if (name.contains(服务器入口物品包含名字.get())) {
                     InvUtils.click().slotId(slot.id);
                     info("Clicked item in GUI: %s", name);
-                    break;
+                    return;
                 }
             }
         }
