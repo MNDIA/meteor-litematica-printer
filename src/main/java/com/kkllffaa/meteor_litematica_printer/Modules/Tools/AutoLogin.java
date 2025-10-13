@@ -3,6 +3,7 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
+import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
@@ -57,6 +58,15 @@ public class AutoLogin extends Module {
     .build()
     );
     
+    private final Setting<Integer> delayTicksSetting = sgGeneral.add(new IntSetting.Builder()
+        .name("delay-ticks")
+        .description("Number of ticks to delay before searching and clicking the entry item.")
+        .defaultValue(10)
+        .min(0)
+        .max(100)
+        .build()
+    );
+    
     private final Setting<Boolean> INFO = sgGeneral.add(new BoolSetting.Builder()
         .name("info")
         .description("Show info messages when auto login is triggered.")
@@ -87,6 +97,7 @@ public class AutoLogin extends Module {
         使用菜单,
     }
     private State currentState = State.NONE;
+    private int delayTicks = 0;
 
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -140,19 +151,34 @@ public class AutoLogin extends Module {
     private void onOpenScreen(OpenScreenEvent event) {
         if (event.screen instanceof GenericContainerScreen && currentState == State.使用菜单) {
             currentState = State.NONE;
-            String 服务器入口物品关键字 = 服务器入口物品包含名字.get();
-            if (!服务器入口物品关键字.isEmpty()) {
-                var slots = mc.player.currentScreenHandler.slots;
-                info("Looking for item with name containing: %s in %s slots", 服务器入口物品关键字, slots.size());
-                for (Slot slot : slots) {
-                    String name = slot.getStack().getName().getString();
-                    info("Found item in GUI: %s", name);
-                    if (name.contains(服务器入口物品关键字)) {
-                        InvUtils.click().slotId(slot.id);
-                        info("Clicked item in GUI: %s", name);
-                            break;
-                        }
+            delayTicks = delayTicksSetting.get();
+            
+        }
+    }
+
+    @EventHandler
+    private void onTick(TickEvent.Post event) {
+        if (delayTicks > 0) {
+            delayTicks--;
+            if (delayTicks == 0) {
+                var name = 服务器入口物品包含名字.get();
+                if (!name.isEmpty()) {
+                    搜索点击入口物品(name);
                 }
+            }
+        }
+    }
+
+    private void 搜索点击入口物品(String 服务器入口物品关键字) {
+        var slots = mc.player.currentScreenHandler.slots;
+        info("Looking for item with name containing: %s in %s slots", 服务器入口物品关键字, slots.size());
+        for (Slot slot : slots) {
+            String name = slot.getStack().getName().getString();
+            info("Found item in GUI: %s", name);
+            if (name.contains(服务器入口物品关键字)) {
+                InvUtils.click().slotId(slot.id);
+                info("Clicked item in GUI: %s", name);
+                break;
             }
         }
     }
