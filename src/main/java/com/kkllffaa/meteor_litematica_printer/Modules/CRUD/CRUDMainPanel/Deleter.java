@@ -544,9 +544,10 @@ public class Deleter extends Module {
     
     private BlockPos lastPlayerPos = null;
     private int continuousScanTimer = 0;
-
-    public Deleter(String name) {
-        super(Addon.CRUD, name, "Deletes blocks as you whish.");
+    private static int 序号 = 1;
+    public Deleter() {
+        super(Addon.CRUD, "deleter-ps" + 序号, "Deletes blocks as you whish.");
+        序号++;
     }
 
     @SuppressWarnings("unchecked")

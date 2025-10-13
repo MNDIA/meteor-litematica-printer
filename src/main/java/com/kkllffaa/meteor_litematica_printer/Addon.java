@@ -27,11 +27,11 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new CRUDExecuter());
 
 		Modules.get().add(new Printer());
-		Modules.get().add(new Deleter("deleter-ps1"));
-		Modules.get().add(new Deleter("deleter-ps2") {});
-		Modules.get().add(new Deleter("deleter-ps3") {});
-		Modules.get().add(new Deleter("deleter-ps4") {});
-		Modules.get().add(new Deleter("deleter-ps5") {});
+		Modules.get().add(new Deleter());
+		Modules.get().add(new Deleter() {});
+		Modules.get().add(new Deleter() {});
+		Modules.get().add(new Deleter() {});
+		Modules.get().add(new Deleter() {});
 
 		Modules.get().add(new AutoSwarm());
 		Modules.get().add(new AutoFix());

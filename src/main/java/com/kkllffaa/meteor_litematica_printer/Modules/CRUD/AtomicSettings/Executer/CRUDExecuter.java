@@ -12,17 +12,17 @@ public class CRUDExecuter extends Module {
     public CRUDExecuter() {
         super(Addon.SettingsForCRUD, "CRUDExecuter", "Execute CRUD operations in TickEvent.");
     }
-    
     @Override
-    public void onActivate(){
+    public void toggle() {
+        if (isActive()) {
+            return;
+        }
+        super.toggle();
     }
-
-    @Override
-    public void onDeactivate(){
-    }
-
     
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {

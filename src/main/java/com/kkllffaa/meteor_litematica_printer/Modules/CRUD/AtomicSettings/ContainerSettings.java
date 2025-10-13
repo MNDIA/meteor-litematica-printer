@@ -11,9 +11,12 @@ public class ContainerSettings extends Module {
 	}
 
 	@Override
-	public void onActivate(){
-		this.toggle();
-	}
+	public void toggle() {
+        if (isActive()) {
+            return;
+        }
+        super.toggle();
+    }
 
 	
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();

@@ -48,9 +48,12 @@ public class PlaceSettings extends Module {
 		super(Addon.SettingsForCRUD, "PlaceSettings", "Module to configure AtomicSettings.");
 	}
 	@Override
-	public void onActivate(){
-		this.toggle();
-	}
+	public void toggle() {
+        if (isActive()) {
+            return;
+        }
+        super.toggle();
+    }
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
 	private final SettingGroup sgClickFace = settings.createGroup("Click Face");
