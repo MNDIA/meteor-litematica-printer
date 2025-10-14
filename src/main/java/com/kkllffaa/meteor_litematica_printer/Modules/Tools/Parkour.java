@@ -9,10 +9,10 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.utils.misc.input.Input;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.shape.VoxelShape;
-import org.lwjgl.glfw.GLFW;
 import java.util.stream.Stream;
 
 
@@ -43,13 +43,10 @@ public class Parkour extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        long window = mc.getWindow().getHandle();
-        int keyCode = mc.options.jumpKey.getDefaultKey().getCode();
-        boolean isPhysicalJumpKeyActive = GLFW.glfwGetKey(window, keyCode) == GLFW.GLFW_PRESS;
         if (isForcedJumping){
             mc.options.jumpKey.setPressed(true);
         }else{
-            if (isPhysicalJumpKeyActive) {
+            if (Input.isPressed(mc.options.jumpKey)) {
                 if (isLostControl()) {
                     mc.options.jumpKey.setPressed(false);
                 } else {

@@ -12,6 +12,7 @@ import meteordevelopment.meteorclient.systems.modules.combat.CrystalAura;
 import meteordevelopment.meteorclient.systems.modules.combat.KillAura;
 import meteordevelopment.meteorclient.systems.modules.player.AutoGap;
 import meteordevelopment.meteorclient.utils.Utils;
+import meteordevelopment.meteorclient.utils.misc.input.Input;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.SlotUtils;
 import meteordevelopment.orbit.EventHandler;
@@ -20,8 +21,6 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.FoodComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-
-import org.lwjgl.glfw.GLFW;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter;
@@ -245,29 +244,12 @@ public class AutoEat extends Module {
         FoodComponent food = mc.player.getInventory().getStack(slot).get(DataComponentTypes.FOOD);
         if (food == null) return false;
 
-        int attackKeyCode = mc.options.attackKey.getDefaultKey().getCode();
-        int useKeyCode = mc.options.useKey.getDefaultKey().getCode();
-        long window = mc.getWindow().getHandle();
-        if (isControlling(window, attackKeyCode) || isControlling(window, useKeyCode)) {
+        if (Input.isPressed(mc.options.attackKey) || Input.isPressed(mc.options.useKey)) {
             return false;
         }
         
         return thresholdMode.get().test(healthLow, hungerLow)
             && (mc.player.getHungerManager().isNotFull() ||  food.canAlwaysEat());
-    }
-
-    private boolean isControlling(long window, int keyCode) {
-        if (keyCode >= 0) {
-            if (GLFW.glfwGetKey(window, keyCode) == GLFW.GLFW_PRESS) {
-                return true;
-            }
-        } else {
-            int button = -keyCode - 100;
-            if (GLFW.glfwGetMouseButton(window, button) == GLFW.GLFW_PRESS) {
-                return true;
-            }
-        }
-        return false;
     }
     
     private int findSlot() {

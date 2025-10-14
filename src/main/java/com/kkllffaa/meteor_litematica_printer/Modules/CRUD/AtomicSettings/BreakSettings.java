@@ -95,14 +95,23 @@ public class BreakSettings extends Module {
             if (MeteorClient.mc.interactionManager != null) MeteorClient.mc.interactionManager.cancelBlockBreaking();
         }
     }
+
     public boolean canBreakByObjective(BlockPos blockPos){
-        return BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos));
+        return BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos)) && !isOutOfDistance(blockPos);
     }
 
+    private double getHandDistance() {
+        return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistanceToBlockCenter.get();
+    }
+
+    private boolean isOutOfDistance(BlockPos Pos) {
+        return BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(Pos) > getHandDistance();
+    }
 
     public void breakBlock(BlockPos blockPos) {
         // if (!canBreakByObjective(blockPos)) return;
-
+        if (!BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos))) return;
+        
         switch (instantRotation.get()) {
             case ActionMode.None -> breakBlockStep2(blockPos);
             case ActionMode.SendPacket -> Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, false, () -> breakBlockStep2(blockPos));
