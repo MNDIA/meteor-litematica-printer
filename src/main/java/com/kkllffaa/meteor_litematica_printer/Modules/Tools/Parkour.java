@@ -4,13 +4,22 @@ import com.google.common.collect.Streams;
 import com.kkllffaa.meteor_litematica_printer.Addon;
 
 import meteordevelopment.meteorclient.events.world.TickEvent;
+import meteordevelopment.meteorclient.mixin.CreativeInventoryScreenAccessor;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
+import meteordevelopment.meteorclient.systems.modules.movement.GUIMove;
 import meteordevelopment.meteorclient.utils.misc.input.Input;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.client.gui.screen.ChatScreen;
+import net.minecraft.client.gui.screen.ingame.AbstractCommandBlockScreen;
+import net.minecraft.client.gui.screen.ingame.AnvilScreen;
+import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
+import net.minecraft.client.gui.screen.ingame.SignEditScreen;
+import net.minecraft.client.gui.screen.ingame.StructureBlockScreen;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.shape.VoxelShape;
 import java.util.stream.Stream;
@@ -33,56 +42,44 @@ public class Parkour extends Module {
             .range(0.0, 0.39285)
             .defaultValue(0.085)
             .build());
+    private final Setting<Double> 悬空高度 = sgGeneral.add(new DoubleSetting.Builder()
+            .name("悬空高度")
+            .description("脚下高度内没有碰撞才可以跳跃")
+            .range(0.0001, 1.5)
+            .defaultValue(0.1249)
+            .build());
 
     public Parkour() {
         super(Addon.TOOLS, "parkour", "Automatically jumps at the edges of blocks.");
     }
 
-    private boolean isForcedJumping = false;
-
+    private boolean needEdgeJumping = false;
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (isForcedJumping){
-            mc.options.jumpKey.setPressed(true);
-        }else{
-            if (Input.isPressed(mc.options.jumpKey)) {
-                if (isLostControl()) {
-                    mc.options.jumpKey.setPressed(false);
-                } else {
-                    mc.options.jumpKey.setPressed(true);
-                }
-            }else{
-                mc.options.jumpKey.setPressed(false);
-            }
-        }
+        mc.options.jumpKey.setPressed(
+            needEdgeJumping || (Input.isPressed(mc.options.jumpKey) && isPlayerInControl())
+            );
     }
-
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (isLostControl()) {
-            isForcedJumping = false;
-            return;
-        }
-
         if (!mc.player.isOnGround() || mc.options.jumpKey.isPressed()||
         mc.player.isSneaking() || mc.options.sneakKey.isPressed()) {
-            isForcedJumping = false;
+            needEdgeJumping = false;
         } else {
             double horizontalSpeed = Math.sqrt(mc.player.getVelocity().x * mc.player.getVelocity().x + mc.player.getVelocity().z * mc.player.getVelocity().z);
             if (horizontalSpeed < minSpeed.get()) {
-                isForcedJumping = false;
+                needEdgeJumping = false;
             } else {
-                Box box = mc.player.getBoundingBox();
-                Box adjustedBox = box.offset(0, -0.5, 0).expand(-edgeDistance.get(), 0, -edgeDistance.get());
+                Box adjustedBox = mc.player.getBoundingBox().offset(0, -悬空高度.get(), 0).expand(-edgeDistance.get(), 0, -edgeDistance.get());
 
                 Stream<VoxelShape> blockCollisions = Streams.stream(mc.world.getBlockCollisions(mc.player, adjustedBox));
 
                 if (blockCollisions.findAny().isPresent()) {
-                    isForcedJumping = false;
+                    needEdgeJumping = false;
                 } else {
-                    isForcedJumping = true;
+                    needEdgeJumping = true;
                 }
             }
         }
@@ -90,7 +87,9 @@ public class Parkour extends Module {
     }
 
 
-    private boolean isLostControl() {
-        return mc.cameraEntity != mc.player || mc.currentScreen != null || Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.render.Freecam.class);
+    private boolean isPlayerInControl() {
+        return !Modules.get().get(GUIMove.class).skip();
     }
+    
+
 }
