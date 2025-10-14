@@ -34,6 +34,8 @@ dependencies {
     //litematica
     modImplementation "com.github.sakura-ryoko:litematica:LTS~${project.minecraft_version}-SNAPSHOT"
     modImplementation "com.github.sakura-ryoko:malilib:LTS~${project.minecraft_version}-SNAPSHOT"
+    // modImplementation "com.github.sakura-ryoko:litematica:${project.minecraft_version}-${project.litematica_version}"
+    // modImplementation "com.github.sakura-ryoko:malilib:${project.minecraft_version}-${project.malilib_version}"
 }
 
 processResources {
