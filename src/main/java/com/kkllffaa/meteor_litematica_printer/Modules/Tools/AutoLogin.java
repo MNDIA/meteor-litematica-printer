@@ -99,11 +99,7 @@ public class AutoLogin extends Module {
     private int 挂起操作Tick = 0;
     @EventHandler
     private void onGameJoined(GameJoinedEvent event) {
-        if (currentState == State.成功登录) {
-            挂起操作Tick = delayTicksSetting.get();
-        }else{
-            currentState = State.NONE;
-        }
+        currentState = State.NONE;
     }
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -149,6 +145,8 @@ public class AutoLogin extends Module {
                         搜索菜单并点击入口物品();
                     }
                     currentState = State.成功登录;
+                    挂起操作Tick = delayTicksSetting.get()+40;
+
                     return;
                 }else if (currentState == State.成功登录){
                     输入待命命令();
