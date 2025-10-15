@@ -90,16 +90,25 @@ public class AutoLogin extends Module {
     }
     
     private enum State {
-        NONE,
-        输入了登录命令,
-        使用了菜单,
-        成功登录,
+        预备触发登录,
+        挂起操作打开菜单,
+        挂起操作搜索入口,
+        挂起操作输入待命命令,
+        输入了登陆命令,
+        进入了服务器
     }
-    private State currentState = State.NONE;
+
+    private State currentState = State.预备触发登录;
     private int 挂起操作Tick = 0;
+
     @EventHandler
     private void onGameJoined(GameJoinedEvent event) {
-        currentState = State.NONE;
+        if (currentState == State.挂起操作搜索入口) {
+            挂起操作Tick = delayTicksSetting.get();
+            currentState = State.挂起操作输入待命命令;
+        } else {
+            currentState = State.预备触发登录;
+        }
     }
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -108,24 +117,26 @@ public class AutoLogin extends Module {
         String messageString = message.getString();
 
         if (messageString.contains(triggerMessage.get())) {
-            if (currentState == State.NONE) {
-                输入登录命令();
+            if (currentState == State.预备触发登录) {
+                if (输入登录命令()) {
+                    currentState = State.输入了登陆命令;
+                }else{
+                    currentState = State.预备触发登录;
+                }
             }
         } else if (messageString.contains(successMessage.get())) {
-            if (currentState == State.输入了登录命令) {
-                if (!菜单物品包含名字.get().isEmpty()){
-                    挂起操作Tick = delayTicksSetting.get();
-                }else{
-                    currentState = State.成功登录;
-                }
+            if (currentState == State.输入了登陆命令) {
+                挂起操作Tick = delayTicksSetting.get();
+                currentState = State.挂起操作打开菜单;
             }
         }
     }
 
     @EventHandler
     private void onOpenScreen(OpenScreenEvent event) {
-        if (event.screen instanceof GenericContainerScreen && currentState == State.使用了菜单) {
+        if (event.screen instanceof GenericContainerScreen && currentState == State.挂起操作打开菜单) {
             挂起操作Tick = delayTicksSetting.get();
+            currentState = State.挂起操作搜索入口;
         }
     }
 
@@ -135,22 +146,28 @@ public class AutoLogin extends Module {
             挂起操作Tick--;
             if (挂起操作Tick == 0) {
 
-                if (currentState == State.输入了登录命令) {
-                    打开菜单物品();
-                    currentState = State.使用了菜单;
-                    return;
-
-                }else if (currentState == State.使用了菜单){
-                    if (!服务器入口物品包含名字.get().isEmpty()) {
-                        搜索菜单并点击入口物品();
+                if (currentState == State.挂起操作打开菜单) {
+                    if (搜索hotbar打开菜单物品()) {
+                        //TO onOpenScreen
                     }
-                    currentState = State.成功登录;
-                    挂起操作Tick = delayTicksSetting.get()+40;
-
+                    else{
+                        currentState = State.预备触发登录;
+                    }
                     return;
-                }else if (currentState == State.成功登录){
+
+
+                } else if (currentState == State.挂起操作搜索入口) {
+                    if (搜索菜单点击入口物品()) {
+                        //TO  onGameJoined
+                    } else {
+                        currentState = State.预备触发登录;
+                    }
+                    return;
+
+
+                }else if (currentState == State.挂起操作输入待命命令){
                     输入待命命令();
-                    currentState = State.NONE;
+                    currentState = State.预备触发登录;
                     return;
                 }
 
@@ -160,7 +177,7 @@ public class AutoLogin extends Module {
         }
     }
 
-    private void 输入登录命令() {
+    private boolean 输入登录命令() {
         String playerName = mc.player.getName().getString();
         List<String> commandsList = loginCommands.get();
 
@@ -169,13 +186,13 @@ public class AutoLogin extends Module {
             if (parts.length >= 2 && parts[0].trim().equals(playerName)) {
                 String command = parts[1].trim();
                 ChatUtils.sendPlayerMsg(command);
-                currentState = State.输入了登录命令;
                 info("%s with command: %s", playerName, command);
-                return;
+                return true;
             }
         }
+        return false;
     }
-    private void 输入待命命令() {
+    private boolean 输入待命命令() {
         String playerName = mc.player.getName().getString();
         List<String> commandsList = loginCommands.get();
 
@@ -187,11 +204,13 @@ public class AutoLogin extends Module {
                     ChatUtils.sendPlayerMsg(standbyCommand);
                     info("%s standby command: %s", playerName, standbyCommand);
                 }
-                return;
+                return true;
             }
         }
+        return false;
     }
-    private void 打开菜单物品() {
+    private boolean 搜索hotbar打开菜单物品() {
+        if (菜单物品包含名字.get().isEmpty()) return true;
         info("Looking for menu item with name containing: %s in hotbar", 菜单物品包含名字.get());
         for (int slot = 0; slot < 9; slot++) {
             ItemStack stack = mc.player.getInventory().getStack(slot);
@@ -199,12 +218,14 @@ public class AutoLogin extends Module {
                 InvUtils.swap(slot, false);
                 mc.interactionManager.interactItem(mc.player, Hand.MAIN_HAND);
                 info("Used item: %s", stack.getName().getString());
-                return;
+                return true;
             }
         }
+        return false;
     }
 
-    private void 搜索菜单并点击入口物品() {
+    private boolean 搜索菜单点击入口物品() {
+        if (服务器入口物品包含名字.get().isEmpty()) return true;
         var slots = mc.player.currentScreenHandler.slots;
         info("Looking for entry item with name containing: %s in %s slots", 服务器入口物品包含名字.get(), slots.size());
         for (Slot slot : slots) {
@@ -214,10 +235,11 @@ public class AutoLogin extends Module {
                 if (name.contains(服务器入口物品包含名字.get())) {
                     InvUtils.click().slotId(slot.id);
                     info("Clicked item in GUI: %s", name);
-                    return;
+                    return true;
                 }
             }
         }
+        return false;
     }
 
 
