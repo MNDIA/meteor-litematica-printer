@@ -103,12 +103,7 @@ public class AutoLogin extends Module {
 
     @EventHandler
     private void onGameJoined(GameJoinedEvent event) {
-        if (currentState == State.挂起操作搜索入口) {
-            挂起操作Tick = delayTicksSetting.get();
-            currentState = State.挂起操作输入待命命令;
-        } else {
-            currentState = State.预备触发登录;
-        }
+        currentState = State.预备触发登录;
     }
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -158,7 +153,8 @@ public class AutoLogin extends Module {
 
                 } else if (currentState == State.挂起操作搜索入口) {
                     if (搜索菜单点击入口物品()) {
-                        //TO  onGameJoined
+                        挂起操作Tick = delayTicksSetting.get()+40;
+                        currentState = State.挂起操作输入待命命令;
                     } else {
                         currentState = State.预备触发登录;
                     }
