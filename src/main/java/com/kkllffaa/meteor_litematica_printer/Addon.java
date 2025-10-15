@@ -39,6 +39,7 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(new AutoLogin());
 		Modules.get().add(new AutoTool());
 		Modules.get().add(new AutoEat());
+		Modules.get().add(new AlwaysSneak());
 
 		Modules.get().add(new ItemFinder());
 		Modules.get().add(new Parkour());
