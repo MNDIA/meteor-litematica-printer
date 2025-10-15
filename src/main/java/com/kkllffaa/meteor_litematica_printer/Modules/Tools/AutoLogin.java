@@ -94,7 +94,6 @@ public class AutoLogin extends Module {
         输入了登录命令,
         使用了菜单,
         成功登录,
-        待命命令,
     }
     private State currentState = State.NONE;
     private int 挂起操作Tick = 0;
@@ -102,7 +101,6 @@ public class AutoLogin extends Module {
     private void onGameJoined(GameJoinedEvent event) {
         if (currentState == State.成功登录) {
             挂起操作Tick = delayTicksSetting.get();
-            currentState = State.待命命令;
         }else{
             currentState = State.NONE;
         }
@@ -152,9 +150,10 @@ public class AutoLogin extends Module {
                     }
                     currentState = State.成功登录;
                     return;
-                }else if (currentState == State.待命命令){
+                }else if (currentState == State.成功登录){
                     输入待命命令();
                     currentState = State.NONE;
+                    return;
                 }
 
 
