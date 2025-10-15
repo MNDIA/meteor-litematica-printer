@@ -30,7 +30,7 @@ public class AutoLogin extends Module {
     );
     private final Setting<List<String>> loginCommands = sgGeneral.add(new StringListSetting.Builder()
     .name("login-commands")
-    .description("List of player name to command mappings. Format: player:/login password")
+    .description("List of player name to command mappings. Format: player:login_command:standby_command")
     .defaultValue(new java.util.ArrayList<>())
     .build()
     );
@@ -93,12 +93,19 @@ public class AutoLogin extends Module {
         NONE,
         输入了登录命令,
         使用了菜单,
+        成功登录,
+        待命命令,
     }
     private State currentState = State.NONE;
     private int 挂起操作Tick = 0;
     @EventHandler
     private void onGameJoined(GameJoinedEvent event) {
-        currentState = State.NONE;
+        if (currentState == State.成功登录) {
+            挂起操作Tick = delayTicksSetting.get();
+            currentState = State.待命命令;
+        }else{
+            currentState = State.NONE;
+        }
     }
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -115,7 +122,7 @@ public class AutoLogin extends Module {
                 if (!菜单物品包含名字.get().isEmpty()){
                     挂起操作Tick = delayTicksSetting.get();
                 }else{
-                    currentState = State.NONE;
+                    currentState = State.成功登录;
                 }
             }
         }
@@ -143,8 +150,11 @@ public class AutoLogin extends Module {
                     if (!服务器入口物品包含名字.get().isEmpty()) {
                         搜索菜单并点击入口物品();
                     }
-                    currentState = State.NONE;
+                    currentState = State.成功登录;
                     return;
+                }else if (currentState == State.待命命令){
+                    输入待命命令();
+                    currentState = State.NONE;
                 }
 
 
@@ -158,12 +168,28 @@ public class AutoLogin extends Module {
         List<String> commandsList = loginCommands.get();
 
         for (String pair : commandsList) {
-            String[] parts = pair.split(":", 2);
-            if (parts.length == 2 && parts[0].trim().equals(playerName)) {
+            String[] parts = pair.split(":", 3);
+            if (parts.length >= 2 && parts[0].trim().equals(playerName)) {
                 String command = parts[1].trim();
                 ChatUtils.sendPlayerMsg(command);
                 currentState = State.输入了登录命令;
                 info("%s with command: %s", playerName, command);
+                return;
+            }
+        }
+    }
+    private void 输入待命命令() {
+        String playerName = mc.player.getName().getString();
+        List<String> commandsList = loginCommands.get();
+
+        for (String pair : commandsList) {
+            String[] parts = pair.split(":", 3);
+            if (parts.length == 3 && parts[0].trim().equals(playerName)) {
+                String standbyCommand = parts[2].trim();
+                if (!standbyCommand.isEmpty()) {
+                    ChatUtils.sendPlayerMsg(standbyCommand);
+                    info("%s standby command: %s", playerName, standbyCommand);
+                }
                 return;
             }
         }

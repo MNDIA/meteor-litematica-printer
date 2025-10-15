@@ -26,7 +26,7 @@ public class Parkour extends Module {
     private final Setting<Double> edgeDistance = sgGeneral.add(new DoubleSetting.Builder()
             .name("edge-distance")
             .description("How far from the edge should you jump.")
-            .range(0.001, 0.1)
+            .range(0.001, 0.001)
             .defaultValue(0.001)
             .build());
 
