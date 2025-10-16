@@ -43,7 +43,7 @@ public class AutoLogin extends Module {
 
     private final Setting<List<String>> loginCommands = sgGeneral.add(new StringListSetting.Builder()
     .name("login-commands")
-    .description("List of player name to command mappings. Format: player:login_command:standby_command")
+    .description("List of player name to command mappings. Format: player:login_command:standby_command:standby_state")
     .defaultValue(new java.util.ArrayList<>())
     .build()
     );
@@ -227,23 +227,34 @@ public class AutoLogin extends Module {
         }
     }
 
-    private boolean 打开待机状态() {
-        HangUp hangUpModule = Modules.get().get(HangUp.class);
-        if (hangUpModule == null) return false;
-        if (hangUpModule.isActive()) {
-            hangUpModule.toggle();
-            hangUpModule.toggle();
+    private void 打开待机状态() {
+        String playerName = mc.player.getName().getString();
+        List<String> commandsList = loginCommands.get();
+        for (String pair : commandsList) {
+            String[] parts = pair.split(":", 4);
+            if (parts.length >= 4 && parts[0].trim().equals(playerName)) {
+                String standbyState = parts[3].trim();
+                if ("挂机".equals(standbyState)) {
+                    HangUp hangUpModule = Modules.get().get(HangUp.class);
+                    if (hangUpModule == null) return;
+                    if (hangUpModule.isActive()) {
+                        hangUpModule.toggle();
+                        hangUpModule.toggle();
+                    }
+                    else hangUpModule.toggle();
+                } else if ("商店限量机器人".equals(standbyState)) {
+                    // 可以添加其他状态
+                }
+                return;
+            }
         }
-        else hangUpModule.toggle();
-        return true;
-        
     }
     private boolean 输入登录命令() {
         String playerName = mc.player.getName().getString();
         List<String> commandsList = loginCommands.get();
 
         for (String pair : commandsList) {
-            String[] parts = pair.split(":", 3);
+            String[] parts = pair.split(":", 4);
             if (parts.length >= 2 && parts[0].trim().equals(playerName)) {
                 String command = parts[1].trim();
                 ChatUtils.sendPlayerMsg(command);
@@ -258,8 +269,8 @@ public class AutoLogin extends Module {
         List<String> commandsList = loginCommands.get();
 
         for (String pair : commandsList) {
-            String[] parts = pair.split(":", 3);
-            if (parts.length == 3 && parts[0].trim().equals(playerName)) {
+            String[] parts = pair.split(":", 4);
+            if (parts.length >= 3 && parts[0].trim().equals(playerName)) {
                 String standbyCommand = parts[2].trim();
                 if (!standbyCommand.isEmpty()) {
                     ChatUtils.sendPlayerMsg(standbyCommand);
