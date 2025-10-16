@@ -159,11 +159,13 @@ public class AutoLogin extends Module {
                 delayCounter = readyTicks.get();
             }
         } else if (messageString.contains(mc.player.getName().getString())&&messageString.contains(主城大区Message.get())) {
+            info("进入了 [主城大区]");
             if (loginState == LoginState.等待进入服务器) {
                 loginState = LoginState.预备待命命令;
                 delayCounter = readyTicks.get();
             }
         } else if (messageString.contains(mc.player.getName().getString())&&messageString.contains(生存大区Message.get())) {
+            info("进入了 [生存大区]");
             if (loginState == LoginState.等待传送完成) {
                 loginState = LoginState.预备待命状态;
                 delayCounter = readyTicks.get();
