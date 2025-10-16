@@ -34,20 +34,26 @@ public class ChatLogger extends Module {
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
         Text message = event.getMessage();
+        if (message == null) return;
         String messageString = message.getString();
+        if (messageString == null || messageString.trim().isEmpty()) return;
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         String logEntry = String.format("[%s]%s%n", timestamp, messageString);
 
+        String path = filePath.get();
+        if (path == null || path.trim().isEmpty()) return;
+
         try {
-            Path path = Paths.get(filePath.get());
-            // Ensure parent directories exist
-            Files.createDirectories(path.getParent());
-            try (PrintWriter writer = new PrintWriter(new FileWriter(path.toFile(), true))) {
-                writer.write(logEntry);
+            Path logFilePath = Paths.get(path);
+            if (logFilePath.getParent() != null && !Files.exists(logFilePath.getParent())) {
+                Files.createDirectories(logFilePath.getParent());
+            }
+            try (PrintWriter writer = new PrintWriter(new FileWriter(logFilePath.toFile(), true))) {
+                writer.print(logEntry);
             }
         } catch (IOException e) {
-            error("Failed to write chat log: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
