@@ -143,7 +143,6 @@ public class AutoLogin extends Module {
         if (mc.player == null) return;
         Text message = event.getMessage();
         String messageString = message.getString();
-        info ("RM: %s", messageString);
 
         if (messageString.contains(triggerMessage.get())) {
             if (loginState == LoginState.预备登录) {
