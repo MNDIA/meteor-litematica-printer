@@ -176,7 +176,7 @@ public class AutoLogin extends Module {
             delayCounter--;
         } else {
             switch (loginState) {
-                case 预备登录 -> {}
+                case 预备登录 ->{ return;}
                 case 等待登陆成功, 等待打开菜单,等待进入服务器, 等待传送完成 -> {
                     // 延迟结束但没有成功消息，重置
                     预备登录();
