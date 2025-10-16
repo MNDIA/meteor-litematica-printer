@@ -1,6 +1,5 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.Tools;
 
-import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.events.game.OpenScreenEvent;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -87,9 +86,8 @@ public class AutoLogin extends Module {
     private final Setting<Integer> CheckTicks = sgGeneral.add(new IntSetting.Builder()
         .name("check-ticks")
         .description("执行步骤后延迟后检查执行结果是否成功.")
-        .defaultValue(100)
+        .defaultValue(300)
         .min(0)
-        .max(100)
         .build()
     );
 
@@ -131,6 +129,7 @@ public class AutoLogin extends Module {
 
     @Override
     public void onActivate() {
+        if (loginState == LoginState.等待登陆成功 || loginState == LoginState.等待打开菜单 || loginState == LoginState.等待进入服务器 || loginState == LoginState.等待传送完成) return;
         预备登录();
     }
 
@@ -159,13 +158,13 @@ public class AutoLogin extends Module {
                 delayCounter = readyTicks.get();
             }
         } else if (messageString.contains(mc.player.getName().getString())&&messageString.contains(主城大区Message.get())) {
-            info("进入了 [主城大区]");
+            info("进入了 [主城大区] State: %s", loginState);
             if (loginState == LoginState.等待进入服务器) {
                 loginState = LoginState.预备待命命令;
-                delayCounter = readyTicks.get();
+                delayCounter = readyTicks.get()+40;
             }
         } else if (messageString.contains(mc.player.getName().getString())&&messageString.contains(生存大区Message.get())) {
-            info("进入了 [生存大区]");
+            info("进入了 [生存大区] State: %s", loginState);
             if (loginState == LoginState.等待传送完成) {
                 loginState = LoginState.预备待命状态;
                 delayCounter = readyTicks.get();
@@ -191,6 +190,7 @@ public class AutoLogin extends Module {
             switch (loginState) {
                 case 预备登录 ->{ return;}
                 case 等待登陆成功, 等待打开菜单,等待进入服务器, 等待传送完成 -> {
+                    info("State %s timeout, resetting.", loginState);
                     // 延迟结束但没有成功消息，重置
                     预备登录();
                 }
@@ -204,6 +204,7 @@ public class AutoLogin extends Module {
                 }
                 case 预备点击入口 -> {
                     if (搜索菜单点击入口物品()) {
+                        info("Clicked entry item, waiting to enter server...");
                         loginState = LoginState.等待进入服务器;
                         delayCounter = CheckTicks.get();
                     } else {
