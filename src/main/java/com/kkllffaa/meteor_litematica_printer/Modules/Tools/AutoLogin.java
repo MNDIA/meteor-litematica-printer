@@ -6,6 +6,7 @@ import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.orbit.EventHandler;
@@ -20,6 +21,18 @@ import java.util.List;
 import com.kkllffaa.meteor_litematica_printer.Addon;
 
 public class AutoLogin extends Module {
+    private enum LoginState {
+        预备登录,
+        等待登陆成功,
+        预备打开菜单,
+        等待打开菜单,
+        预备点击入口,
+        等待进入服务器,
+        预备待命命令,
+        等待传送完成,
+        预备待命状态
+    }
+
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
     private final Setting<String> triggerMessage = sgGeneral.add(new StringSetting.Builder()
@@ -56,10 +69,19 @@ public class AutoLogin extends Module {
     .build()
     );
     
-    private final Setting<Integer> delayTicksSetting = sgGeneral.add(new IntSetting.Builder()
+    private final Setting<Integer> CheckTicks = sgGeneral.add(new IntSetting.Builder()
+        .name("check-ticks")
+        .description("执行步骤后延迟后检查执行结果是否成功.")
+        .defaultValue(100)
+        .min(0)
+        .max(100)
+        .build()
+    );
+
+    private final Setting<Integer> readyTicks = sgGeneral.add(new IntSetting.Builder()
         .name("delay-ticks")
-        .description("Number of ticks to delay before searching and clicking the entry item.")
-        .defaultValue(10)
+        .description("预备执行的反应时间.")
+        .defaultValue(3)
         .min(0)
         .max(100)
         .build()
@@ -71,6 +93,9 @@ public class AutoLogin extends Module {
         .defaultValue(false)
         .build()
     );
+    
+    private LoginState loginState = LoginState.预备登录;
+    private int delayCounter = 0;
     
     public AutoLogin() {
         super(Addon.TOOLS, "auto-login", "Automatically logs in when receiving specific messages.");
@@ -88,22 +113,29 @@ public class AutoLogin extends Module {
             super.info(message);
         }
     }
-    
-    private enum State {
-        预备触发登录,
-        挂起操作打开菜单,
-        挂起操作搜索入口,
-        挂起操作输入待命命令,
-        输入了登陆命令,
-        进入了服务器
-    }
 
-    private State currentState = State.预备触发登录;
-    private int 挂起操作Tick = 0;
+    @Override
+    public void onActivate() {
+        预备登录();
+    }
+    
 
     @EventHandler
     private void onGameJoined(GameJoinedEvent event) {
-        currentState = State.预备触发登录;
+        if (loginState == LoginState.等待进入服务器) {
+            loginState = LoginState.预备待命命令;
+            delayCounter = readyTicks.get();
+        }else if (loginState == LoginState.等待传送完成) {
+            loginState = LoginState.预备待命状态;
+            delayCounter = readyTicks.get();
+        }else{
+            预备登录();
+        }
+    }
+
+    private void 预备登录() {
+        loginState = LoginState.预备登录;
+        delayCounter = 0;
     }
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
@@ -112,67 +144,86 @@ public class AutoLogin extends Module {
         String messageString = message.getString();
 
         if (messageString.contains(triggerMessage.get())) {
-            if (currentState == State.预备触发登录) {
+            if (loginState == LoginState.预备登录) {
                 if (输入登录命令()) {
-                    currentState = State.输入了登陆命令;
-                }else{
-                    currentState = State.预备触发登录;
+                    loginState = LoginState.等待登陆成功;
+                    delayCounter = CheckTicks.get();
+                } else {
+                    预备登录();
                 }
             }
         } else if (messageString.contains(successMessage.get())) {
-            if (currentState == State.输入了登陆命令) {
-                挂起操作Tick = delayTicksSetting.get();
-                currentState = State.挂起操作打开菜单;
+            if (loginState == LoginState.等待登陆成功) {
+                loginState = LoginState.预备打开菜单;
+                delayCounter = readyTicks.get();
             }
         }
     }
 
     @EventHandler
     private void onOpenScreen(OpenScreenEvent event) {
-        if (event.screen instanceof GenericContainerScreen && currentState == State.挂起操作打开菜单) {
-            挂起操作Tick = delayTicksSetting.get();
-            currentState = State.挂起操作搜索入口;
+        if (event.screen instanceof GenericContainerScreen) {
+            if (loginState == LoginState.等待打开菜单) {
+                loginState = LoginState.预备点击入口;
+                delayCounter = readyTicks.get();
+            }
         }
     }
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (挂起操作Tick > 0) {
-            挂起操作Tick--;
-            if (挂起操作Tick == 0) {
-
-                if (currentState == State.挂起操作打开菜单) {
-                    if (搜索hotbar打开菜单物品()) {
-                        //TO onOpenScreen
-                    }
-                    else{
-                        currentState = State.预备触发登录;
-                    }
-                    return;
-
-
-                } else if (currentState == State.挂起操作搜索入口) {
-                    if (搜索菜单点击入口物品()) {
-                        挂起操作Tick = delayTicksSetting.get()+40;
-                        currentState = State.挂起操作输入待命命令;
-                    } else {
-                        currentState = State.预备触发登录;
-                    }
-                    return;
-
-
-                }else if (currentState == State.挂起操作输入待命命令){
-                    输入待命命令();
-                    currentState = State.预备触发登录;
-                    return;
+        if (delayCounter > 0) {
+            delayCounter--;
+        } else {
+            switch (loginState) {
+                case 预备登录 -> {}
+                case 等待登陆成功, 等待打开菜单,等待进入服务器, 等待传送完成 -> {
+                    // 延迟结束但没有成功消息，重置
+                    预备登录();
                 }
-
-
-               
+                case 预备打开菜单 -> {
+                    if (搜索hotbar打开菜单物品()) {
+                        loginState = LoginState.等待打开菜单;
+                        delayCounter = CheckTicks.get();
+                    } else {
+                        loginState = LoginState.预备待命命令;
+                    }
+                }
+                case 预备点击入口 -> {
+                    if (搜索菜单点击入口物品()) {
+                        loginState = LoginState.等待进入服务器;
+                        delayCounter = CheckTicks.get();
+                    } else {
+                        loginState = LoginState.预备待命命令;
+                    }
+                }
+                case 预备待命命令 -> {
+                    if (输入待命命令()) {
+                        loginState = LoginState.等待传送完成;
+                        delayCounter = CheckTicks.get();
+                    } else {
+                        预备登录();
+                    }
+                }
+                case 预备待命状态 -> {
+                    打开待机状态();
+                    预备登录();
+                }
             }
         }
     }
 
+    private boolean 打开待机状态() {
+        HangUp hangUpModule = Modules.get().get(HangUp.class);
+        if (hangUpModule == null) return false;
+        if (hangUpModule.isActive()) {
+            hangUpModule.toggle();
+            hangUpModule.toggle();
+        }
+        else hangUpModule.toggle();
+        return true;
+        
+    }
     private boolean 输入登录命令() {
         String playerName = mc.player.getName().getString();
         List<String> commandsList = loginCommands.get();
