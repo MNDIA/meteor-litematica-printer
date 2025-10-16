@@ -41,6 +41,7 @@ public class AutoLogin extends Module {
         .defaultValue("Please login with")
         .build()
     );
+
     private final Setting<List<String>> loginCommands = sgGeneral.add(new StringListSetting.Builder()
     .name("login-commands")
     .description("List of player name to command mappings. Format: player:login_command:standby_command")
@@ -65,6 +66,20 @@ public class AutoLogin extends Module {
     private final Setting<String> 服务器入口物品包含名字 = sgGeneral.add(new StringSetting.Builder()
     .name("server-item-name-keyword")
     .description("The string that the item name in the GUI must contain to be clicked.")
+    .defaultValue("")
+    .build()
+    );
+
+    private final Setting<String> 主城大区Message = sgGeneral.add(new StringSetting.Builder()
+    .name("main-city-region-message")
+    .description("The message that indicates the main city region.")
+    .defaultValue("")
+    .build()
+    );
+
+    private final Setting<String> 生存大区Message = sgGeneral.add(new StringSetting.Builder()
+    .name("survival-region-message")
+    .description("The message that indicates the survival region.")
     .defaultValue("")
     .build()
     );
@@ -118,20 +133,6 @@ public class AutoLogin extends Module {
     public void onActivate() {
         预备登录();
     }
-    
-
-    @EventHandler
-    private void onGameJoined(GameJoinedEvent event) {
-        if (loginState == LoginState.等待进入服务器) {
-            loginState = LoginState.预备待命命令;
-            delayCounter = readyTicks.get();
-        }else if (loginState == LoginState.等待传送完成) {
-            loginState = LoginState.预备待命状态;
-            delayCounter = readyTicks.get();
-        }else{
-            预备登录();
-        }
-    }
 
     private void 预备登录() {
         loginState = LoginState.预备登录;
@@ -155,6 +156,16 @@ public class AutoLogin extends Module {
         } else if (messageString.contains(successMessage.get())) {
             if (loginState == LoginState.等待登陆成功) {
                 loginState = LoginState.预备打开菜单;
+                delayCounter = readyTicks.get();
+            }
+        } else if (messageString.contains(主城大区Message.get())) {
+            if (loginState == LoginState.等待进入服务器) {
+                loginState = LoginState.预备待命命令;
+                delayCounter = readyTicks.get();
+            }
+        } else if (messageString.contains(生存大区Message.get())) {
+            if (loginState == LoginState.等待传送完成) {
+                loginState = LoginState.预备待命状态;
                 delayCounter = readyTicks.get();
             }
         }
