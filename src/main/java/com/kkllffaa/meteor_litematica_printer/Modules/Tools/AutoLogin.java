@@ -242,8 +242,10 @@ public class AutoLogin extends Module {
                         hangUpModule.toggle();
                     }
                     else hangUpModule.toggle();
-                } else if ("商店限量机器人".equals(standbyState)) {
-                    // 可以添加其他状态
+                } else if ("商店限量".equals(standbyState)) {
+                    ShopLimiter shopLimiter = Modules.get().get(ShopLimiter.class);
+                    if (shopLimiter == null) return;
+                    if (!shopLimiter.isActive()) shopLimiter.toggle();
                 }
                 return;
             }

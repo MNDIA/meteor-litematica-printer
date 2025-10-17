@@ -23,7 +23,7 @@ public class ChatLogger extends Module {
     private final Setting<String> filePath = sgGeneral.add(new StringSetting.Builder()
         .name("file-path")
         .description("The file path to save chat logs. Use absolute path or relative to game directory.")
-        .defaultValue("chat_logs.txt")
+        .defaultValue("MySet/chat_logs.txt")
         .build()
     );
 
