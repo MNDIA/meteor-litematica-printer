@@ -173,8 +173,19 @@ public class PlaceSettings extends Module {
 			.build()
 	);
 
+	public final Setting<SignColorMode> SignTextWithColor = sgGeneral.add(new EnumSetting.Builder<SignColorMode>()
+			.name("sign-text-with-color")
+			.description("Use colored text for signs.")
+			.defaultValue(SignColorMode.None)
+			.build()
+	);
 
 
+public static enum SignColorMode {
+		None,
+		反三,
+		八字符号
+	}
 
 
 
