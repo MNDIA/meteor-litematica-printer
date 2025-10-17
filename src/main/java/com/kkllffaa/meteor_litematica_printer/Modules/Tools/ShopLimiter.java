@@ -163,7 +163,7 @@ public class ShopLimiter extends Module {
         info(player + " 买" + count + "个" + item + " 总计：" + newTotal);
 
         Integer limit = getItemLimits().get(item);
-        if (limit != null && newTotal > limit) {
+        if (limit != null && limit > 0 && newTotal > limit) {
             info("玩家 " + player + " 超过了 " + item + " 的限制 (" + newTotal + "/" + limit + ")");
             removePlayer(player);
         }
