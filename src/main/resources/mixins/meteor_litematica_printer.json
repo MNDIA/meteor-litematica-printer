@@ -4,7 +4,8 @@
   "package": "com.kkllffaa.meteor_litematica_printer.mixins",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ClientPlayerInteractionManagerMixin"
+    "ClientPlayerInteractionManagerMixin",
+    "MixinClientPlayerEntity"
   ],
   "injectors": {
     "defaultRequire": 1
