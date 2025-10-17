@@ -10,6 +10,7 @@ import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.item.ItemStack;
+import net.minecraft.client.gui.hud.MessageIndicator;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
@@ -140,10 +141,13 @@ public class AutoLogin extends Module {
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
         if (mc.player == null) return;
-        Text message = event.getMessage();
-        String messageString = message.getString();
+        Text originalText = event.getMessage();
+        MessageIndicator originalIndicator = event.getIndicator();
+        int originalId = event.id;
 
-        if (messageString.contains(triggerMessage.get())) {
+        String message = originalText.getString();
+
+        if (message.contains(triggerMessage.get())) {
             if (loginState == LoginState.预备登录) {
                 if (输入登录命令()) {
                     loginState = LoginState.等待登陆成功;
@@ -152,23 +156,33 @@ public class AutoLogin extends Module {
                     预备登录();
                 }
             }
-        } else if (messageString.contains(successMessage.get())) {
+        } else if (message.contains(successMessage.get())) {
             if (loginState == LoginState.等待登陆成功) {
                 loginState = LoginState.预备打开菜单;
                 delayCounter = readyTicks.get();
             }
-        } else if (messageString.contains(mc.player.getName().getString())&&messageString.contains(主城大区Message.get())) {
+        } else if (message.contains(mc.player.getName().getString())&&message.contains(主城大区Message.get())) {
             info("进入了 [主城大区] State: %s", loginState);
             if (loginState == LoginState.等待进入服务器) {
                 loginState = LoginState.预备待命命令;
                 delayCounter = readyTicks.get()+40;
             }
-        } else if (messageString.contains(mc.player.getName().getString())&&messageString.contains(生存大区Message.get())) {
+        } else if (message.contains(mc.player.getName().getString())&&message.contains(生存大区Message.get())) {
             info("进入了 [生存大区] State: %s", loginState);
             if (loginState == LoginState.等待传送完成) {
                 loginState = LoginState.预备待命状态;
                 delayCounter = readyTicks.get();
             }
+        }
+
+        if (event.getMessage() != originalText) {
+            event.setMessage(originalText);
+        }
+        if (event.getIndicator() != originalIndicator) {
+            event.setIndicator(originalIndicator);
+        }
+        if (event.id != originalId) {
+            event.id = originalId;
         }
     }
 

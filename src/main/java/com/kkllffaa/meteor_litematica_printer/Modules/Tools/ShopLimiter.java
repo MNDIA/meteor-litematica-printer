@@ -9,6 +9,7 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
+import net.minecraft.client.gui.hud.MessageIndicator;
 import net.minecraft.text.Text;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
@@ -77,7 +78,7 @@ public class ShopLimiter extends Module {
     private final Setting<List<String>> removeCommand = sgGeneral.add(new StringListSetting.Builder()
         .name("remove-command")
         .description("Commands to remove player from territory, use %player% as placeholder.")
-        .defaultValue("/res pset %player% remove")
+        .defaultValue("/res pset %player% tp false")
         .build()
     );
 
@@ -139,7 +140,12 @@ public class ShopLimiter extends Module {
 
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
-        String message = event.getMessage().getString();
+        Text originalText = event.getMessage();
+        MessageIndicator originalIndicator = event.getIndicator();
+        int originalId = event.id;
+
+        String message = originalText.getString();
+
         String regex = messagePattern.get()
             .replace("%player%", "(.+)")
             .replace("%count%", "(\\d+)")
@@ -151,6 +157,16 @@ public class ShopLimiter extends Module {
             int count = Integer.parseInt(matcher.group(2));
             String item = matcher.group(3);
             processPurchase(player, count, item);
+
+            if (event.getMessage() != originalText) {
+                event.setMessage(originalText);
+            }
+            if (event.getIndicator() != originalIndicator) {
+                event.setIndicator(originalIndicator);
+            }
+            if (event.id != originalId) {
+                event.id = originalId;
+            }
         }
     }
     

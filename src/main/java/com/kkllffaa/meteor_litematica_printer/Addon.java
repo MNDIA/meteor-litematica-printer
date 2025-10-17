@@ -24,7 +24,6 @@ public class Addon extends MeteorAddon {
 		Modules.get().add(InteractSettings.Instance);
 		Modules.get().add(ContainerSettings.Instance);
 		Modules.get().add(BreakSettings.Instance);
-		Modules.get().add(CRUDExecuter.Instance);
 
 		Modules.get().add(new Printer());
 		Modules.get().add(new Deleter());
