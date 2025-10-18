@@ -21,6 +21,8 @@ import net.minecraft.util.math.Direction;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.ActionMode;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFace;
 
 
 
@@ -52,7 +54,7 @@ public class BreakSettings extends Module {
         .defaultValue(ActionMode.None)
         .build()
     );
-    private final Setting<SafetyFace> miningFaceBy = sgGeneral.add(new EnumSetting.Builder<SafetyFace>()
+    private final Setting<SafetyFace> FaceBy = sgGeneral.add(new EnumSetting.Builder<SafetyFace>()
         .name("mining-face-by")
         .description("")
         .defaultValue(SafetyFace.PlayerPosition)
@@ -107,7 +109,7 @@ public class BreakSettings extends Module {
             ir.sendPacket();
             return;
         }
-        Direction direction = switch (miningFaceBy.get()) {
+        Direction direction = switch (FaceBy.get()) {
             case SafetyFace.PlayerRotation -> BlockUtils.getDirection(pos);
             case SafetyFace.PlayerPosition -> BlockPosUtils.getDirectionFromPlayerPosition(pos);
         };
@@ -125,13 +127,5 @@ public class BreakSettings extends Module {
         breakingThisTick = true;
 
     }
-    private static enum ActionMode {
-        None,
-        SendPacket,
-        Normal
-    }
-    private static enum SafetyFace {
-		PlayerRotation,
-		PlayerPosition,
-	}
+
 }

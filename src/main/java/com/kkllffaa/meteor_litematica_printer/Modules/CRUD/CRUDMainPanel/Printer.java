@@ -75,7 +75,11 @@ public class Printer extends Module {
 			.build()
 	);
 
-
+	private final Setting<Boolean> 启用交互 = sgGeneral.add(new BoolSetting.Builder()
+			.name("enable-interaction")
+			.description("Enable block interaction.")
+			.defaultValue(true)
+			.build());
 
     private final Setting<SortAlgorithm> firstAlgorithm = sgGeneral.add(new EnumSetting.Builder<SortAlgorithm>()
 			.name("first-sorting-mode")
@@ -252,7 +256,7 @@ public class Printer extends Module {
 		if (timer >= printing_delay.get()) {
 			BlockIterator.register(printing_range.get() + 1, printing_range.get() + 1, (pos, blockState) -> {
 				BlockState required = worldSchematic.getBlockState(pos);
-				if (InteractSettings.Instance.enableInteraction.get() && !pendingInteractions.containsKey(pos)) {
+				if (启用交互.get() && !pendingInteractions.containsKey(pos)) {
 					int requiredInteractions = InteractSettings.Instance.calculateRequiredInteractions(required,
 							blockState);
 					if (requiredInteractions > 0) {
@@ -287,7 +291,7 @@ public class Printer extends Module {
 
 
 				int placed = 0;
-				
+
 				Iterator<Map.Entry<BlockPos, Integer>> iterator = pendingInteractions.entrySet().iterator();
 				while (iterator.hasNext() && placed < blocksPerTick.get()) {
 					Map.Entry<BlockPos, Integer> entry = iterator.next();
@@ -296,21 +300,21 @@ public class Printer extends Module {
 					if (remaining > 0) {
 						int toDo = Math.min(remaining, blocksPerTick.get() - placed);
 						int did = InteractSettings.Instance.interactWithBlock(pos, toDo);
-						if (did > 0){
+						if (did > 0) {
 							timer = 0;
 						}
 						placed += did;
 						int newRemaining = remaining - did;
 						if (newRemaining <= 0) {
 							iterator.remove();
-						}else{
+						} else {
 							entry.setValue(newRemaining);
 						}
 					} else {
 						iterator.remove();
 					}
 				}
-
+				
 				for (BlockPos pos : toSort) {
 					BlockState state = worldSchematic.getBlockState(pos);
 

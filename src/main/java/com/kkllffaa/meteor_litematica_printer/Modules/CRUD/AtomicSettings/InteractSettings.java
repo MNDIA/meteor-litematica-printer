@@ -22,7 +22,8 @@ import java.util.List;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
-import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.ActionMode;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFace;
 
 
 
@@ -43,26 +44,29 @@ public class InteractSettings extends Module {
 
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
+	private final Setting<ActionMode> instantRotation = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
+        .name("instant-rotate")
+        .description("rotation pre interact.")
+        .defaultValue(ActionMode.None)
+        .build()
+    );
+    private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
+        .name("swing-hand")
+        .description("swing hand post interact.")
+        .defaultValue(ActionMode.None)
+        .build()
+    );
 
-
-	public final Setting<Boolean> enableInteraction = sgGeneral.add(new BoolSetting.Builder()
-			.name("enable-interaction")
-			.description("Enable interaction with blocks.")
-			.defaultValue(true)
-			.build());
-
-	private final Setting<SafetyFaceMode> safetyInteractFaceMode = sgGeneral.add(new EnumSetting.Builder<SafetyFaceMode>()
-			.name("safety-interact-face-mode")
-			.description("Only interact with blocks on safe faces.")
-			.defaultValue(SafetyFaceMode.PlayerPosition)
-            .visible(enableInteraction::get)
+	private final Setting<SafetyFace> FaceBy = sgGeneral.add(new EnumSetting.Builder<SafetyFace>()
+			.name("interact-face-by")
+			.description("Determines which face of the block to interact with.")
+			.defaultValue(SafetyFace.PlayerPosition)
 			.build());
             
 	private final Setting<Boolean> onlyInteractOnLook = sgGeneral.add(new BoolSetting.Builder()
-			.name("only-interact-on-look")
-			.description("Only interact with blocks on the face you are looking at.")
+			.name("only-interact-on-look-the-face")
+			.description("Only interact with blocks when looking at the face to interact with.")
 			.defaultValue(false)
-            .visible(enableInteraction::get)
 			.build());
 
 	private final Setting<List<Block>> stateBlocks = sgGeneral.add(new BlockListSetting.Builder()
@@ -96,41 +100,28 @@ public class InteractSettings extends Module {
 					Blocks.WARPED_FENCE_GATE,
 					Blocks.MANGROVE_FENCE_GATE, Blocks.BAMBOO_FENCE_GATE, Blocks.CHERRY_FENCE_GATE,
 					Blocks.PALE_OAK_FENCE_GATE)
-			.visible(enableInteraction::get)
             .build());
 
 	//todo: 添加穿墙保护
 
 
 	public int interactWithBlock(BlockPos pos, int count) {
-        if (!enableInteraction.get()) {
-            return 0;
-        }
-		ClientPlayerEntity player = mc.player;
-		ClientPlayerInteractionManager interactionManager = mc.interactionManager;
-		if (player == null || interactionManager == null) return 0;
-		if (player.isSneaking()){
+		if (mc.player.isSneaking()||!CommonSettings.canTouchTheBlockAt(pos)){
 			return 0;
 		}
-		if (!CommonSettings.canTouchTheBlockAt(pos)) {
-			return 0;
-		}
-        Direction SafeFace = switch (safetyInteractFaceMode.get()) {
-            case SafetyFaceMode.None -> Direction.UP;
-			case SafetyFaceMode.PlayerRotation -> BlockUtils.getDirection(pos);
-            case SafetyFaceMode.PlayerPosition -> BlockPosUtils.getDirectionFromPlayerPosition(pos);
+        Direction SafeFace = switch (FaceBy.get()) {
+			case SafetyFace.PlayerRotation -> BlockUtils.getDirection(pos);
+            case SafetyFace.PlayerPosition -> BlockPosUtils.getDirectionFromPlayerPosition(pos);
         };
 
         if (onlyInteractOnLook.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(pos, SafeFace)) {
             return 0;
         }
-		
-
 
         Vec3d hitPos = new Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
         for (int i = 0; i < count; i++) {
 		    BlockHitResult blockHitResult = new BlockHitResult(hitPos, SafeFace, pos, false);
-		    ActionResult result = interactionManager.interactBlock(player, Hand.MAIN_HAND, blockHitResult);
+		    ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
 		    if (!result.isAccepted()) {
                 warning("Interaction not accepted at " + pos + ", result: " + result);
                 return i;

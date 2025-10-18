@@ -215,6 +215,15 @@ public class MyUtils {
             this.lineColor = line;
         }
     }
+	public static enum ActionMode {
+        None,
+        SendPacket,
+        Normal
+    }
+    public static enum SafetyFace {
+		PlayerRotation,
+		PlayerPosition,
+	}
 
 	private static int usedSlot = -1;
 	public static boolean switchItem(Item item, BlockState state, boolean returnHand, Supplier<Boolean> action) {
