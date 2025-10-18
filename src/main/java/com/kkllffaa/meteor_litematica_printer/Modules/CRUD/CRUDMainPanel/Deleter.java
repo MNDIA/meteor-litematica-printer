@@ -12,7 +12,6 @@ import meteordevelopment.meteorclient.systems.modules.world.HighwayBuilder;
 import meteordevelopment.meteorclient.systems.modules.world.Nuker;
 import meteordevelopment.meteorclient.systems.modules.world.VeinMiner;
 import meteordevelopment.meteorclient.utils.misc.Pool;
-import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.block.Block;
@@ -37,6 +36,7 @@ import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.BreakSettings;
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.placement.SchematicPlacement;
@@ -193,12 +193,6 @@ public class Deleter extends Module {
         .build()
     );
 
-    private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
-        .name("rotate")
-        .description("Sends rotation packets to the server when mining.")
-        .defaultValue(false)
-        .build()
-    );
     //endregion
 
     //region Render
@@ -330,26 +324,6 @@ public class Deleter extends Module {
         .visible(启用挖掘超时保护::get)
         .build()
     );
-
-    private final Setting<DistanceMode> distanceProtection = sgProtection.add(new EnumSetting.Builder<DistanceMode>()
-        .name("distance-protection")
-        .description("Prevent mining blocks that are too far or too close to the player.")
-        .defaultValue(DistanceMode.Max)
-        .build()
-    );
-
-    private final Setting<Double> maxDistanceToBlockCenter = sgProtection.add(new DoubleSetting.Builder()
-        .name("max-distance-to-block-center")
-        .description("Maximum distance from player to mine blocks.")
-        .defaultValue(5.9)
-        .min(1.0)
-        .max(1024.0)
-        .sliderRange(1.0, 6.0)
-        .visible(() -> distanceProtection.get() == DistanceMode.Max)
-        .build()
-    );
-
-
 
     private final Setting<ProtectMode> standProtectionMode = sgProtection.add(new EnumSetting.Builder<ProtectMode>()
         .name("stand-protection")
@@ -546,13 +520,7 @@ public class Deleter extends Module {
     @SuppressWarnings("unchecked")
     private static final Class<? extends Module>[] BlackModuleList = new Class[] {
             EChestFarmer.class, HighwayBuilder.class, Nuker.class, VeinMiner.class };
-    private double getHandDistance() {
-        return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistanceToBlockCenter.get();
-    }
 
-    private boolean isOutOfDistance(BlockPos Pos) {
-        return BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(Pos) > getHandDistance();
-    }
     private boolean isAirOrFluid(BlockState state) {
         return state.isAir() || !state.getFluidState().isEmpty();
     }
@@ -857,9 +825,9 @@ public class Deleter extends Module {
 
     private boolean 允许存入挖掘表(BlockPos pos){
         if(TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()){
-            return !isOutOfDistance(pos) && !isProtectedPosition(pos);
+            return BreakSettings.canBreakByObjective(pos) && !isProtectedPosition(pos);
         }
-        return !isOutOfDistance(pos) && !isStandBlock(pos) && !isProtectedPosition(pos);
+        return BreakSettings.canBreakByObjective(pos) && !isStandBlock(pos) && !isProtectedPosition(pos);
     }
     private boolean 允许存入挖掘表(BlockState state){
         return !isAirOrFluid(state);
@@ -923,8 +891,8 @@ public class Deleter extends Module {
             lastPlayerPos = currentPlayerPos.toImmutable();
             continuousScanTimer = 0;
 
-            Vec3d centerPos = MyUtils.getPlayerEye(mc.player);
-            double radius = getHandDistance();
+            Vec3d centerPos = mc.player.getEyePos();
+            double radius = CommonSettings.getHandDistance();
 
             int minX = (int) (Math.floor(centerPos.x - radius) + 0.01);
             int maxX = (int) (Math.floor(centerPos.x + radius) + 0.01);
@@ -1289,8 +1257,7 @@ public class Deleter extends Module {
             if (startTime == 0) {
                 startTime = System.currentTimeMillis();
             }
-            if (rotate.get()) Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, this::updateBlockBreakingProgress);
-            else updateBlockBreakingProgress();
+            updateBlockBreakingProgress();
         }
 
         public boolean canInstaBreak() {
@@ -1318,7 +1285,7 @@ public class Deleter extends Module {
         }
 
         private void updateBlockBreakingProgress() {
-            BreakSettings.Instance.breakBlock(blockPos);
+            BreakSettings.breakBlock(blockPos);
         }
        
         public void render(Render3DEvent event) {

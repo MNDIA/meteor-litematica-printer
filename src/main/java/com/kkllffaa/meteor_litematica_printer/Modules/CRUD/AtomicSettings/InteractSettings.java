@@ -2,7 +2,6 @@ package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings;
 
 import meteordevelopment.meteorclient.settings.BlockListSetting;
 import meteordevelopment.meteorclient.settings.BoolSetting;
-import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -30,7 +29,7 @@ import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFaceMode;
 public class InteractSettings extends Module {
 	public static InteractSettings Instance = new InteractSettings();
 	public InteractSettings() {
-		super(Addon.SettingsForCRUD, "InteractSettings", "Module to configure AtomicSettings.");
+		super(Addon.SettingsForCRUD, "Interact", "Module to configure AtomicSettings.");
 		this.toggle();
 	}
 	
@@ -50,15 +49,6 @@ public class InteractSettings extends Module {
 			.name("enable-interaction")
 			.description("Enable interaction with blocks.")
 			.defaultValue(true)
-			.build());
-
-    private final Setting<Double> maxDistanceToBlockCenter = sgGeneral.add(new DoubleSetting.Builder()
-			.name("max-distance-to-block-center")
-			.description("Maximum distance to the block center.")
-			.defaultValue(5.9)
-			.min(0.0)
-			.max(10.0)
-			.visible(enableInteraction::get)
 			.build());
 
 	private final Setting<SafetyFaceMode> safetyInteractFaceMode = sgGeneral.add(new EnumSetting.Builder<SafetyFaceMode>()
@@ -122,7 +112,7 @@ public class InteractSettings extends Module {
 		if (player.isSneaking()){
 			return 0;
 		}
-		if (BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(pos) > maxDistanceToBlockCenter.get()) {
+		if (!CommonSettings.canTouchTheBlockAt(pos)) {
 			return 0;
 		}
         Direction SafeFace = switch (safetyInteractFaceMode.get()) {

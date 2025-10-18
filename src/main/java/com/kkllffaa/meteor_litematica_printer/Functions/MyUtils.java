@@ -14,7 +14,6 @@ import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationPropertyHelper;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
@@ -132,10 +131,6 @@ public class MyUtils {
 			// if we can't get the collision shape, assume it's bad...
 		}
 		return false;
-	}
-
-	public static @NotNull Vec3d getPlayerEye(@NotNull ClientPlayerEntity player) {
-		return new Vec3d(player.getX(), player.getY() + player.getEyeHeight(player.getPose()), player.getZ());
 	}
 
     public static void renderPos(Render3DEvent event, BlockPos blockPos, ShapeMode shapeMode, ColorScheme colorScheme) {

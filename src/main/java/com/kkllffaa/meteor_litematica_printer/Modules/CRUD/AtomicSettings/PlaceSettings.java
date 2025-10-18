@@ -46,7 +46,7 @@ import static meteordevelopment.meteorclient.utils.world.BlockUtils.isClickable;
 public class PlaceSettings extends Module {
 	public static PlaceSettings Instance = new PlaceSettings();
 	public PlaceSettings() {
-		super(Addon.SettingsForCRUD, "PlaceSettings", "Module to configure AtomicSettings.");
+		super(Addon.SettingsForCRUD, "Place", "Module to configure AtomicSettings.");
 		this.toggle();
 	}
 
@@ -180,13 +180,11 @@ public class PlaceSettings extends Module {
 			.build()
 	);
 
-
-public static enum SignColorMode {
+	public static enum SignColorMode {
 		None,
 		反三,
 		八字符号
 	}
-
 
 
 
@@ -700,7 +698,7 @@ public static enum SignColorMode {
 			// 确定了face 邻居坐标 点击位置
 
 			// 距离保护
-			if (hitPos.distanceTo(getPlayerEye(player)) > placeRangeToHitPos.get()) {
+			if (hitPos.distanceTo(player.getEyePos()) > placeRangeToHitPos.get()) {
 				continue;
 			}
 

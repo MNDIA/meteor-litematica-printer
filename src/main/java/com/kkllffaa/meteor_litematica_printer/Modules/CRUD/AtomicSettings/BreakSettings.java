@@ -5,7 +5,6 @@ import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.player.InstantRebreak;
@@ -22,14 +21,13 @@ import net.minecraft.util.math.Direction;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
-import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.DistanceMode;
 
 
 
 public class BreakSettings extends Module {
     public static BreakSettings Instance = new BreakSettings();
     public BreakSettings() {
-		super(Addon.SettingsForCRUD, "BreakSettings", "Module to configure AtomicSettings.");
+		super(Addon.SettingsForCRUD, "Break", "Module to configure AtomicSettings.");
         this.toggle();
 	}
 
@@ -60,25 +58,6 @@ public class BreakSettings extends Module {
         .defaultValue(SafetyFace.PlayerPosition)
         .build()
     );
-
-    private final Setting<DistanceMode> distanceProtection = sgGeneral.add(new EnumSetting.Builder<DistanceMode>()
-        .name("distance-protection")
-        .description("Prevent mining blocks that are too far to the player.")
-        .defaultValue(DistanceMode.Max)
-        .build()
-    );
-
-    private final Setting<Double> maxDistanceToBlockCenter = sgGeneral.add(new DoubleSetting.Builder()
-        .name("max-distance-to-block-center")
-        .description("Maximum distance from player to mine blocks.")
-        .defaultValue(5.9)
-        .min(1.0)
-        .max(1024.0)
-        .sliderRange(1.0, 6.0)
-        .visible(() -> distanceProtection.get() == DistanceMode.Max)
-        .build()
-    );
-
     
     public static boolean breaking;
     private static boolean breakingThisTick;
@@ -96,28 +75,27 @@ public class BreakSettings extends Module {
         }
     }
 
-    public boolean canBreakByObjective(BlockPos blockPos){
-        return BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos)) && !isOutOfDistance(blockPos);
+    public static boolean canBreakByObjective(BlockPos blockPos){
+        return BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos)) 
+        && CommonSettings.canTouchTheBlockAt(blockPos);
     }
 
-    private double getHandDistance() {
-        return distanceProtection.get() == DistanceMode.Auto ? mc.player.getBlockInteractionRange() : maxDistanceToBlockCenter.get();
+    public static void breakBlock(BlockPos blockPos){
+        Instance.breakBlockStep1(blockPos);
     }
 
-    private boolean isOutOfDistance(BlockPos Pos) {
-        return BlockPosUtils.getDistanceFromPosCenterToPlayerEyes(Pos) > getHandDistance();
+    public static boolean TryBreakBlock(BlockPos blockPos){
+        if (!canBreakByObjective(blockPos)) return false;
+        breakBlock(blockPos);
+        return true;
     }
 
-    public void breakBlock(BlockPos blockPos) {
-        // if (!canBreakByObjective(blockPos)) return;
-        if (!BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos))) return;
-        
+    private void breakBlockStep1(BlockPos blockPos) {
         switch (instantRotation.get()) {
             case ActionMode.None -> breakBlockStep2(blockPos);
             case ActionMode.SendPacket -> Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, false, () -> breakBlockStep2(blockPos));
             case ActionMode.Normal -> Rotations.rotate(Rotations.getYaw(blockPos), Rotations.getPitch(blockPos), 50, true, () -> breakBlockStep2(blockPos));
         }
-
     }
 
     private void breakBlockStep2(BlockPos blockPos) {
@@ -147,12 +125,12 @@ public class BreakSettings extends Module {
         breakingThisTick = true;
 
     }
-    public static enum ActionMode {
+    private static enum ActionMode {
         None,
         SendPacket,
         Normal
     }
-    public static enum SafetyFace {
+    private static enum SafetyFace {
 		PlayerRotation,
 		PlayerPosition,
 	}

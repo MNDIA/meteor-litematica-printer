@@ -19,6 +19,7 @@ public class Addon extends MeteorAddon {
 	@Override
 	public void onInitialize() {
 		// Modules
+		Modules.get().add(CommonSettings.Instance);
 		Modules.get().add(PlaceSettings.Instance);
 		Modules.get().add(InteractSettings.Instance);
 		Modules.get().add(ContainerSettings.Instance);

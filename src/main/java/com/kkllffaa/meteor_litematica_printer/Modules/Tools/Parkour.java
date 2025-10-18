@@ -26,8 +26,8 @@ public class Parkour extends Module {
     private final Setting<Double> edgeDistance = sgGeneral.add(new DoubleSetting.Builder()
             .name("edge-distance")
             .description("How far from the edge should you jump.")
-            .range(0.001, 0.001)
-            .defaultValue(0.001)
+            .range(0.001, 0.1)
+            .defaultValue(0.004)
             .build());
 
     private final Setting<Double> minSpeed = sgGeneral.add(new DoubleSetting.Builder()
@@ -45,7 +45,7 @@ public class Parkour extends Module {
     private final Setting<Boolean> 垫幽灵砖 = sgGeneral.add( new BoolSetting.Builder()
             .name("垫幽灵砖")
             .description("Whether to place ghost blocks under the player.")
-            .defaultValue(true)
+            .defaultValue(false)
             .build());
 
     public Parkour() {

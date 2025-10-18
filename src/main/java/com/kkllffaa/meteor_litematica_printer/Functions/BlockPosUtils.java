@@ -4,8 +4,6 @@ import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 import org.jetbrains.annotations.NotNull;
 
-
-import static com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.*;
 import meteordevelopment.meteorclient.utils.Utils;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -187,7 +185,7 @@ public class BlockPosUtils {
 	// 方块的面可见(不穿墙)
 	public static boolean isTheOutFaceVisibleOfBlock(Vec3i blockPos, Direction direction) {
 		if (mc.player == null) return false;
-		Vec3d playerEye = MyUtils.getPlayerEye(mc.player);
+		Vec3d playerEye = mc.player.getEyePos();
 
 		Vec3d[] offsets = switch (direction) {
 			case UP -> FACE_OFFSETS_UP_OUT;
@@ -210,7 +208,7 @@ public class BlockPosUtils {
 	// 点可见(不穿墙)
 	public static boolean isPointVisible(Vec3d point) {
 		if (mc.player == null) return false;
-		Vec3d playerEye = MyUtils.getPlayerEye(mc.player);
+		Vec3d playerEye = mc.player.getEyePos();
 		return isLineOfSightClear(playerEye, point);
 	}
 	// endregion
@@ -218,7 +216,7 @@ public class BlockPosUtils {
 
 	// 选择仅一个合适的面根据砖块相对玩家的位置
 	public static @NotNull Direction getDirectionFromPlayerPosition(@NotNull Vec3i pos) {
-		Vec3d eyePos = getPlayerEye(mc.player);
+		Vec3d eyePos = mc.player.getEyePos();
 
 		Vec3d blockCenter = Vec3d.ofCenter(pos);
 

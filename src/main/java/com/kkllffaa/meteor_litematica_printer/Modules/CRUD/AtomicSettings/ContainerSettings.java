@@ -8,7 +8,7 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 public class ContainerSettings extends Module {
     public static ContainerSettings Instance = new ContainerSettings();
     public ContainerSettings() {
-		super(Addon.SettingsForCRUD, "ContainerSettings", "Module to configure AtomicSettings.");
+		super(Addon.SettingsForCRUD, "Container", "Module to configure AtomicSettings.");
 		this.toggle();
 	}
 
