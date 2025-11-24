@@ -20,7 +20,6 @@ import static meteordevelopment.meteorclient.MeteorClient.mc;
 import java.util.Random;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -28,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class MyUtils {
 	//yaw转换四方向
-	private static @NotNull Direction ConvertToDirectionFromYaw(float yaw) {
+	private static Direction ConvertToDirectionFromYaw(float yaw) {
 		yaw = Rotation.normalizeYaw(yaw);
 		if ((yaw >= 45 && yaw < 135)) {
 			return Direction.WEST;
@@ -42,7 +41,7 @@ public class MyUtils {
 	}
 	
 	// 获取玩家参考系下的相对方向
-	public static @Nullable Direction getLeftDirectionFromPlayer(@NotNull Direction playerDirection) {
+	public static Direction getLeftDirectionFromPlayer(Direction playerDirection) {
 		return switch (playerDirection) {
 			case NORTH -> Direction.WEST;
 			case EAST -> Direction.NORTH;
@@ -60,7 +59,7 @@ public class MyUtils {
 		};
 	}
 
-	public static @Nullable Direction getUpDirectionFromPlayer(@NotNull Direction playerDirection) {
+	public static Direction getUpDirectionFromPlayer(Direction playerDirection) {
 		if (playerDirection == Direction.EAST || playerDirection == Direction.SOUTH || playerDirection == Direction.WEST
 				|| playerDirection == Direction.NORTH) {
 			return Direction.UP;
@@ -82,7 +81,7 @@ public class MyUtils {
 
 
 	//铁轨属性转换标志方向
-	private static @Nullable Direction ConvertToDirection(net.minecraft.block.enums.RailShape shape) {
+	private static Direction ConvertToDirection(net.minecraft.block.enums.RailShape shape) {
 		return switch (shape) {
 			case NORTH_SOUTH -> Direction.SOUTH;
 			case EAST_WEST -> Direction.EAST;
@@ -94,7 +93,7 @@ public class MyUtils {
 		};
 	}
 	//获取方块状态的一个可区分标志方向
-	public static @Nullable Direction getATagFaceOf(@NotNull BlockState state) {
+	public static Direction getATagFaceOf(BlockState state) {
 		if (state.contains(Properties.FACING))
 			return state.get(Properties.FACING);
 		else if (state.contains(Properties.HOPPER_FACING))

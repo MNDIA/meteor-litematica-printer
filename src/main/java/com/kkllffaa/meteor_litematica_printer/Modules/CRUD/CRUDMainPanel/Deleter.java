@@ -527,7 +527,7 @@ public class Deleter extends Module {
     
     private static final double 速度阈值 = 0.009;
     private boolean isPlayerSurrounding(BlockPos pos) {
-        Vec3d playerPos = mc.player.getPos();
+        Vec3d playerPos = mc.player.getEntityPos();
         double playerX = playerPos.x;
         double playerY = playerPos.y;
         double playerZ = playerPos.z;

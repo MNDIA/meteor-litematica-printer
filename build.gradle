@@ -11,11 +11,14 @@ base {
 }
 
 java {
-    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_24
 }
 
 kotlin {
     jvmToolchain(25)
+    // compilerOptions {
+    //     jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24
+    // }
 }
 
 repositories {

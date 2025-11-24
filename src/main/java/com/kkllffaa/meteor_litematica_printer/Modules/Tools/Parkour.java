@@ -90,7 +90,7 @@ public class Parkour extends Module {
 
 
     private boolean isPlayerInControl() {
-         return mc.cameraEntity == mc.player && (mc.currentScreen == null || !Modules.get().get(GUIMove.class).skip()) && !Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.render.Freecam.class);
+         return (mc.currentScreen == null || !Modules.get().get(GUIMove.class).skip()) && !Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.render.Freecam.class);
     }
     
 

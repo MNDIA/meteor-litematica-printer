@@ -26,7 +26,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
-import javax.annotation.Nullable;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
@@ -55,7 +54,7 @@ public class PlaceSettings extends Module {
         }
         super.toggle();
     }
-	
+
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
 	private final SettingGroup sgDirectional = settings.createGroup("Directional Protection");
 	private final SettingGroup sgClickFace = settings.createGroup("Click Face");
@@ -378,7 +377,7 @@ public class PlaceSettings extends Module {
 				Blocks.LEVER,
 
 				// 按钮
-				Blocks.STONE_BUTTON, Blocks.OAK_BUTTON, Blocks.SPRUCE_BUTTON, Blocks.BIRCH_BUTTON, 
+				Blocks.STONE_BUTTON, Blocks.OAK_BUTTON, Blocks.SPRUCE_BUTTON, Blocks.BIRCH_BUTTON,
 				Blocks.JUNGLE_BUTTON, Blocks.ACACIA_BUTTON, Blocks.DARK_OAK_BUTTON, Blocks.CRIMSON_BUTTON,
 				Blocks.WARPED_BUTTON, Blocks.MANGROVE_BUTTON, Blocks.BAMBOO_BUTTON, Blocks.CHERRY_BUTTON,
 				Blocks.POLISHED_BLACKSTONE_BUTTON,
@@ -398,14 +397,14 @@ public class PlaceSettings extends Module {
 				// 铜活板门
 				Blocks.COPPER_TRAPDOOR, Blocks.EXPOSED_COPPER_TRAPDOOR, Blocks.WEATHERED_COPPER_TRAPDOOR, Blocks.OXIDIZED_COPPER_TRAPDOOR,
 				Blocks.WAXED_COPPER_TRAPDOOR, Blocks.WAXED_EXPOSED_COPPER_TRAPDOOR, Blocks.WAXED_WEATHERED_COPPER_TRAPDOOR, Blocks.WAXED_OXIDIZED_COPPER_TRAPDOOR,
-				
+
 				//单头棍子
 				Blocks.END_ROD, Blocks.LIGHTNING_ROD,
 
-				//双头棍子
-				Blocks.HAY_BLOCK, Blocks.CHAIN,
+				// 双头棍子
+				Blocks.HAY_BLOCK, Blocks.IRON_CHAIN,
 				// 原木
-				Blocks.OAK_LOG, Blocks.SPRUCE_LOG, Blocks.BIRCH_LOG, Blocks.JUNGLE_LOG, 
+				Blocks.OAK_LOG, Blocks.SPRUCE_LOG, Blocks.BIRCH_LOG, Blocks.JUNGLE_LOG,
 				Blocks.ACACIA_LOG, Blocks.DARK_OAK_LOG, Blocks.CRIMSON_STEM, Blocks.PALE_OAK_LOG,
 				Blocks.WARPED_STEM, Blocks.MANGROVE_LOG, Blocks.CHERRY_LOG,
 				// 去皮原木
@@ -413,20 +412,20 @@ public class PlaceSettings extends Module {
 				Blocks.STRIPPED_ACACIA_LOG, Blocks.STRIPPED_DARK_OAK_LOG, Blocks.STRIPPED_CRIMSON_STEM, Blocks.STRIPPED_WARPED_STEM,
 				Blocks.STRIPPED_MANGROVE_LOG, Blocks.STRIPPED_CHERRY_LOG, Blocks.STRIPPED_PALE_OAK_LOG,
 				// 木头
-				Blocks.OAK_WOOD, Blocks.SPRUCE_WOOD, Blocks.BIRCH_WOOD, Blocks.JUNGLE_WOOD, 
-				Blocks.ACACIA_WOOD, Blocks.DARK_OAK_WOOD,Blocks.CRIMSON_HYPHAE, Blocks.WARPED_HYPHAE, 
+				Blocks.OAK_WOOD, Blocks.SPRUCE_WOOD, Blocks.BIRCH_WOOD, Blocks.JUNGLE_WOOD,
+				Blocks.ACACIA_WOOD, Blocks.DARK_OAK_WOOD,Blocks.CRIMSON_HYPHAE, Blocks.WARPED_HYPHAE,
 				Blocks.MANGROVE_WOOD, Blocks.CHERRY_WOOD, Blocks.PALE_OAK_WOOD,
 				// 去皮木头
 				Blocks.STRIPPED_OAK_WOOD, Blocks.STRIPPED_SPRUCE_WOOD, Blocks.STRIPPED_BIRCH_WOOD, Blocks.STRIPPED_JUNGLE_WOOD,
 				Blocks.STRIPPED_ACACIA_WOOD, Blocks.STRIPPED_DARK_OAK_WOOD, Blocks.STRIPPED_CRIMSON_HYPHAE, Blocks.STRIPPED_WARPED_HYPHAE,
 				Blocks.STRIPPED_MANGROVE_WOOD, Blocks.STRIPPED_CHERRY_WOOD, Blocks.STRIPPED_PALE_OAK_WOOD,
 				// 其他AXIS块
-				Blocks.BAMBOO_BLOCK, Blocks.STRIPPED_BAMBOO_BLOCK, 
-				Blocks.QUARTZ_PILLAR, Blocks.BONE_BLOCK, Blocks.PURPUR_PILLAR, Blocks.BASALT, Blocks.POLISHED_BASALT, 
+				Blocks.BAMBOO_BLOCK, Blocks.STRIPPED_BAMBOO_BLOCK,
+				Blocks.QUARTZ_PILLAR, Blocks.BONE_BLOCK, Blocks.PURPUR_PILLAR, Blocks.BASALT, Blocks.POLISHED_BASALT,
 				// 蛙鸣灯
 				Blocks.OCHRE_FROGLIGHT, Blocks.PEARLESCENT_FROGLIGHT, Blocks.VERDANT_FROGLIGHT
-				
-				
+
+
 				)
 			.visible(precisePlacement::get)
 			.build());
@@ -435,15 +434,15 @@ public class PlaceSettings extends Module {
 			.name("precise-facing-backward")
 			.description("Blocks for precise placement facing backward.")
 			.defaultValue(
-				
+
 				// 钟
 				Blocks.BELL,
 				// 漏斗
 				Blocks.HOPPER,
-				//双头棍子
-				Blocks.HAY_BLOCK, Blocks.CHAIN,
+				// 双头棍子
+				Blocks.HAY_BLOCK, Blocks.IRON_CHAIN,
 				// 原木
-				Blocks.OAK_LOG, Blocks.SPRUCE_LOG, Blocks.BIRCH_LOG, Blocks.JUNGLE_LOG, 
+				Blocks.OAK_LOG, Blocks.SPRUCE_LOG, Blocks.BIRCH_LOG, Blocks.JUNGLE_LOG,
 				Blocks.ACACIA_LOG, Blocks.DARK_OAK_LOG, Blocks.CRIMSON_STEM, Blocks.PALE_OAK_LOG,
 				Blocks.WARPED_STEM, Blocks.MANGROVE_LOG, Blocks.CHERRY_LOG,
 				// 去皮原木
@@ -451,23 +450,23 @@ public class PlaceSettings extends Module {
 				Blocks.STRIPPED_ACACIA_LOG, Blocks.STRIPPED_DARK_OAK_LOG, Blocks.STRIPPED_CRIMSON_STEM, Blocks.STRIPPED_WARPED_STEM,
 				Blocks.STRIPPED_MANGROVE_LOG, Blocks.STRIPPED_CHERRY_LOG, Blocks.STRIPPED_PALE_OAK_LOG,
 				// 木头
-				Blocks.OAK_WOOD, Blocks.SPRUCE_WOOD, Blocks.BIRCH_WOOD, Blocks.JUNGLE_WOOD, 
-				Blocks.ACACIA_WOOD, Blocks.DARK_OAK_WOOD,Blocks.CRIMSON_HYPHAE, Blocks.WARPED_HYPHAE, 
+				Blocks.OAK_WOOD, Blocks.SPRUCE_WOOD, Blocks.BIRCH_WOOD, Blocks.JUNGLE_WOOD,
+				Blocks.ACACIA_WOOD, Blocks.DARK_OAK_WOOD,Blocks.CRIMSON_HYPHAE, Blocks.WARPED_HYPHAE,
 				Blocks.MANGROVE_WOOD, Blocks.CHERRY_WOOD, Blocks.PALE_OAK_WOOD,
 				// 去皮木头
 				Blocks.STRIPPED_OAK_WOOD, Blocks.STRIPPED_SPRUCE_WOOD, Blocks.STRIPPED_BIRCH_WOOD, Blocks.STRIPPED_JUNGLE_WOOD,
 				Blocks.STRIPPED_ACACIA_WOOD, Blocks.STRIPPED_DARK_OAK_WOOD, Blocks.STRIPPED_CRIMSON_HYPHAE, Blocks.STRIPPED_WARPED_HYPHAE,
 				Blocks.STRIPPED_MANGROVE_WOOD, Blocks.STRIPPED_CHERRY_WOOD, Blocks.STRIPPED_PALE_OAK_WOOD,
 				// 其他AXIS块
-				Blocks.BAMBOO_BLOCK, Blocks.STRIPPED_BAMBOO_BLOCK, 
-				Blocks.QUARTZ_PILLAR, Blocks.BONE_BLOCK, Blocks.PURPUR_PILLAR, Blocks.BASALT, Blocks.POLISHED_BASALT, 
+				Blocks.BAMBOO_BLOCK, Blocks.STRIPPED_BAMBOO_BLOCK,
+				Blocks.QUARTZ_PILLAR, Blocks.BONE_BLOCK, Blocks.PURPUR_PILLAR, Blocks.BASALT, Blocks.POLISHED_BASALT,
 				// 蛙鸣灯
 				Blocks.OCHRE_FROGLIGHT, Blocks.PEARLESCENT_FROGLIGHT, Blocks.VERDANT_FROGLIGHT
-				
+
 			)
 			.visible(precisePlacement::get)
 			.build());
-	
+
 
 
 
@@ -631,7 +630,7 @@ public class PlaceSettings extends Module {
 						if (face != Direction.DOWN) continue;// 只能放在邻居下方
 						// 正常放在邻居下方方向取决于玩家，禁用点击面保护
 						disableFaceProtection = true;
-						break;	
+						break;
 					default:
 						if (face == Direction.UP || face == Direction.DOWN) continue;// 只能放在邻居四周
 						//放置在四周方向取决于点击面，禁用方向保护
@@ -657,7 +656,7 @@ public class PlaceSettings extends Module {
 						if (face != Direction.DOWN) continue;// 只能放在邻居下方
 						// 正常放在邻居下方方向取决于玩家，禁用点击面保护
 						disableFaceProtection = true;
-						break;	
+						break;
 					case WALL:
 						if (face == Direction.UP || face == Direction.DOWN) continue;// 只能放在邻居四周
 						//放置在四周方向取决于点击面，禁用方向保护
@@ -764,7 +763,7 @@ public class PlaceSettings extends Module {
 					return true;
 				}
 			}
-			
+
 			return false;
 		} else {
 			return true;
@@ -837,7 +836,7 @@ public class PlaceSettings extends Module {
 		}
 	}
 
-	private @Nullable Direction getPlayerFacingDirectionOrNull() {
+	private Direction getPlayerFacingDirectionOrNull() {
 		ClientPlayerEntity player = mc.player;
 		if (player == null) {
 			return null;
@@ -872,7 +871,7 @@ public class PlaceSettings extends Module {
 		if (player == null) return false;
 		BlockState neighbour = world.getBlockState(neighbourPos);
 		var neighbourBlock = neighbour.getBlock();
-		return 
+		return
 		!neighbour.isAir()
 		&& neighbour.getFluidState().isEmpty()
 		&& (
@@ -884,7 +883,7 @@ public class PlaceSettings extends Module {
 		&&
 		(
 			isBlockShapeFullCube(neighbour)||
-			neighbourBlock == Blocks.GLASS || 
+			neighbourBlock == Blocks.GLASS ||
 			neighbourBlock instanceof StainedGlassBlock ||
 			neighbourBlock instanceof StairsBlock ||
 			(enableAddList.get() && addList.get().contains(neighbourBlock)) ||
@@ -928,7 +927,7 @@ public class PlaceSettings extends Module {
 
 
 	private void place(BlockHitResult blockHitResult) {
-		// ActionResult result = 
+		// ActionResult result =
 		mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
 		// if (result == ActionResult.SUCCESS) {
 		// 	if (swing)
@@ -947,11 +946,11 @@ public class PlaceSettings extends Module {
 				return false;
 			}
 		}
-		
+
 		if (required.contains(Properties.DOUBLE_BLOCK_HALF)) {
 			DoubleBlockHalf doubleBlockHalf = required.get(Properties.DOUBLE_BLOCK_HALF);
 			if (doubleBlockHalf == DoubleBlockHalf.UPPER) {
-				return false; 
+				return false;
 			}
 		}
 		return true;

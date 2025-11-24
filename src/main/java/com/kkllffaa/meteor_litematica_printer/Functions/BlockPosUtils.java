@@ -215,7 +215,7 @@ public class BlockPosUtils {
 
 
 	// 选择仅一个合适的面根据砖块相对玩家的位置
-	public static @NotNull Direction getDirectionFromPlayerPosition(@NotNull Vec3i pos) {
+	public static Direction getDirectionFromPlayerPosition(Vec3i pos) {
 		Vec3d eyePos = mc.player.getEyePos();
 
 		Vec3d blockCenter = Vec3d.ofCenter(pos);
