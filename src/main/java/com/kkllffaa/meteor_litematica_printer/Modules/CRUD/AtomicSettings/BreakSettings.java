@@ -13,8 +13,7 @@ import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.util.Hand;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
@@ -48,12 +47,12 @@ public class BreakSettings extends Module {
         .defaultValue(ActionMode.None)
         .build()
     );
-    private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
-        .name("swing-hand")
-        .description("swing hand post mining.")
-        .defaultValue(ActionMode.None)
-        .build()
-    );
+    // private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
+    //     .name("swing-hand")
+    //     .description("swing hand post mining.")
+    //     .defaultValue(ActionMode.None)
+    //     .build()
+    // );
     private final Setting<SafetyFace> FaceBy = sgGeneral.add(new EnumSetting.Builder<SafetyFace>()
         .name("mining-face-by")
         .description("")
@@ -77,9 +76,18 @@ public class BreakSettings extends Module {
         }
     }
 
-    public static boolean canBreakByObjective(BlockPos blockPos){
-        return BlockUtils.canBreak(blockPos, MeteorClient.mc.world.getBlockState(blockPos)) 
-        && CommonSettings.canTouchTheBlockAt(blockPos);
+    public static boolean canBreakByObjectiveStep1(BlockPos blockPos){
+        return CommonSettings.canTouchTheBlockAt(blockPos);
+    }
+    public static boolean canBreakByObjectiveStep2(BlockPos blockPos, BlockState blockState){
+        return BlockUtils.canBreak(blockPos, blockState);
+    }
+
+    private static boolean canBreakByObjective(BlockPos blockPos){
+        if (!canBreakByObjectiveStep1(blockPos)) return false;
+        BlockState blockState = MeteorClient.mc.world.getBlockState(blockPos);
+        if (!canBreakByObjectiveStep2(blockPos, blockState)) return false;
+        return true;
     }
 
     public static void breakBlock(BlockPos blockPos){
@@ -118,11 +126,11 @@ public class BreakSettings extends Module {
             MeteorClient.mc.interactionManager.updateBlockBreakingProgress(pos, direction);
         else MeteorClient.mc.interactionManager.attackBlock(pos, direction);
 
-        switch (swingHand.get()) {
-            case ActionMode.None -> {}
-            case ActionMode.SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-            case ActionMode.Normal -> MeteorClient.mc.player.swingHand(Hand.MAIN_HAND);
-        }
+        // switch (swingHand.get()) {
+        //     case ActionMode.None -> {}
+        //     case ActionMode.SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+        //     case ActionMode.Normal -> MeteorClient.mc.player.swingHand(Hand.MAIN_HAND);
+        // }
         breaking = true;
         breakingThisTick = true;
 

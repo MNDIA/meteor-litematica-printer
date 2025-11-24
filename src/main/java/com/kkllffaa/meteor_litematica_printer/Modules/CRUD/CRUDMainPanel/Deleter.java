@@ -586,6 +586,9 @@ public class Deleter extends Module {
 
     }
     private boolean isStandBlock(BlockPos pos) {
+        if(TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get() ){
+            return false;
+        }
         ProtectMode standProtectionStatus = standProtectionMode.get();
         if (standProtectionStatus == ProtectMode.Off) {
             return false;
@@ -597,58 +600,6 @@ public class Deleter extends Module {
         }
     }
 
-    private boolean isProtectedPosition(BlockPos pos) {
-        if ((groundProtection.get() && !mc.player.isOnGround())
-        ||(!isWithinWidthRange(pos))
-        ||(!isWithinHeightRange(pos))
-        ||(!isWithinRegion(pos))
-        ||(!isWithinDirectionalRange(pos))
-        ) {
-            return true;
-        }
-
-        if (流体相邻保护.get()) {
-            for (Vec3i neighbourOffset : faceNeighbours) {
-                BlockPos neighbour = pos.add(neighbourOffset);
-                BlockState neighbourState = mc.world.getBlockState(neighbour);
-                
-                if (!neighbourState.getFluidState().isEmpty()) {
-                    return true;
-                }
-            }
-        }
-        
-        if (自定义相邻保护.get()) {
-            for (Vec3i neighbourOffset : upperNeighbours) {
-                BlockPos neighbour = pos.add(neighbourOffset);
-                BlockState neighbourState = mc.world.getBlockState(neighbour);
-                
-                if (相邻保护上.get().contains(neighbourState.getBlock())) {
-                    return true;
-                }
-            }
-            
-            for (Vec3i neighbourOffset : sideNeighbours) {
-                BlockPos neighbour = pos.add(neighbourOffset);
-                BlockState neighbourState = mc.world.getBlockState(neighbour);
-                
-                if (相邻保护侧.get().contains(neighbourState.getBlock())) {
-                    return true;
-                }
-            }
-            
-            for (Vec3i neighbourOffset : lowerNeighbours) {
-                BlockPos neighbour = pos.add(neighbourOffset);
-                BlockState neighbourState = mc.world.getBlockState(neighbour);
-
-                if (相邻保护下.get().contains(neighbourState.getBlock())) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
 
     //region ProtectionChecks
 
@@ -823,16 +774,108 @@ public class Deleter extends Module {
 
     //endregion
 
-    private boolean 允许存入挖掘表(BlockPos pos){
-        if(TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()){
-            return BreakSettings.canBreakByObjective(pos) && !isProtectedPosition(pos);
+    private boolean 允许存入挖掘表Step1(BlockPos pos,boolean 无视网格挖掘和站立保护){
+        if (
+            表里已经包含(pos)
+        ||!BreakSettings.canBreakByObjectiveStep1(pos)
+        ||(groundProtection.get() && !mc.player.isOnGround())
+        ||(!isWithinWidthRange(pos))
+        ||(!isWithinHeightRange(pos))
+        ||(!isWithinRegion(pos))
+        ||(!isWithinDirectionalRange(pos))
+        ||(!isStandBlock(pos) && isPlayerSurrounding(pos))
+        ) {
+            return false;
         }
-        return BreakSettings.canBreakByObjective(pos) && !isStandBlock(pos) && !isProtectedPosition(pos);
+
+        if (OreChannel.get()) {
+            if (无视网格挖掘和站立保护) {
+                return true;
+            }
+            if (isStandBlock(pos))
+                return false;
+        }
+
+        if (MeshMine.get() && !isPlayerSurrounding(pos)) {
+            boolean hasNeighbourInBlocks = false;
+            outer: for (Vec3i offset : faceNeighbours) {
+                BlockPos neighbour = pos.add(offset);
+                switch (meshMineMode.get()) {
+                    case Cache -> {
+                        if (表里已经包含(neighbour)) {
+                            hasNeighbourInBlocks = true;
+                            break outer;
+                        }
+                    }
+                    case CacheAndAir -> {
+                        if (表里已经包含(neighbour) || mc.world.getBlockState(neighbour).isAir()) {
+                            hasNeighbourInBlocks = true;
+                            break outer;
+                        }
+                    }
+                    case CacheAndAirAndFluid -> {
+                        if (表里已经包含(neighbour) || isAirOrFluid(mc.world.getBlockState(neighbour))) {
+                            hasNeighbourInBlocks = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            if (hasNeighbourInBlocks) {
+                return false;
+            }
+        }
+
+        if (流体相邻保护.get()) {
+            for (Vec3i neighbourOffset : faceNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (!neighbourState.getFluidState().isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        
+        if (自定义相邻保护.get()) {
+            for (Vec3i neighbourOffset : upperNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (相邻保护上.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+            
+            for (Vec3i neighbourOffset : sideNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+                
+                if (相邻保护侧.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+            
+            for (Vec3i neighbourOffset : lowerNeighbours) {
+                BlockPos neighbour = pos.add(neighbourOffset);
+                BlockState neighbourState = mc.world.getBlockState(neighbour);
+
+                if (相邻保护下.get().contains(neighbourState.getBlock())) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    
+    
+    
+    
     }
-    private boolean 允许存入挖掘表(BlockState state){
+    private boolean 允许存入挖掘表Step2(BlockPos pos, BlockState state){
         return !isAirOrFluid(state);
     }
-    private boolean 允许存入挖掘表(Block block){
+    private boolean 允许存入挖掘表Step3(Block block){
         if(TriggerMode.get() == 触发模式.自动半径全部 && OreChannel.get()){
             switch (矿物挖掘模式.get()){
                 case 强制挖掘 -> {
@@ -934,57 +977,7 @@ public class Deleter extends Module {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos scanPos = new BlockPos(x, y, z);
-
-                    if (!允许存入挖掘表(scanPos))  continue;
-                    BlockState scanState = mc.world.getBlockState(scanPos);
-                    if (!允许存入挖掘表(scanState))  continue;
-                    Block scanBlock = scanState.getBlock();
-                    if (!允许存入挖掘表(scanBlock))  continue;
-
-                    if(OreChannel.get()) {
-                        if (无视网格挖掘和站立保护(scanPos, OreBlocks, playerPos)){
-                            TryBlocksAdd(scanPos, scanBlock);
-                            continue;
-                        }
-                        if(isStandBlock(scanPos))  continue;
-                    }
-
-
-
-                    if (
-                        MeshMine.get() && !isPlayerSurrounding(scanPos)
-                    ) {
-                        boolean hasNeighbourInBlocks = false;
-                        outer: for (Vec3i offset : faceNeighbours) {
-                            BlockPos neighbour = scanPos.add(offset);
-                            switch (meshMineMode.get()) {
-                                case Cache -> {
-                                    if (表里已经包含(neighbour)) {
-                                        hasNeighbourInBlocks = true;
-                                        break outer;
-                                    }
-                                }
-                                case CacheAndAir -> {
-                                    if (表里已经包含(neighbour) || mc.world.getBlockState(neighbour).isAir()) {
-                                        hasNeighbourInBlocks = true;
-                                        break outer;
-                                    }
-                                }
-                                case CacheAndAirAndFluid -> {
-                                    if (表里已经包含(neighbour) || isAirOrFluid(mc.world.getBlockState(neighbour))) {
-                                        hasNeighbourInBlocks = true;
-                                        break outer;
-                                    }
-                                }
-                            }
-                        }
-                        if (hasNeighbourInBlocks) {
-                            continue;
-                        }
-                    }
-                    
                     TryBlocksAdd(scanPos, scanBlock);
-                    
                 }
             }
         }
@@ -1025,7 +1018,7 @@ public class Deleter extends Module {
                     BlockState schematicState = worldSchematic.getBlockState(schematicPos);
                     Block schematicBlock = schematicState.getBlock();
                     Block worldBlock = worldState.getBlock();
-                    if (schematicBlock != worldBlock && 允许存入挖掘表(worldPos) && 允许存入挖掘表(worldState) && 允许存入挖掘表(worldBlock)) {
+                    if (schematicBlock != worldBlock && 允许存入挖掘表Step1(worldPos) && 允许存入挖掘表Step2(worldState) && 允许存入挖掘表Step3(worldBlock)) {
                         TryBlocksAdd(worldPos, worldBlock);
                     }
                 }
@@ -1037,13 +1030,13 @@ public class Deleter extends Module {
         if (!isActive() || TriggerMode.get() != 触发模式.手动相连同类) return;
 
         BlockPos pos = event.blockPos;
-        if (!允许存入挖掘表(pos)) return;
+        if (!允许存入挖掘表Step1(pos)) return;
 
         BlockState state = mc.world.getBlockState(pos);
-        if (!允许存入挖掘表(state)) return;
+        if (!允许存入挖掘表Step2(state)) return;
         
         Block block = state.getBlock();
-        if (!允许存入挖掘表(block)) return;
+        if (!允许存入挖掘表Step3(block)) return;
 
         TryBlocksAdd(pos, block);
 
@@ -1059,9 +1052,9 @@ public class Deleter extends Module {
 
         for(Vec3i neighbourOffset: blockNeighbours) {
             BlockPos neighbourPos = pos.add(neighbourOffset);
-            if (!允许存入挖掘表(neighbourPos)) continue;
+            if (!允许存入挖掘表Step1(neighbourPos)) continue;
             BlockState neighbourState = mc.world.getBlockState(neighbourPos);
-            if (!允许存入挖掘表(neighbourState)) continue;
+            if (!允许存入挖掘表Step2(neighbourState)) continue;
             Block neighbourBlock = neighbourState.getBlock();
 
             if (neighbourBlock.asItem() == item) {
@@ -1194,7 +1187,7 @@ public class Deleter extends Module {
             state = calculateState();
         }
         private State calculateState() {
-            if (!允许存入挖掘表(blockPos) || !允许存入挖掘表(originalBlock)) {
+            if (!允许存入挖掘表Step1(blockPos) || !允许存入挖掘表Step3(originalBlock)) {
                 return State.Canceled;
             }
 
@@ -1343,7 +1336,11 @@ public class Deleter extends Module {
 
 
     private void TryBlocksAdd(BlockPos pos, Block originalBlock){
-        if (表里已经包含(pos)) return;
+        if (!允许存入挖掘表Step1(pos)) return;
+        BlockState scanState = mc.world.getBlockState(pos);
+        if (!允许存入挖掘表Step2(pos, scanState))  return;
+        Block scanBlock = scanState.getBlock();
+        if (!允许存入挖掘表Step3(scanBlock))  return;
         MyBlock block = blockPool.get(); 
         block.set(pos, originalBlock);
         blocks.add(block);

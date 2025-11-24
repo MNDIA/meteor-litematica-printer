@@ -18,9 +18,7 @@ import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -138,11 +136,11 @@ public class PlaceSettings extends Module {
 			.defaultValue(false)
 			.build());
 
-	private final Setting<Boolean> swing = sgGeneral.add(new BoolSetting.Builder()
-			.name("swing")
-			.description("Swing hand when placing.")
-			.defaultValue(false)
-			.build());
+	// private final Setting<Boolean> swing = sgGeneral.add(new BoolSetting.Builder()
+	// 		.name("swing")
+	// 		.description("Swing hand when placing.")
+	// 		.defaultValue(false)
+	// 		.build());
 
     private final Setting<Boolean> rotate = sgGeneral.add(new BoolSetting.Builder()
 			.name("rotate")
@@ -733,9 +731,9 @@ public class PlaceSettings extends Module {
 					() -> {
 						if (rotate.get()) {
 							Rotations.rotate(Rotations.getYaw(hitPos), Rotations.getPitch(hitPos), 50, clientSide.get(),
-									() -> place(new BlockHitResult(hitPos, face, neighbour, false), swing.get()));
+									() -> place(new BlockHitResult(hitPos, face, neighbour, false)));
 						} else {
-							place(new BlockHitResult(hitPos, face, neighbour, false), swing.get());
+							place(new BlockHitResult(hitPos, face, neighbour, false));
 						}
 						return true;
 					});
@@ -929,16 +927,15 @@ public class PlaceSettings extends Module {
 
 
 
-	private void place(BlockHitResult blockHitResult, boolean swing) {
-		if (mc.player == null || mc.interactionManager == null || mc.getNetworkHandler() == null)
-			return;
-		ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
-		if (result == ActionResult.SUCCESS) {
-			if (swing)
-				mc.player.swingHand(Hand.MAIN_HAND);
-			else
-				mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-		}
+	private void place(BlockHitResult blockHitResult) {
+		// ActionResult result = 
+		mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult);
+		// if (result == ActionResult.SUCCESS) {
+		// 	if (swing)
+		// 		mc.player.swingHand(Hand.MAIN_HAND);
+		// 	else
+		// 		mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+		// }
 	}
 
 

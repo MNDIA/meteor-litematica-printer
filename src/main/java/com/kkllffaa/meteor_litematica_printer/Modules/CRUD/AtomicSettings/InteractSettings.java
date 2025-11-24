@@ -8,8 +8,6 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import net.minecraft.block.*;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -22,7 +20,6 @@ import java.util.List;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
 import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils;
-import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.ActionMode;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFace;
 
 
@@ -44,18 +41,13 @@ public class InteractSettings extends Module {
 
 
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
-	private final Setting<ActionMode> instantRotation = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
-        .name("instant-rotate")
-        .description("rotation pre interact.")
-        .defaultValue(ActionMode.None)
-        .build()
-    );
-    private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
-        .name("swing-hand")
-        .description("swing hand post interact.")
-        .defaultValue(ActionMode.None)
-        .build()
-    );
+
+    // private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
+    //     .name("swing-hand")
+    //     .description("swing hand post interact.")
+    //     .defaultValue(ActionMode.None)
+    //     .build()
+    // );
 
 	private final Setting<SafetyFace> FaceBy = sgGeneral.add(new EnumSetting.Builder<SafetyFace>()
 			.name("interact-face-by")
@@ -103,9 +95,11 @@ public class InteractSettings extends Module {
             .build());
 
 	//todo: 添加穿墙保护
+	public static int interactWithBlock(BlockPos blockPos, int count){
+		return Instance.interactWithBlockStep(blockPos, count);
+	}
 
-
-	public int interactWithBlock(BlockPos pos, int count) {
+	private int interactWithBlockStep(BlockPos pos, int count) {
 		if (mc.player.isSneaking()||!CommonSettings.canTouchTheBlockAt(pos)){
 			return 0;
 		}
@@ -127,17 +121,26 @@ public class InteractSettings extends Module {
                 return i;
             }
         }
+		// if (count>0) {
+        // 	switch (swingHand.get()) {
+        // 	    case ActionMode.None -> {}
+        // 	    case ActionMode.SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+        // 	    case ActionMode.Normal -> MeteorClient.mc.player.swingHand(Hand.MAIN_HAND);
+        // 	}
+		// }
         return count;
 	}
-	public int calculateRequiredInteractions(BlockState targetState, BlockState currentState) {
 
+
+	public static int calculateRequiredInteractions(BlockState targetState, BlockState currentState) {
+		return Instance.calculateRequiredInteractionsStep(targetState, currentState);
+	}
+
+	private int calculateRequiredInteractionsStep(BlockState targetState, BlockState currentState) {
         Block currentblock = currentState.getBlock();
-        if (currentblock != targetState.getBlock()) {
+        if (currentblock != targetState.getBlock() || !stateBlocks.get().contains(currentblock)) {
             return 0;
         }
-		if (!stateBlocks.get().contains(currentblock)) {
-			return 0;
-		}
 
 		// 音符盒
 		if (currentblock instanceof NoteBlock) {
@@ -180,7 +183,6 @@ public class InteractSettings extends Module {
 		if (currentState.contains(Properties.OPEN)) {
 				return currentState.get(Properties.OPEN) == targetState.get(Properties.OPEN) ? 0 : 1;
 		}
-		
 
 		return 0; // 未知类型或不可交互类型
 	}

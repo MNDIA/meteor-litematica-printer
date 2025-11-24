@@ -3,13 +3,17 @@ package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.settings.Setting;
+import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
+import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.ActionMode;
 import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.DistanceMode;
 
 
@@ -30,6 +34,12 @@ public class CommonSettings extends Module {
     }
     
 	private final SettingGroup sgGeneral = settings.getDefaultGroup();
+    private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
+        .name("swing-hand")
+        .description("swing hand post mining.")
+        .defaultValue(ActionMode.None)
+        .build()
+    );
     
     private final Setting<DistanceMode> distanceProtection = sgGeneral.add(new EnumSetting.Builder<DistanceMode>()
         .name("distance-protection")
@@ -48,6 +58,16 @@ public class CommonSettings extends Module {
         .visible(() -> distanceProtection.get() == DistanceMode.Max)
         .build()
     );
+    public static void swing(Hand hand) {
+        Instance.swingHand(hand);
+    }
+    private void swingHand(Hand hand) {
+        switch (swingHand.get()) {
+            case ActionMode.None -> {}
+            case ActionMode.SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+            case ActionMode.Normal -> MeteorClient.mc.player.swingHand(hand);
+        }
+    }
 
     public static double getHandDistance() {
         return Instance.getHandDistanceStep();
