@@ -2,7 +2,6 @@ package com.kkllffaa.meteor_litematica_printer.Functions;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
-import org.jetbrains.annotations.NotNull;
 
 import meteordevelopment.meteorclient.utils.Utils;
 import net.minecraft.util.hit.BlockHitResult;
