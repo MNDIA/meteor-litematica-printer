@@ -21,11 +21,11 @@ class Addon : MeteorAddon() {
         Modules.get().add(BreakSettings.Instance)
 
         Modules.get().add(Printer())
-        Modules.get().add(Deleter())
-        Modules.get().add(Deleter())
-        Modules.get().add(Deleter())
-        Modules.get().add(Deleter())
-        Modules.get().add(Deleter())
+        // Modules.get().add(Deleter())
+        // Modules.get().add(Deleter())
+        // Modules.get().add(Deleter())
+        // Modules.get().add(Deleter())
+        // Modules.get().add(Deleter())
 
         Modules.get().add(AutoSwarm())
         Modules.get().add(AutoFix())

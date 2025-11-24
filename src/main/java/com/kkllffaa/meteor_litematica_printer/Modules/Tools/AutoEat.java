@@ -23,7 +23,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 
 import com.kkllffaa.meteor_litematica_printer.Addon;
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter;
+// import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter;
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Printer;
 
 import java.util.ArrayList;
@@ -32,7 +32,9 @@ import java.util.function.BiPredicate;
 
 public class AutoEat extends Module {
     @SuppressWarnings("unchecked")
-    private static final Class<? extends Module>[] AURAS = new Class[]{ KillAura.class, CrystalAura.class, AnchorAura.class, BedAura.class, Deleter.class, Printer.class};
+    private static final Class<? extends Module>[] AURAS = new Class[]{ KillAura.class, CrystalAura.class, AnchorAura.class, BedAura.class, 
+        // Deleter.class, 
+        Printer.class};
 
     // Settings groups
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
