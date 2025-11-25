@@ -23,7 +23,7 @@ classes/
 bin/
 .classpath
 .project
-
+*.md
 # macos
 
 *.DS_Store
