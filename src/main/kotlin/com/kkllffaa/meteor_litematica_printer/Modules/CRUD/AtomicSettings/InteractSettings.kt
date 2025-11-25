@@ -1,0 +1,216 @@
+package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings
+
+import com.kkllffaa.meteor_litematica_printer.Addon
+import com.kkllffaa.meteor_litematica_printer.Functions.BlockPosUtils
+import com.kkllffaa.meteor_litematica_printer.Functions.MyUtils.SafetyFace
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings.Companion.canTouchTheBlockAt
+import meteordevelopment.meteorclient.settings.*
+import meteordevelopment.meteorclient.systems.modules.Module
+import meteordevelopment.meteorclient.utils.world.BlockUtils
+import net.minecraft.block.*
+import net.minecraft.block.enums.ComparatorMode
+import net.minecraft.state.property.Properties
+import net.minecraft.util.Hand
+import net.minecraft.util.hit.BlockHitResult
+import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Vec3d
+
+class InteractSettings : Module(Addon.SettingsForCRUD, "Interact", "Module to configure AtomicSettings.") {
+    override fun toggle() {
+        if (isActive()) {
+            return
+        }
+        super.toggle()
+    }
+
+
+    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
+
+    // private final Setting<ActionMode> swingHand = sgGeneral.add(new EnumSetting.Builder<ActionMode>()
+    //     .name("swing-hand")
+    //     .description("swing hand post interact.")
+    //     .defaultValue(ActionMode.None)
+    //     .build()
+    // );
+    private val FaceBy: Setting<SafetyFace?> = sgGeneral.add<SafetyFace?>(
+        EnumSetting.Builder<SafetyFace?>()
+            .name("interact-face-by")
+            .description("Determines which face of the block to interact with.")
+            .defaultValue(SafetyFace.PlayerPosition)
+            .build()
+    )
+
+    private val onlyInteractOnLook: Setting<Boolean?> = sgGeneral.add<Boolean?>(
+        BoolSetting.Builder()
+            .name("only-interact-on-look-the-face")
+            .description("Only interact with blocks when looking at the face to interact with.")
+            .defaultValue(false)
+            .build()
+    )
+
+    private val stateBlocks: Setting<MutableList<Block?>?> = sgGeneral.add<MutableList<Block?>?>(
+        BlockListSetting.Builder()
+            .name("state-blocks")
+            .description("Blocks that need interaction to adjust their state.")
+            .defaultValue( // 中继器、比较器
+                Blocks.REPEATER,
+                Blocks.COMPARATOR,  // 音符盒
+                Blocks.NOTE_BLOCK,  // 拉杆
+
+                Blocks.LEVER,  // 日光传感器
+                Blocks.DAYLIGHT_DETECTOR,  // 活板门
+                Blocks.OAK_TRAPDOOR,
+                Blocks.SPRUCE_TRAPDOOR,
+                Blocks.BIRCH_TRAPDOOR,
+                Blocks.JUNGLE_TRAPDOOR,
+                Blocks.ACACIA_TRAPDOOR,
+                Blocks.DARK_OAK_TRAPDOOR,
+                Blocks.CRIMSON_TRAPDOOR,
+                Blocks.WARPED_TRAPDOOR,
+                Blocks.MANGROVE_TRAPDOOR,
+                Blocks.BAMBOO_TRAPDOOR,
+                Blocks.CHERRY_TRAPDOOR,
+                Blocks.PALE_OAK_TRAPDOOR,
+                Blocks.COPPER_TRAPDOOR,
+                Blocks.EXPOSED_COPPER_TRAPDOOR,
+                Blocks.WEATHERED_COPPER_TRAPDOOR,
+                Blocks.OXIDIZED_COPPER_TRAPDOOR,  // 门
+                Blocks.OAK_DOOR,
+                Blocks.SPRUCE_DOOR,
+                Blocks.BIRCH_DOOR,
+                Blocks.JUNGLE_DOOR,
+                Blocks.ACACIA_DOOR,
+                Blocks.DARK_OAK_DOOR,
+                Blocks.CRIMSON_DOOR,
+                Blocks.WARPED_DOOR,
+                Blocks.MANGROVE_DOOR,
+                Blocks.BAMBOO_DOOR,
+                Blocks.CHERRY_DOOR,
+                Blocks.PALE_OAK_DOOR,
+                Blocks.COPPER_DOOR,
+                Blocks.EXPOSED_COPPER_DOOR,
+                Blocks.WEATHERED_COPPER_DOOR,
+                Blocks.OXIDIZED_COPPER_DOOR,  // 栅栏门
+                Blocks.OAK_FENCE_GATE,
+                Blocks.SPRUCE_FENCE_GATE,
+                Blocks.BIRCH_FENCE_GATE,
+                Blocks.JUNGLE_FENCE_GATE,
+                Blocks.ACACIA_FENCE_GATE,
+                Blocks.DARK_OAK_FENCE_GATE,
+                Blocks.CRIMSON_FENCE_GATE,
+                Blocks.WARPED_FENCE_GATE,
+                Blocks.MANGROVE_FENCE_GATE,
+                Blocks.BAMBOO_FENCE_GATE,
+                Blocks.CHERRY_FENCE_GATE,
+                Blocks.PALE_OAK_FENCE_GATE
+            )
+            .build()
+    )
+
+    init {
+        this.toggle()
+    }
+
+    private fun interactWithBlockStep(pos: BlockPos, count: Int): Int {
+        if (mc.player!!.isSneaking() || !canTouchTheBlockAt(pos)) {
+            return 0
+        }
+        val SafeFace = when (FaceBy.get()) {
+            SafetyFace.PlayerRotation -> BlockUtils.getDirection(pos)
+            SafetyFace.PlayerPosition -> BlockPosUtils.getDirectionFromPlayerPosition(pos)
+        }
+
+        if (onlyInteractOnLook.get() && !BlockPosUtils.isPlayerYawPitchInTheFaceOfBlock(pos, SafeFace)) {
+            return 0
+        }
+
+        val hitPos = Vec3d(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5)
+        for (i in 0..<count) {
+            val blockHitResult = BlockHitResult(hitPos, SafeFace, pos, false)
+            val result = mc.interactionManager!!.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult)
+            if (!result.isAccepted()) {
+                warning("Interaction not accepted at " + pos + ", result: " + result)
+                return i
+            }
+        }
+        // if (count>0) {
+        // 	switch (swingHand.get()) {
+        // 	    case ActionMode.None -> {}
+        // 	    case ActionMode.SendPacket -> MeteorClient.mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
+        // 	    case ActionMode.Normal -> MeteorClient.mc.player.swingHand(Hand.MAIN_HAND);
+        // 	}
+        // }
+        return count
+    }
+
+
+    private fun calculateRequiredInteractionsStep(targetState: BlockState, currentState: BlockState): Int {
+        val currentblock = currentState.getBlock()
+        if (currentblock !== targetState.getBlock() || !stateBlocks.get()!!.contains(currentblock)) {
+            return 0
+        }
+
+        // 音符盒
+        if (currentblock is NoteBlock) {
+            val currentNote = currentState.get<Int?>(Properties.NOTE)
+            val targetNote = targetState.get<Int?>(Properties.NOTE)
+
+            // Note blocks cycle through 0-24 (25 states)
+            val diff = (targetNote - currentNote + 25) % 25
+            return diff
+        }
+
+        // 中继器
+        if (currentblock is RepeaterBlock) {
+            val currentDelay = currentState.get<Int?>(Properties.DELAY)
+            val targetDelay = targetState.get<Int?>(Properties.DELAY)
+
+            // Repeaters cycle through 1-4 (4 states)
+            val diff = (targetDelay - currentDelay + 4) % 4
+            return diff
+        }
+
+        // 比较器
+        if (currentblock is ComparatorBlock) {
+            return if (currentState.get<ComparatorMode?>(Properties.COMPARATOR_MODE) == targetState.get<ComparatorMode?>(
+                    Properties.COMPARATOR_MODE
+                )
+            )
+                0
+            else
+                1
+        }
+
+        // 光传感器
+        if (currentblock is DaylightDetectorBlock) {
+            return if (currentState.get<Boolean?>(Properties.INVERTED) === targetState.get<Boolean?>(Properties.INVERTED)) 0 else 1
+        }
+
+        // 拉杆
+        if (currentblock is LeverBlock) {
+            return if (currentState.get<Boolean?>(Properties.POWERED) === targetState.get<Boolean?>(Properties.POWERED)) 0 else 1
+        }
+
+        // 栅栏门 活板门 门
+        if (currentState.contains(Properties.OPEN)) {
+            return if (currentState.get<Boolean?>(Properties.OPEN) === targetState.get<Boolean?>(Properties.OPEN)) 0 else 1
+        }
+
+        return 0 // 未知类型或不可交互类型
+    }
+
+    companion object {
+        var Instance: InteractSettings = InteractSettings()
+
+        //todo: 添加穿墙保护
+        @JvmStatic
+        fun interactWithBlock(blockPos: BlockPos, count: Int): Int {
+            return Instance.interactWithBlockStep(blockPos, count)
+        }
+
+        @JvmStatic
+        fun calculateRequiredInteractions(targetState: BlockState, currentState: BlockState): Int {
+            return Instance.calculateRequiredInteractionsStep(targetState, currentState)
+        }
+    }
+}
