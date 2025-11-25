@@ -18,20 +18,18 @@ object BlockPosUtils {
     }
 
     //region 距离计算
-    fun getManhattanDistance(pos1: Vec3i, pos2: Vec3i): Int {
-        return abs(pos1.getX() - pos2.getX()) + abs(pos1.getY() - pos2.getY()) + abs(pos1.getZ() - pos2.getZ())
-    }
+    fun getManhattanDistance(pos1: Vec3i, pos2: Vec3i): Int = abs(pos1.getX() - pos2.getX()) + abs(pos1.getY() - pos2.getY()) + abs(pos1.getZ() - pos2.getZ())
 
     fun getDistanceFromPosCenterToPlayerEyes(pos: Vec3i): Double {
-        if (MeteorClient.mc.player == null) return Double.Companion.MAX_VALUE
+        if (MeteorClient.mc.player == null) return Double.MAX_VALUE
         // 等价MyUtils.getPlayerEye(player).distanceTo(Vec3d.ofCenter(pos));
         return Utils.distance(
             MeteorClient.mc.player!!.getX(),
             MeteorClient.mc.player!!.getY() + MeteorClient.mc.player!!.getEyeHeight(MeteorClient.mc.player!!.getPose()),
             MeteorClient.mc.player!!.getZ(),
-            pos.getX() + 0.5,
-            pos.getY() + 0.5,
-            pos.getZ() + 0.5
+            pos.x + 0.5,
+            pos.y + 0.5,
+            pos.z + 0.5
         )
     }
 
