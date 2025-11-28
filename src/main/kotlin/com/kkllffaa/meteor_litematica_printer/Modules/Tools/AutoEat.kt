@@ -130,7 +130,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     @EventHandler(priority = EventPriority.LOW)
     private fun onTick(event: TickEvent.Pre) {
         // Don't eat if AutoGap is already eating
-        if (Modules.get().get(AutoGap::class.java)?.isEating==true) return
+        if (Modules.get().get(AutoGap::class.java)?.isEating == true) return
 
         // case 1: Already eating
         if (eating) {
@@ -177,7 +177,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
         wasAura.clear()
         if (pauseAuras.get()) {
             for (klass in AURAS) {
-                val module = Modules.get().get(klass)
+                val module: Module = Modules.get().get(klass)
 
                 if (module.isActive) {
                     wasAura.add(klass)
@@ -210,7 +210,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
         // Resume auras
         if (pauseAuras.get()) {
             for (klass in AURAS) {
-                val module = Modules.get().get(klass)
+                val module: Module = Modules.get().get(klass)
 
                 if (klass in wasAura && !module.isActive) {
                     module.toggle()
