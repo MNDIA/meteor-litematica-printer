@@ -17,7 +17,6 @@ import meteordevelopment.orbit.EventHandler
 import meteordevelopment.orbit.EventPriority
 import net.minecraft.block.*
 import net.minecraft.component.DataComponentTypes
-import net.minecraft.component.type.ToolComponent
 import net.minecraft.enchantment.Enchantments
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
@@ -28,19 +27,19 @@ import java.util.function.Predicate
 
 class AutoTool :
     Module(Addon.TOOLS, "auto-tool-+", "Automatically switches to the most effective tool when performing an action.") {
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
-    private val sgWhitelist: SettingGroup = settings.createGroup("Whitelist")
+    private val sgGeneral = settings.defaultGroup
+    private val sgWhitelist = settings.createGroup("Whitelist")
 
     //region General
-    private val prefer: Setting<EnchantPreference?> = sgGeneral.add<EnchantPreference?>(
-        EnumSetting.Builder<EnchantPreference?>()
+    private val prefer: Setting<EnchantPreference> = sgGeneral.add(
+        EnumSetting.Builder<EnchantPreference>()
             .name("prefer")
             .description("Either to prefer Silk Touch, Fortune, or none.")
             .defaultValue(EnchantPreference.SilkTouch)
             .build()
     )
 
-    private val silkTouchForEnderChest: Setting<Boolean?> = sgGeneral.add<Boolean?>(
+    private val silkTouchForEnderChest: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("silk-touch-for-ender-chest")
             .description("Mines Ender Chests only with the Silk Touch enchantment.")
@@ -48,7 +47,7 @@ class AutoTool :
             .build()
     )
 
-    private val fortuneForOresCrops: Setting<Boolean?> = sgGeneral.add<Boolean?>(
+    private val fortuneForOresCrops: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("fortune-for-ores-and-crops")
             .description("Mines Ores and crops only with the Fortune enchantment.")
@@ -56,7 +55,7 @@ class AutoTool :
             .build()
     )
 
-    private val antiBreak: Setting<Boolean?> = sgGeneral.add<Boolean?>(
+    private val antiBreak: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("anti-break")
             .description("Stops you from breaking your tool.")
@@ -64,18 +63,18 @@ class AutoTool :
             .build()
     )
 
-    private val breakDurability: Setting<Int?> = sgGeneral.add<Int?>(
+    private val breakDurability: Setting<Int> = sgGeneral.add(
         IntSetting.Builder()
             .name("anti-break-percentage")
             .description("The durability percentage to stop using a tool.")
             .defaultValue(9)
             .range(1, 100)
             .sliderRange(1, 100)
-            .visible(IVisible { antiBreak.get()!! })
+            .visible { antiBreak.get() }
             .build()
     )
 
-    private val switchBackDelay: Setting<Int?> = sgGeneral.add<Int?>(
+    private val switchBackDelay: Setting<Int> = sgGeneral.add(
         (IntSetting.Builder()
             .name("switch-back-delay")
             .description("Delay in ticks for switching tools back.")
@@ -85,7 +84,7 @@ class AutoTool :
                 )
     )
 
-    private val useSlot: Setting<Int?> = sgGeneral.add<Int?>(
+    private val useSlot: Setting<Int> = sgGeneral.add(
         IntSetting.Builder()
             .name("use-slot")
             .description("the only one static hotbar slot to use.")
@@ -97,54 +96,55 @@ class AutoTool :
 
     //endregion
     //region Whitelist and blacklist
-    private val listMode: Setting<ListMode?> = sgWhitelist.add<ListMode?>(
-        EnumSetting.Builder<ListMode?>()
+    private val listMode: Setting<ListMode> = sgWhitelist.add(
+        EnumSetting.Builder<ListMode>()
             .name("list-mode")
             .description("Selection mode.")
             .defaultValue(ListMode.Blacklist)
             .build()
     )
 
-    private val whitelist: Setting<MutableList<Item?>?> = sgWhitelist.add<MutableList<Item?>?>(
+    private val whitelist: Setting<MutableList<Item>> = sgWhitelist.add(
         ItemListSetting.Builder()
             .name("whitelist")
             .description("The tools you want to use.")
-            .visible(IVisible { listMode.get() == ListMode.Whitelist })
-            .filter(Predicate { item: Item? -> Companion.isTool(item!!) })
+            .visible { listMode.get() == ListMode.Whitelist }
+            .filter { item: Item -> isTool(item) }
             .build()
     )
 
-    private val blacklist: Setting<MutableList<Item?>?> = sgWhitelist.add<MutableList<Item?>?>(
+    private val blacklist: Setting<MutableList<Item>> = sgWhitelist.add(
         ItemListSetting.Builder()
             .name("blacklist")
             .description("The tools you don't want to use.")
-            .visible(IVisible { listMode.get() == ListMode.Blacklist })
-            .filter(Predicate { item: Item? -> Companion.isTool(item!!) })
+            .visible { listMode.get() == ListMode.Blacklist }
+            .filter { item: Item -> isTool(item) }
             .build()
     )
 
-    private var useSlotIndex = useSlot.get()!! - 1
+    private var useSlotIndex = useSlot.get() - 1
 
     override fun onActivate() {
         resolveModuleConflict()
     }
 
     private fun resolveModuleConflict() {
-        val meteorAutoTool: Module? = Modules.get().get<AutoTool?>(AutoTool::class.java)
-        if (meteorAutoTool != null && meteorAutoTool.isActive()) {
+        val meteorAutoTool = Modules.get().get(AutoTool::class.java)
+        if (meteorAutoTool != null && meteorAutoTool.isActive) {
             meteorAutoTool.toggle()
         }
     }
 
     @EventHandler
-    private fun onTick(event: TickEvent.Post?) {
+    private fun onTick(event: TickEvent.Post) {
         if (Modules.get().isActive(InfinityMiner::class.java)) return
-
-        if (mc.interactionManager != null && mc.interactionManager!!.isBreakingBlock()) {
-            busyTick = switchBackDelay.get()!!
+        val interactionManager = mc.interactionManager ?: return
+        val player = mc.player ?: return
+        if (interactionManager.isBreakingBlock) {
+            busyTick = switchBackDelay.get()
         }
         if (busyTick == 0) {
-            if (useSlotIndex == mc.player!!.getInventory().getSelectedSlot()) {
+            if (useSlotIndex == player.getInventory().selectedSlot) {
                 InvUtils.swapBack()
             } else {
                 InvUtils.previousSlot = -1
@@ -159,9 +159,10 @@ class AutoTool :
     @EventHandler(priority = EventPriority.HIGH)
     private fun onStartBreakingBlock(event: StartBreakingBlockEvent) {
         if (Modules.get().isActive(InfinityMiner::class.java)) return
-        if (mc.player!!.isCreative()) return
+        val player = mc.player ?: return
+        if (player.isCreative) return
 
-        val blockState = mc.world!!.getBlockState(event.blockPos)
+        val blockState = mc.world?.getBlockState(event.blockPos) ?: return
         if (!BlockUtils.canBreak(event.blockPos, blockState)) return
 
         // Check if we should switch to a better tool
@@ -169,18 +170,18 @@ class AutoTool :
         var bestSlot = -1
 
         for (i in 0..35) {
-            val itemStack = mc.player!!.getInventory().getStack(i)
+            val itemStack = player.getInventory().getStack(i)
 
-            if (listMode.get() == ListMode.Whitelist && !whitelist.get()!!.contains(itemStack.getItem())) continue
-            if (listMode.get() == ListMode.Blacklist && blacklist.get()!!.contains(itemStack.getItem())) continue
+            if (listMode.get() == ListMode.Whitelist && !whitelist.get().contains(itemStack.item)) continue
+            if (listMode.get() == ListMode.Blacklist && blacklist.get().contains(itemStack.item)) continue
 
-            val score: Double = Companion.getScore(
+            val score: Double = getScore(
                 itemStack,
                 blockState,
-                silkTouchForEnderChest.get()!!,
-                fortuneForOresCrops.get()!!,
-                prefer.get(),
-                Predicate { itemStack2: ItemStack? -> !shouldStopUsing(itemStack2!!) })
+                silkTouchForEnderChest.get(),
+                fortuneForOresCrops.get(),
+                prefer.get()
+            ) { itemStack2: ItemStack -> !shouldStopUsing(itemStack2) }
 
             if (score > bestScore) {
                 bestScore = score
@@ -188,18 +189,18 @@ class AutoTool :
             }
         }
         if (bestSlot == -1) {
-            val cursorStack = mc.player!!.currentScreenHandler.getCursorStack()
-            if (!cursorStack.isEmpty() && !(listMode.get() == ListMode.Whitelist && !whitelist.get()!!
-                    .contains(cursorStack.getItem())) && !(listMode.get() == ListMode.Blacklist && blacklist.get()!!
-                    .contains(cursorStack.getItem()))
+            val cursorStack = player.currentScreenHandler.cursorStack
+            if (!cursorStack.isEmpty && !(listMode.get() == ListMode.Whitelist && !whitelist.get()
+                    .contains(cursorStack.item)) && !(listMode.get() == ListMode.Blacklist && blacklist.get()
+                    .contains(cursorStack.item))
             ) {
-                val score: Double = Companion.getScore(
+                val score: Double = getScore(
                     cursorStack,
                     blockState,
-                    silkTouchForEnderChest.get()!!,
-                    fortuneForOresCrops.get()!!,
-                    prefer.get(),
-                    Predicate { itemStack2: ItemStack? -> !shouldStopUsing(itemStack2!!) })
+                    silkTouchForEnderChest.get(),
+                    fortuneForOresCrops.get(),
+                    prefer.get()
+                ) { itemStack2: ItemStack -> !shouldStopUsing(itemStack2) }
                 if (score > bestScore) {
                     bestScore = score
                     bestSlot = -2
@@ -207,22 +208,22 @@ class AutoTool :
             }
         }
 
-        if (bestSlot != -1 && bestScore > Companion.getScore(
-                mc.player!!.getMainHandStack(),
+        if (bestSlot != -1 && bestScore > getScore(
+                player.mainHandStack,
                 blockState,
-                silkTouchForEnderChest.get()!!,
-                fortuneForOresCrops.get()!!,
-                prefer.get(),
-                Predicate { itemStack: ItemStack? -> !shouldStopUsing(itemStack!!) })
+                silkTouchForEnderChest.get(),
+                fortuneForOresCrops.get(),
+                prefer.get()
+            ) { itemStack: ItemStack -> !shouldStopUsing(itemStack) }
         ) {
-            if (bestSlot != mc.player!!.getInventory().getSelectedSlot()) {
+            if (bestSlot != player.getInventory().selectedSlot) {
                 if (SlotUtils.isHotbar(bestSlot)) {
                     useSlotIndex = bestSlot
                 } else {
-                    useSlotIndex = useSlot.get()!! - 1
+                    useSlotIndex = useSlot.get() - 1
                     if (bestSlot == -2) {
                         InvUtils.click().slot(useSlotIndex)
-                        if (!mc.player!!.currentScreenHandler.getCursorStack().isEmpty()) {
+                        if (!player.currentScreenHandler.cursorStack.isEmpty) {
                             val emptySlot = InvUtils.findEmpty()
                             if (emptySlot.found()) {
                                 InvUtils.click().slot(emptySlot.slot())
@@ -232,7 +233,7 @@ class AutoTool :
                         }
                     } else {
                         InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex)
-                        if (!mc.player!!.currentScreenHandler.getCursorStack().isEmpty()) {
+                        if (!player.currentScreenHandler.cursorStack.isEmpty) {
                             val emptySlot = InvUtils.findEmpty()
                             if (emptySlot.found()) {
                                 InvUtils.click().slot(emptySlot.slot())
@@ -249,18 +250,18 @@ class AutoTool :
             //没有有耐久的工具
         }
         // Anti break
-        val currentStack = mc.player!!.getMainHandStack()
+        val currentStack = player.mainHandStack
 
         if (shouldStopUsing(currentStack) && isTool(currentStack)) {
-            mc.options.attackKey.setPressed(false)
+            mc.options.attackKey.isPressed = false
             event.cancel()
         } else {
-            busyTick = switchBackDelay.get()!!
+            busyTick = switchBackDelay.get()
         }
     }
 
     private fun shouldStopUsing(itemStack: ItemStack): Boolean {
-        return antiBreak.get() && (itemStack.getMaxDamage() - itemStack.getDamage()) < (itemStack.getMaxDamage() * breakDurability.get()!! / 100)
+        return antiBreak.get() && (itemStack.maxDamage - itemStack.damage) < (itemStack.maxDamage * breakDurability.get() / 100)
     }
 
     enum class EnchantPreference {
@@ -282,23 +283,23 @@ class AutoTool :
             state: BlockState,
             silkTouchEnderChest: Boolean,
             fortuneOre: Boolean,
-            enchantPreference: EnchantPreference?,
-            good: Predicate<ItemStack?>
+            enchantPreference: EnchantPreference,
+            good: Predicate<ItemStack>
         ): Double {
             if (!good.test(itemStack) || !isTool(itemStack)) return -1.0
-            if (!itemStack.isSuitableFor(state) && !(itemStack.isIn(ItemTags.SWORDS) && (state.getBlock() is BambooBlock || state.getBlock() is BambooShootBlock)) && !(itemStack.getItem() is ShearsItem && state.getBlock() is LeavesBlock || state.isIn(
+            if (!itemStack.isSuitableFor(state) && !(itemStack.isIn(ItemTags.SWORDS) && (state.block is BambooBlock || state.block is BambooShootBlock)) && !(itemStack.item is ShearsItem && state.block is LeavesBlock || state.isIn(
                     BlockTags.WOOL
                 ))
             ) return -1.0
 
             if (silkTouchEnderChest
-                && state.getBlock() === Blocks.ENDER_CHEST && !Utils.hasEnchantments(itemStack, Enchantments.SILK_TOUCH)
+                && state.block === Blocks.ENDER_CHEST && !Utils.hasEnchantments(itemStack, Enchantments.SILK_TOUCH)
             ) {
                 return -1.0
             }
 
             if (fortuneOre
-                && isFortunable(state.getBlock())
+                && isFortunable(state.block)
                 && !Utils.hasEnchantments(itemStack, Enchantments.FORTUNE)
             ) {
                 return -1.0
@@ -311,33 +312,30 @@ class AutoTool :
             score += Utils.getEnchantmentLevel(itemStack, Enchantments.EFFICIENCY).toDouble()
             score += Utils.getEnchantmentLevel(itemStack, Enchantments.MENDING).toDouble()
 
-            if (enchantPreference == EnchantPreference.Fortune) score += Utils.getEnchantmentLevel(
-                itemStack,
-                Enchantments.FORTUNE
-            ).toDouble()
-            if (enchantPreference == EnchantPreference.SilkTouch) score += Utils.getEnchantmentLevel(
-                itemStack,
-                Enchantments.SILK_TOUCH
-            ).toDouble()
+            if (enchantPreference == EnchantPreference.Fortune)
+                score += Utils.getEnchantmentLevel(itemStack, Enchantments.FORTUNE).toDouble()
+            if (enchantPreference == EnchantPreference.SilkTouch)
+                score += Utils.getEnchantmentLevel(itemStack, Enchantments.SILK_TOUCH).toDouble()
 
-            if (itemStack.isIn(ItemTags.SWORDS) && (state.getBlock() is BambooBlock || state.getBlock() is BambooShootBlock)) score += (9000 + (itemStack.get<ToolComponent?>(
-                DataComponentTypes.TOOL
-            )!!.getSpeed(state) * 1000)).toDouble()
+            if (itemStack.isIn(ItemTags.SWORDS) && (state.block is BambooBlock || state.block is BambooShootBlock))
+                score += (9000 +
+                        ((itemStack.get(DataComponentTypes.TOOL)?.getSpeed(state) ?: 0f) * 1000)
+                        ).toDouble()
 
             return score
         }
 
         fun isTool(item: Item): Boolean {
-            return isTool(item.getDefaultStack())
+            return isTool(item.defaultStack)
         }
 
         fun isTool(itemStack: ItemStack): Boolean {
             return itemStack.isIn(ItemTags.AXES) || itemStack.isIn(ItemTags.HOES) || itemStack.isIn(ItemTags.PICKAXES) || itemStack.isIn(
                 ItemTags.SHOVELS
-            ) || itemStack.getItem() is ShearsItem
+            ) || itemStack.item is ShearsItem
         }
 
-        private fun isFortunable(block: Block?): Boolean {
+        private fun isFortunable(block: Block): Boolean {
             if (block === Blocks.ANCIENT_DEBRIS) return false
             return Xray.ORES.contains(block) || block is CropBlock
         }

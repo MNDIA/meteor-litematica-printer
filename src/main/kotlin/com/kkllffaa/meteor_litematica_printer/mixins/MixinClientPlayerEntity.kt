@@ -23,11 +23,11 @@ import org.spongepowered.asm.mixin.Unique
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
-import java.util.*
-import java.util.function.Consumer
+import java.util.Locale
 
 @Mixin(ClientPlayerEntity::class)
-class MixinClientPlayerEntity(world: ClientWorld, profile: GameProfile) : AbstractClientPlayerEntity(world, profile) {
+open class MixinClientPlayerEntity(world: ClientWorld, profile: GameProfile) :
+    AbstractClientPlayerEntity(world, profile) {
     @Final
     @Shadow
     protected var client: MinecraftClient? = null
@@ -38,63 +38,51 @@ class MixinClientPlayerEntity(world: ClientWorld, profile: GameProfile) : Abstra
 
     @Inject(method = ["openEditSignScreen"], at = [At("HEAD")], cancellable = true)
     fun openEditSignScreen(sign: SignBlockEntity, front: Boolean, ci: CallbackInfo) {
-        getTargetSignEntity(sign).ifPresent(Consumer { signBlockEntity: SignBlockEntity? ->
-            val targetText = signBlockEntity!!.getText(front)
-            val line0 = getFormattedLine(targetText.getMessage(0, false))
-            val line1 = getFormattedLine(targetText.getMessage(1, false))
-            val line2 = getFormattedLine(targetText.getMessage(2, false))
-            val line3 = getFormattedLine(targetText.getMessage(3, false))
+        getTargetSignEntity(sign)?.let { signBlockEntity ->
+            val targetText = signBlockEntity.getText(front)
+            val lines = (0..3).map { getFormattedLine(targetText.getMessage(it, false)) }
 
             val packet = UpdateSignC2SPacket(
-                sign.getPos(),
+                sign.pos,
                 front,
-                line0,
-                line1,
-                line2,
-                line3
+                lines[0],
+                lines[1],
+                lines[2],
+                lines[3]
             )
-            this.networkHandler!!.sendPacket(packet)
+            networkHandler?.sendPacket(packet)
             ci.cancel()
-        })
+        }
     }
 
     @Unique
-    private fun getTargetSignEntity(sign: SignBlockEntity): Optional<SignBlockEntity?> {
-        val worldSchematic = SchematicWorldHandler.getSchematicWorld()
-        if (sign.getWorld() == null || worldSchematic == null) {
-            return Optional.empty<SignBlockEntity?>()
-        }
-
-        val targetBlockEntity = worldSchematic.getBlockEntity(sign.getPos())
-
-        if (targetBlockEntity is SignBlockEntity) {
-            return Optional.of<SignBlockEntity?>(targetBlockEntity)
-        }
-
-        return Optional.empty<SignBlockEntity?>()
+    private fun getTargetSignEntity(sign: SignBlockEntity): SignBlockEntity? {
+        val worldSchematic = SchematicWorldHandler.getSchematicWorld() ?: return null
+        if (sign.world == null) return null
+        return worldSchematic.getBlockEntity(sign.pos) as? SignBlockEntity
     }
 
     @Unique
-    private fun getFormattedLine(text: Text): String? {
-        val mode = PlaceSettings.Instance.SignTextWithColor.get()
+    private fun getFormattedLine(text: Text): String {
+        val mode = PlaceSettings.SignTextWithColor.get()
         if (mode == SignColorMode.None) {
-            return text.getString()
+            return text.string
         }
 
         val controlChar = if (mode == SignColorMode.反三) '§' else '&'
-        val lastStyle: Array<Style?> = arrayOf<Style>(Style.EMPTY)
+        var lastStyle = Style.EMPTY
         val builder = StringBuilder()
 
-        text.visit<Any?>(StyledVisitor { style: Style?, string: String? ->
-            if (style != lastStyle[0]) {
-                if (!lastStyle[0]!!.isEmpty()) {
+        text.visit(StyledVisitor<Unit> { style, string ->
+            if (style != lastStyle) {
+                if (!lastStyle.isEmpty) {
                     builder.append(controlChar).append('r')
                 }
-                appendStyleCodes(builder, style!!, controlChar)
-                lastStyle[0] = style
+                appendStyleCodes(builder, style, controlChar)
+                lastStyle = style
             }
             builder.append(string)
-            Optional.empty<Any?>()
+            java.util.Optional.empty<Unit>()
         }, Style.EMPTY)
 
         return builder.toString()
@@ -102,54 +90,29 @@ class MixinClientPlayerEntity(world: ClientWorld, profile: GameProfile) : Abstra
 
     @Unique
     private fun appendStyleCodes(builder: StringBuilder, style: Style, controlChar: Char) {
-        val textColor = style.getColor()
-        if (textColor != null) {
-            appendColorCode(builder, textColor, controlChar)
-        }
-        if (style.isObfuscated()) {
-            builder.append(controlChar).append('k')
-        }
-        if (style.isBold()) {
-            builder.append(controlChar).append('l')
-        }
-        if (style.isStrikethrough()) {
-            builder.append(controlChar).append('m')
-        }
-        if (style.isUnderlined()) {
-            builder.append(controlChar).append('n')
-        }
-        if (style.isItalic()) {
-            builder.append(controlChar).append('o')
-        }
+        style.color?.let { appendColorCode(builder, it, controlChar) }
+        if (style.isObfuscated) builder.append(controlChar).append('k')
+        if (style.isBold) builder.append(controlChar).append('l')
+        if (style.isStrikethrough) builder.append(controlChar).append('m')
+        if (style.isUnderlined) builder.append(controlChar).append('n')
+        if (style.isItalic) builder.append(controlChar).append('o')
     }
 
     @Unique
     private fun appendColorCode(builder: StringBuilder, color: TextColor, controlChar: Char) {
-        val vanillaFormatting = getVanillaFormatting(color)
-        if (vanillaFormatting != null) {
-            builder.append(controlChar).append(vanillaFormatting.getCode())
+        getVanillaFormatting(color)?.let {
+            builder.append(controlChar).append(it.code)
             return
         }
 
-        val rgb = color.getRgb()
-        val hex = String.format(Locale.ROOT, "%06X", rgb)
+        val hex = "%06X".format(Locale.ROOT, color.rgb)
         builder.append(controlChar).append('x')
-        for (c in hex.toCharArray()) {
-            builder.append(controlChar).append(c.lowercaseChar())
-        }
+        hex.forEach { builder.append(controlChar).append(it.lowercaseChar()) }
     }
 
     @Unique
-    private fun getVanillaFormatting(color: TextColor): Formatting? {
-        val rgb = color.getRgb()
-        for (formatting in Formatting.entries) {
-            val colorValue = formatting.getColorValue()
-            if (colorValue != null && colorValue == rgb) {
-                return formatting
-            }
-        }
-        return null
-    }
+    private fun getVanillaFormatting(color: TextColor): Formatting? =
+        Formatting.entries.find { it.colorValue == color.rgb }
 
     companion object {
         @Unique

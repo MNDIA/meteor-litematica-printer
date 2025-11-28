@@ -14,11 +14,11 @@ import net.minecraft.item.Items
 class Addon : MeteorAddon() {
     override fun onInitialize() {
         // Modules
-        Modules.get().add(CommonSettings.Instance)
-        Modules.get().add(PlaceSettings.Instance)
-        Modules.get().add(InteractSettings.Instance)
-        Modules.get().add(ContainerSettings.Instance)
-        Modules.get().add(BreakSettings.Instance)
+        Modules.get().add(CommonSettings)
+        Modules.get().add(PlaceSettings)
+        Modules.get().add(InteractSettings)
+        Modules.get().add(ContainerSettings)
+        Modules.get().add(BreakSettings)
 
         Modules.get().add(Printer())
         // Modules.get().add(Deleter())
@@ -39,7 +39,7 @@ class Addon : MeteorAddon() {
         Modules.get().add(Parkour())
         Modules.get().add(MidiParser())
         Modules.get().add(ChatLogger())
-        Modules.get().add(ShopLimiter())
+        Modules.get().add(ShopLimiter)
     }
 
     override fun getPackage(): String = "com.kkllffaa.meteor_litematica_printer"

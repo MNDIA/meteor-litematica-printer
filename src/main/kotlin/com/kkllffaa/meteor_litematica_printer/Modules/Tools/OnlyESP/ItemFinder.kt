@@ -20,15 +20,14 @@ import net.minecraft.entity.ItemEntity
 import net.minecraft.item.BlockItem
 import net.minecraft.util.math.MathHelper
 import org.joml.Vector3d
-import java.util.function.Consumer
 
 class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through walls.") {
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
-    private val sgColors: SettingGroup = settings.createGroup("Colors")
+    private val sgGeneral = settings.defaultGroup
+    private val sgColors = settings.createGroup("Colors")
 
     //region General
-    private val mode: Setting<Mode?> = sgGeneral.add<Mode?>(
-        EnumSetting.Builder<Mode?>()
+    private val mode: Setting<Mode> = sgGeneral.add(
+        EnumSetting.Builder<Mode>()
             .name("mode")
             .description("Rendering mode.")
             .defaultValue(Mode.Wireframe)
@@ -37,18 +36,16 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
 
     //endregion
     //region Colors
-    private val blocks: Setting<MutableList<Block?>?> = sgColors.add<MutableList<Block?>?>(
+    private val blocks: Setting<MutableList<Block>> = sgColors.add(
         BlockListSetting.Builder()
             .name("blocks")
             .description("Blocks to search for.")
-            .onChanged(Consumer { blocks1: MutableList<Block?>? ->
-                if (isActive() && Utils.canUpdate()) onActivate()
-            })
+            .onChanged { if (isActive && Utils.canUpdate()) onActivate() }
             .build()
     )
 
-    private val defaultBlockConfig: Setting<ESPBlockData?> = sgColors.add<ESPBlockData?>(
-        GenericSetting.Builder<ESPBlockData?>()
+    private val defaultBlockConfig: Setting<ESPBlockData> = sgColors.add(
+        GenericSetting.Builder<ESPBlockData>()
             .name("default-block-config")
             .description("Default block config.")
             .defaultValue(
@@ -63,9 +60,9 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
             .build()
     )
 
-    private val blockConfigs: Setting<MutableMap<Block?, ESPBlockData?>?> =
-        sgColors.add<MutableMap<Block?, ESPBlockData?>?>(
-            BlockDataSetting.Builder<ESPBlockData?>()
+    private val blockConfigs: Setting<MutableMap<Block, ESPBlockData>> =
+        sgColors.add(
+            BlockDataSetting.Builder<ESPBlockData>()
                 .name("block-configs")
                 .description("Config for each block.")
                 .defaultData(defaultBlockConfig)
@@ -86,16 +83,16 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
         if (mode.get() == Mode._2D) return
 
         count = 0
-
-        for (entity in mc.world!!.getEntities()) {
-            if (entity !is ItemEntity || !EntityUtils.isInRenderDistance(entity)) continue
-            drawBoundingBox(event, entity)
+        mc.world?.let { world ->
+            for (entity in world.entities) {
+                if (entity !is ItemEntity || !EntityUtils.isInRenderDistance(entity)) continue
+                drawBoundingBox(event, entity)
+            }
         }
     }
 
     private fun drawBoundingBox(event: Render3DEvent, itemEntity: ItemEntity) {
-        val renderData = getItemColorData(itemEntity)
-        if (renderData == null) return
+        val renderData = getItemColorData(itemEntity) ?: return
 
         count++
         if (mode.get() == Mode.Wireframe) {
@@ -111,20 +108,20 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
             val x = MathHelper.lerp(
                 event.tickDelta.toDouble(),
                 itemEntity.lastRenderX,
-                itemEntity.getX()
-            ) - itemEntity.getX()
+                itemEntity.x
+            ) - itemEntity.x
             val y = MathHelper.lerp(
                 event.tickDelta.toDouble(),
                 itemEntity.lastRenderY,
-                itemEntity.getY()
-            ) - itemEntity.getY()
+                itemEntity.y
+            ) - itemEntity.y
             val z = MathHelper.lerp(
                 event.tickDelta.toDouble(),
                 itemEntity.lastRenderZ,
-                itemEntity.getZ()
-            ) - itemEntity.getZ()
+                itemEntity.z
+            ) - itemEntity.z
 
-            val box = itemEntity.getBoundingBox()
+            val box = itemEntity.boundingBox
             event.renderer.box(
                 x + box.minX,
                 y + box.minY,
@@ -145,7 +142,7 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
         if (renderData.tracer) {
             event.renderer.line(
                 RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z,
-                itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(),
+                itemEntity.x, itemEntity.y, itemEntity.z,
                 renderData.tracerColor
             )
         }
@@ -159,49 +156,50 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
         Renderer2D.COLOR.begin()
         count = 0
 
-        for (entity in mc.world!!.getEntities()) {
-            if (entity !is ItemEntity || !EntityUtils.isInRenderDistance(entity)) continue
+        mc.world?.let { world ->
+            for (entity in world.entities) {
+                if (entity !is ItemEntity || !EntityUtils.isInRenderDistance(entity)) continue
 
-            val box = entity.getBoundingBox()
+                val box = entity.boundingBox
 
-            val x = MathHelper.lerp(event.tickDelta.toDouble(), entity.lastRenderX, entity.getX()) - entity.getX()
-            val y = MathHelper.lerp(event.tickDelta.toDouble(), entity.lastRenderY, entity.getY()) - entity.getY()
-            val z = MathHelper.lerp(event.tickDelta.toDouble(), entity.lastRenderZ, entity.getZ()) - entity.getZ()
+                val x = MathHelper.lerp(event.tickDelta.toDouble(), entity.lastRenderX, entity.x) - entity.x
+                val y = MathHelper.lerp(event.tickDelta.toDouble(), entity.lastRenderY, entity.y) - entity.y
+                val z = MathHelper.lerp(event.tickDelta.toDouble(), entity.lastRenderZ, entity.z) - entity.z
 
-            // Check corners
-            pos1.set(Double.Companion.MAX_VALUE, Double.Companion.MAX_VALUE, Double.Companion.MAX_VALUE)
-            pos2.set(0.0, 0.0, 0.0)
+                // Check corners
+                pos1.set(Double.Companion.MAX_VALUE, Double.Companion.MAX_VALUE, Double.Companion.MAX_VALUE)
+                pos2.set(0.0, 0.0, 0.0)
 
-            //     Bottom
-            if (checkCorner(box.minX + x, box.minY + y, box.minZ + z, pos1, pos2)) continue
-            if (checkCorner(box.maxX + x, box.minY + y, box.minZ + z, pos1, pos2)) continue
-            if (checkCorner(box.minX + x, box.minY + y, box.maxZ + z, pos1, pos2)) continue
-            if (checkCorner(box.maxX + x, box.minY + y, box.maxZ + z, pos1, pos2)) continue
+                //     Bottom
+                if (checkCorner(box.minX + x, box.minY + y, box.minZ + z, pos1, pos2)) continue
+                if (checkCorner(box.maxX + x, box.minY + y, box.minZ + z, pos1, pos2)) continue
+                if (checkCorner(box.minX + x, box.minY + y, box.maxZ + z, pos1, pos2)) continue
+                if (checkCorner(box.maxX + x, box.minY + y, box.maxZ + z, pos1, pos2)) continue
 
-            //     Top
-            if (checkCorner(box.minX + x, box.maxY + y, box.minZ + z, pos1, pos2)) continue
-            if (checkCorner(box.maxX + x, box.maxY + y, box.minZ + z, pos1, pos2)) continue
-            if (checkCorner(box.minX + x, box.maxY + y, box.maxZ + z, pos1, pos2)) continue
-            if (checkCorner(box.maxX + x, box.maxY + y, box.maxZ + z, pos1, pos2)) continue
+                //     Top
+                if (checkCorner(box.minX + x, box.maxY + y, box.minZ + z, pos1, pos2)) continue
+                if (checkCorner(box.maxX + x, box.maxY + y, box.minZ + z, pos1, pos2)) continue
+                if (checkCorner(box.minX + x, box.maxY + y, box.maxZ + z, pos1, pos2)) continue
+                if (checkCorner(box.maxX + x, box.maxY + y, box.maxZ + z, pos1, pos2)) continue
 
-            // Setup color
-            val renderData = getItemColorData(entity)
-            if (renderData == null) continue
+                // Setup color
+                val renderData = getItemColorData(entity) ?: continue
 
 
-            // Render
-            if (renderData.shapeMode != ShapeMode.Lines && renderData.sideColor.a > 0) {
-                Renderer2D.COLOR.quad(pos1.x, pos1.y, pos2.x - pos1.x, pos2.y - pos1.y, renderData.sideColor)
+                // Render
+                if (renderData.shapeMode != ShapeMode.Lines && renderData.sideColor.a > 0) {
+                    Renderer2D.COLOR.quad(pos1.x, pos1.y, pos2.x - pos1.x, pos2.y - pos1.y, renderData.sideColor)
+                }
+
+                if (renderData.shapeMode != ShapeMode.Sides) {
+                    Renderer2D.COLOR.line(pos1.x, pos1.y, pos1.x, pos2.y, renderData.lineColor)
+                    Renderer2D.COLOR.line(pos2.x, pos1.y, pos2.x, pos2.y, renderData.lineColor)
+                    Renderer2D.COLOR.line(pos1.x, pos1.y, pos2.x, pos1.y, renderData.lineColor)
+                    Renderer2D.COLOR.line(pos1.x, pos2.y, pos2.x, pos2.y, renderData.lineColor)
+                }
+
+                count++
             }
-
-            if (renderData.shapeMode != ShapeMode.Sides) {
-                Renderer2D.COLOR.line(pos1.x, pos1.y, pos1.x, pos2.y, renderData.lineColor)
-                Renderer2D.COLOR.line(pos2.x, pos1.y, pos2.x, pos2.y, renderData.lineColor)
-                Renderer2D.COLOR.line(pos1.x, pos1.y, pos2.x, pos1.y, renderData.lineColor)
-                Renderer2D.COLOR.line(pos1.x, pos2.y, pos2.x, pos2.y, renderData.lineColor)
-            }
-
-            count++
         }
 
         Renderer2D.COLOR.render()
@@ -226,20 +224,20 @@ class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through
 
     // Utils
     private fun getItemColorData(itemEntity: ItemEntity): ESPBlockData? {
-        val stack = itemEntity.getStack()
-        val item = stack.getItem()
+        val stack = itemEntity.stack
+        val item = stack.item
         if (item is BlockItem) {
-            val block = item.getBlock()
-            if (blocks.get()!!.contains(block)) {
+            val block = item.block
+            if (block in blocks.get()) {
                 return getBlockData(block)
             }
         }
         return null
     }
 
-    private fun getBlockData(block: Block?): ESPBlockData? {
-        val blockData = blockConfigs.get()!!.get(block)
-        return if (blockData == null) defaultBlockConfig.get() else blockData
+    private fun getBlockData(block: Block): ESPBlockData {
+        val blockData = blockConfigs.get().get(block)
+        return blockData ?: defaultBlockConfig.get()
     }
 
     override fun getInfoString(): String {

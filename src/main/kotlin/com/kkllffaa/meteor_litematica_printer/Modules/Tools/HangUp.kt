@@ -10,13 +10,13 @@ import net.minecraft.client.gui.screen.ingame.InventoryScreen
 
 class HangUp : Module(Addon.TOOLS, "HangUp", "Hang up the player.") {
     init {
-        if (isActive()) toggle()
+        if (isActive) toggle()
     }
 
     @EventHandler
-    private fun onTick(event: TickEvent.Pre?) {
-        if (!isActive() || mc.player == null) return
-        mc.options.sneakKey.setPressed(true)
+    private fun onTick(event: TickEvent.Pre) {
+        if (!isActive || mc.player == null) return
+        mc.options.sneakKey.isPressed = true
         if (Input.isPressed(mc.options.sneakKey)) toggle()
     }
 
@@ -28,6 +28,6 @@ class HangUp : Module(Addon.TOOLS, "HangUp", "Hang up the player.") {
     }
 
     override fun onDeactivate() {
-        mc.options.sneakKey.setPressed(Input.isPressed(mc.options.sneakKey))
+        mc.options.sneakKey.isPressed = Input.isPressed(mc.options.sneakKey)
     }
 }

@@ -25,16 +25,15 @@ import net.minecraft.component.type.FoodComponent
 import net.minecraft.item.Item
 import net.minecraft.item.Items
 import java.util.function.BiPredicate
-import java.util.function.Predicate
 
 // import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter;
 class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     // Settings groups
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
-    private val sgThreshold: SettingGroup = settings.createGroup("Threshold")
+    private val sgGeneral = settings.defaultGroup
+    private val sgThreshold = settings.createGroup("Threshold")
 
     // General
-    val blacklist: Setting<MutableList<Item?>?> = sgGeneral.add<MutableList<Item?>?>(
+    val blacklist: Setting<MutableList<Item>> = sgGeneral.add(
         ItemListSetting.Builder()
             .name("blacklist")
             .description("Which items to not eat.")
@@ -49,13 +48,13 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
                 Items.SPIDER_EYE,
                 Items.SUSPICIOUS_STEW
             )
-            .filter(Predicate { item: Item? ->
-                item!!.getComponents().get<FoodComponent?>(DataComponentTypes.FOOD) != null
-            })
+            .filter { item: Item ->
+                item.components.get<FoodComponent>(DataComponentTypes.FOOD) != null
+            }
             .build()
     )
 
-    private val pauseAuras: Setting<Boolean?> = sgGeneral.add<Boolean?>(
+    private val pauseAuras: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("pause-auras")
             .description("Pauses all auras when eating.")
@@ -63,7 +62,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
             .build()
     )
 
-    private val pauseBaritone: Setting<Boolean?> = sgGeneral.add<Boolean?>(
+    private val pauseBaritone: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("pause-baritone")
             .description("Pause baritone when eating.")
@@ -72,33 +71,33 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     )
 
     // Threshold
-    private val thresholdMode: Setting<ThresholdMode?> = sgThreshold.add<ThresholdMode?>(
-        EnumSetting.Builder<ThresholdMode?>()
+    private val thresholdMode: Setting<ThresholdMode> = sgThreshold.add(
+        EnumSetting.Builder<ThresholdMode>()
             .name("threshold-mode")
             .description("The threshold mode to trigger auto eat.")
             .defaultValue(ThresholdMode.Any)
             .build()
     )
 
-    private val healthThreshold: Setting<Double?> = sgThreshold.add<Double?>(
+    private val healthThreshold: Setting<Double> = sgThreshold.add(
         DoubleSetting.Builder()
             .name("health-threshold")
             .description("The level of health you eat at.")
             .defaultValue(19.0)
             .range(1.0, 19.0)
             .sliderRange(1.0, 19.0)
-            .visible(IVisible { thresholdMode.get() != ThresholdMode.Hunger })
+            .visible { thresholdMode.get() != ThresholdMode.Hunger }
             .build()
     )
 
-    private val hungerThreshold: Setting<Int?> = sgThreshold.add<Int?>(
+    private val hungerThreshold: Setting<Int> = sgThreshold.add(
         IntSetting.Builder()
             .name("hunger-threshold")
             .description("The level of hunger you eat at.")
             .defaultValue(7)
             .range(1, 19)
             .sliderRange(1, 19)
-            .visible(IVisible { thresholdMode.get() != ThresholdMode.Health })
+            .visible { thresholdMode.get() != ThresholdMode.Health }
             .build()
     )
 
@@ -107,7 +106,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     private var slot = 0
     private var prevSlot = 0
 
-    private val wasAura: MutableList<Class<out Module?>?> = ArrayList<Class<out Module?>?>()
+    private val wasAura: MutableList<Class<out Module>> = ArrayList()
     private var wasBaritone = false
 
     override fun onActivate() {
@@ -115,8 +114,8 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     }
 
     private fun resolveModuleConflict() {
-        val meteorAutoEat: Module? = Modules.get().get<AutoEat?>(AutoEat::class.java)
-        if (meteorAutoEat != null && meteorAutoEat.isActive()) {
+        val meteorAutoEat = Modules.get().get(AutoEat::class.java)
+        if (meteorAutoEat != null && meteorAutoEat.isActive) {
             meteorAutoEat.toggle()
         }
     }
@@ -129,9 +128,9 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
      * Main tick handler for the module's eating logic
      */
     @EventHandler(priority = EventPriority.LOW)
-    private fun onTick(event: TickEvent.Pre?) {
+    private fun onTick(event: TickEvent.Pre) {
         // Don't eat if AutoGap is already eating
-        if (Modules.get().get<AutoGap?>(AutoGap::class.java).isEating()) return
+        if (Modules.get().get(AutoGap::class.java).isEating) return
 
         // case 1: Already eating
         if (eating) {
@@ -142,7 +141,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
             }
 
             // Check if the item in current slot is not food anymore
-            if (mc.player!!.getInventory().getStack(slot).get<FoodComponent?>(DataComponentTypes.FOOD) == null) {
+            if (mc.player?.getInventory()?.getStack(slot)?.get(DataComponentTypes.FOOD) == null) {
                 val newSlot = findSlot()
 
                 // Stop if no food found
@@ -171,7 +170,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     }
 
     private fun startEating() {
-        prevSlot = mc.player!!.getInventory().getSelectedSlot()
+        prevSlot = mc.player?.getInventory()?.selectedSlot ?: prevSlot
         eat()
 
         // Pause auras
@@ -180,7 +179,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
             for (klass in AURAS) {
                 val module: Module = Modules.get().get(klass)
 
-                if (module.isActive()) {
+                if (module.isActive) {
                     wasAura.add(klass)
                     module.toggle()
                 }
@@ -188,7 +187,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
         }
 
         // Pause baritone
-        if (pauseBaritone.get() && PathManagers.get().isPathing() && !wasBaritone) {
+        if (pauseBaritone.get() && PathManagers.get().isPathing && !wasBaritone) {
             wasBaritone = true
             PathManagers.get().pause()
         }
@@ -197,7 +196,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     private fun eat() {
         changeSlot(slot)
         setPressed(true)
-        if (!mc.player!!.isUsingItem()) Utils.rightClick()
+        if (mc.player?.isUsingItem == false) Utils.rightClick()
 
         eating = true
     }
@@ -213,7 +212,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
             for (klass in AURAS) {
                 val module: Module = Modules.get().get(klass)
 
-                if (wasAura.contains(klass) && !module.isActive()) {
+                if (klass in wasAura && !module.isActive) {
                     module.toggle()
                 }
             }
@@ -227,7 +226,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     }
 
     private fun setPressed(pressed: Boolean) {
-        mc.options.useKey.setPressed(pressed)
+        mc.options.useKey.isPressed = pressed
     }
 
     private fun changeSlot(slot: Int) {
@@ -236,37 +235,37 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     }
 
     fun shouldEat(): Boolean {
-        val healthLow = mc.player!!.getHealth() <= healthThreshold.get()!!
-        val hungerLow = mc.player!!.getHungerManager().getFoodLevel() <= hungerThreshold.get()!!
+        val player = mc.player ?: return false
+        val healthLow = player.health <= healthThreshold.get()
+        val hungerLow = player.getHungerManager().foodLevel <= hungerThreshold.get()
         slot = findSlot()
         if (slot == -1) return false
 
-        val food = mc.player!!.getInventory().getStack(slot).get<FoodComponent?>(DataComponentTypes.FOOD)
-        if (food == null) return false
+        val food = player.getInventory().getStack(slot).get(DataComponentTypes.FOOD) ?: return false
 
         if (Input.isPressed(mc.options.attackKey) || Input.isPressed(mc.options.useKey)) {
             return false
         }
 
-        return thresholdMode.get()!!.test(healthLow, hungerLow)
-                && (mc.player!!.getHungerManager().isNotFull() || food.canAlwaysEat())
+        return thresholdMode.get().test(healthLow, hungerLow)
+                && (player.getHungerManager().isNotFull || food.canAlwaysEat())
     }
 
     private fun findSlot(): Int {
         var slot = -1
         var bestHunger = -1
+        val player = mc.player ?: return slot
 
         for (i in 0..8) {
             // Skip if item isn't food
-            val item = mc.player!!.getInventory().getStack(i).getItem()
-            val foodComponent = item.getComponents().get<FoodComponent?>(DataComponentTypes.FOOD)
-            if (foodComponent == null) continue
+            val item = player.getInventory().getStack(i).item
+            val foodComponent = item.components.get(DataComponentTypes.FOOD) ?: continue
 
             // Check if hunger value is better
             val hunger = foodComponent.nutrition()
             if (hunger > bestHunger) {
                 // Skip if item is in blacklist
-                if (blacklist.get()!!.contains(item)) continue
+                if (blacklist.get().contains(item)) continue
 
                 // Select the current item
                 slot = i
@@ -274,28 +273,26 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
             }
         }
 
-        val offHandItem = mc.player!!.getOffHandStack().getItem()
-        val offHandFood = offHandItem.getComponents().get<FoodComponent?>(DataComponentTypes.FOOD)
-        if (offHandFood != null && !blacklist.get()!!.contains(offHandItem) && offHandFood.nutrition() > bestHunger) {
+        val offHandItem = player.offHandStack.item
+        val offHandFood = offHandItem.components.get(DataComponentTypes.FOOD)
+        if (offHandFood != null && !blacklist.get().contains(offHandItem) && offHandFood.nutrition() > bestHunger) {
             slot = SlotUtils.OFFHAND
         }
 
         return slot
     }
 
-    enum class ThresholdMode(private val predicate: BiPredicate<Boolean?, Boolean?>) {
-        Health(BiPredicate { health: Boolean?, hunger: Boolean? -> health!! }),
-        Hunger(BiPredicate { health: Boolean?, hunger: Boolean? -> hunger!! }),
-        Any(BiPredicate { health: Boolean?, hunger: Boolean? -> health || hunger }),
-        Both(BiPredicate { health: Boolean?, hunger: Boolean? -> health && hunger });
+    enum class ThresholdMode(private val predicate: BiPredicate<Boolean, Boolean>) {
+        Health(BiPredicate { health: Boolean, hunger: Boolean -> health }),
+        Hunger(BiPredicate { health: Boolean, hunger: Boolean -> hunger }),
+        Any(BiPredicate { health: Boolean, hunger: Boolean -> health || hunger }),
+        Both(BiPredicate { health: Boolean, hunger: Boolean -> health && hunger });
 
-        fun test(health: Boolean, hunger: Boolean): Boolean {
-            return predicate.test(health, hunger)
-        }
+        fun test(health: Boolean, hunger: Boolean): Boolean = predicate.test(health, hunger)
     }
 
     companion object {
-        private val AURAS: Array<Class<out Module?>?> = arrayOf<Class<*>>(
+        private val AURAS: Array<Class<out Module>> = arrayOf(
             KillAura::class.java,
             CrystalAura::class.java,
             AnchorAura::class.java,

@@ -3,7 +3,6 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 import com.kkllffaa.meteor_litematica_printer.Addon
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent
 import meteordevelopment.meteorclient.settings.Setting
-import meteordevelopment.meteorclient.settings.SettingGroup
 import meteordevelopment.meteorclient.settings.StringSetting
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.orbit.EventHandler
@@ -16,9 +15,9 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a file.") {
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
+    private val sgGeneral = settings.defaultGroup
 
-    private val filePath: Setting<String?> = sgGeneral.add<String?>(
+    private val filePath: Setting<String> = sgGeneral.add(
         StringSetting.Builder()
             .name("file-path")
             .description("The file path to save chat logs. Use absolute path or relative to game directory.")
@@ -28,9 +27,8 @@ class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a f
 
     @EventHandler
     private fun onReceiveMessage(event: ReceiveMessageEvent) {
-        val message = event.getMessage()
-        if (message == null) return
-        val messageString = message.getString()
+        val message = event.message ?: return
+        val messageString = message.string
         if (messageString == null || messageString.trim { it <= ' ' }.isEmpty()) return
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
@@ -41,8 +39,8 @@ class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a f
 
         try {
             val logFilePath = Paths.get(path)
-            if (logFilePath.getParent() != null && !Files.exists(logFilePath.getParent())) {
-                Files.createDirectories(logFilePath.getParent())
+            if (logFilePath.parent != null && !Files.exists(logFilePath.parent)) {
+                Files.createDirectories(logFilePath.parent)
             }
             PrintWriter(FileWriter(logFilePath.toFile(), true)).use { writer ->
                 writer.print(logEntry)

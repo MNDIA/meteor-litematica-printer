@@ -5,7 +5,6 @@ import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.DoubleSetting
 import meteordevelopment.meteorclient.settings.ItemListSetting
 import meteordevelopment.meteorclient.settings.Setting
-import meteordevelopment.meteorclient.settings.SettingGroup
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.utils.Utils
 import meteordevelopment.meteorclient.utils.player.InvUtils
@@ -14,12 +13,11 @@ import net.minecraft.enchantment.Enchantments
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
-import java.util.function.Predicate
 
 class AutoFix : Module(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手") {
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
+    private val sgGeneral = settings.defaultGroup
 
-    private val Durability: Setting<Double?> = sgGeneral.add<Double?>(
+    private val Durability: Setting<Double> = sgGeneral.add(
         DoubleSetting.Builder()
             .name("percentage")
             .description("The durability percentage.")
@@ -29,7 +27,7 @@ class AutoFix : Module(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排
             .build()
     )
 
-    private val blacklist: Setting<MutableList<Item?>?> = sgGeneral.add<MutableList<Item?>?>(
+    private val blacklist: Setting<MutableList<Item>> = sgGeneral.add(
         ItemListSetting.Builder()
             .name("blacklist")
             .description("Items that should not be auto-fixed.")
@@ -45,12 +43,12 @@ class AutoFix : Module(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排
     )
 
     @EventHandler
-    private fun onTick(event: TickEvent.Post?) {
-        if (InvUtils.testInOffHand(Predicate { itemStack: ItemStack? -> !needFix(itemStack!!) })) {
-            val result = InvUtils.find(Predicate { itemStack: ItemStack? -> needFix(itemStack!!) }, 0, 35)
+    private fun onTick(event: TickEvent.Post) {
+        if (InvUtils.testInOffHand { itemStack: ItemStack -> !needFix(itemStack) }) {
+            val result = InvUtils.find({ itemStack: ItemStack -> needFix(itemStack) }, 0, 35)
             if (result.found()) {
                 InvUtils.move().from(result.slot()).toOffhand()
-                if (!mc.player!!.currentScreenHandler.getCursorStack().isEmpty()) {
+                if (mc.player?.currentScreenHandler?.cursorStack?.isEmpty == false) {
                     val emptySlot = InvUtils.findEmpty()
                     if (emptySlot.found()) {
                         InvUtils.click().slot(emptySlot.slot())
@@ -68,7 +66,7 @@ class AutoFix : Module(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排
         return Utils.hasEnchantment(
             itemStack,
             Enchantments.MENDING
-        ) && (itemStack.getMaxDamage() - itemStack.getDamage()) < (itemStack.getMaxDamage() * Durability.get()!! / 100.0) && !blacklist.get()!!
-            .contains(itemStack.getItem())
+        ) && (itemStack.maxDamage - itemStack.damage) < (itemStack.maxDamage * Durability.get() / 100.0) && !blacklist.get()
+            .contains(itemStack.item)
     }
 }

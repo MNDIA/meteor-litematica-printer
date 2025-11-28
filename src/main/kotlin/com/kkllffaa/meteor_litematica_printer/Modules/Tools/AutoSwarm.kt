@@ -13,9 +13,9 @@ import meteordevelopment.meteorclient.systems.modules.misc.swarm.SwarmWorker
 import meteordevelopment.orbit.EventHandler
 
 class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm instances.") {
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
+    private val sgGeneral = settings.defaultGroup
 
-    private val checkCycle: Setting<Int?> = sgGeneral.add<Int?>(
+    private val checkCycle: Setting<Int> = sgGeneral.add(
         IntSetting.Builder()
             .name("check-cycle")
             .description("Delay in seconds between checkings")
@@ -24,7 +24,7 @@ class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm
             .build()
     )
 
-    private val checkDelayAfterWorldChanged: Setting<Int?> = sgGeneral.add<Int?>(
+    private val checkDelayAfterWorldChanged: Setting<Int> = sgGeneral.add(
         IntSetting.Builder()
             .name("check-delay-after-world-changed")
             .description("Delay in seconds between checkings after world change")
@@ -33,24 +33,24 @@ class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm
             .build()
     )
 
-    val mode: Setting<Swarm.Mode?> = sgGeneral.add<Swarm.Mode?>(
-        EnumSetting.Builder<Swarm.Mode?>()
+    val mode: Setting<Swarm.Mode> = sgGeneral.add(
+        EnumSetting.Builder<Swarm.Mode>()
             .name("mode")
             .description("What type of client to run.")
             .defaultValue(Swarm.Mode.Host)
             .build()
     )
 
-    private val ipAddress: Setting<String?> = sgGeneral.add<String?>(
+    private val ipAddress: Setting<String> = sgGeneral.add(
         StringSetting.Builder()
             .name("ip")
             .description("The IP address of the host server.")
             .defaultValue("localhost")
-            .visible(IVisible { mode.get() == Swarm.Mode.Worker })
+            .visible{ mode.get() == Swarm.Mode.Worker }
             .build()
     )
 
-    private val serverPort: Setting<Int?> = sgGeneral.add<Int?>(
+    private val serverPort: Setting<Int> = sgGeneral.add(
         IntSetting.Builder()
             .name("port")
             .description("The port used for connections.")
@@ -64,9 +64,9 @@ class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm
     private var lastWorldChangeTime: Long = 0
 
     override fun onDeactivate() {
-        val swarm = Modules.get().get<Swarm?>(Swarm::class.java)
+        val swarm = Modules.get().get(Swarm::class.java)
         if (swarm != null) {
-            if (swarm.isActive()) {
+            if (swarm.isActive) {
                 swarm.toggle()
             } else {
                 swarm.close()
@@ -75,33 +75,33 @@ class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm
     }
 
     @EventHandler
-    private fun onTick(event: TickEvent.Post?) {
+    private fun onTick(event: TickEvent.Post) {
         val currentTime = System.currentTimeMillis()
-        if (currentTime - lastCheckTime > checkCycle.get()!! * 1000L) {
+        if (currentTime - lastCheckTime > checkCycle.get() * 1000L) {
             lastCheckTime = currentTime
 
-            if (currentTime - lastWorldChangeTime > checkDelayAfterWorldChanged.get()!! * 1000L) {
+            if (currentTime - lastWorldChangeTime > checkDelayAfterWorldChanged.get() * 1000L) {
                 CheckSwarm()
             }
         }
     }
 
     @EventHandler
-    private fun onGameLeft(event: GameLeftEvent?) {
+    private fun onGameLeft(event: GameLeftEvent) {
         lastWorldChangeTime = System.currentTimeMillis()
     }
 
     @EventHandler
-    private fun onGameJoin(event: GameJoinedEvent?) {
+    private fun onGameJoin(event: GameJoinedEvent) {
         lastWorldChangeTime = System.currentTimeMillis()
     }
 
     private fun CheckSwarm() {
-        val swarm = Modules.get().get<Swarm?>(Swarm::class.java)
+        val swarm = Modules.get().get(Swarm::class.java)
         if (swarm != null) {
-            val isActive = swarm.isActive()
-            val isHost = swarm.isHost()
-            val isWorker = swarm.isWorker()
+            val isActive = swarm.isActive
+            val isHost = swarm.isHost
+            val isWorker = swarm.isWorker
 
             if (!isActive) {
                 swarm.toggle()
@@ -110,11 +110,11 @@ class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm
             if (mode.get() == Swarm.Mode.Host && !isHost) {
                 swarm.close()
                 swarm.mode.set(Swarm.Mode.Host)
-                swarm.host = SwarmHost(serverPort.get()!!)
-            } else if (mode.get() == Swarm.Mode.Worker && (!isWorker || !swarm.worker.isAlive())) {
+                swarm.host = SwarmHost(serverPort.get())
+            } else if (mode.get() == Swarm.Mode.Worker && (!isWorker || !swarm.worker.isAlive)) {
                 swarm.close()
                 swarm.mode.set(Swarm.Mode.Worker)
-                swarm.worker = SwarmWorker(ipAddress.get(), serverPort.get()!!)
+                swarm.worker = SwarmWorker(ipAddress.get(), serverPort.get())
             }
         }
     }

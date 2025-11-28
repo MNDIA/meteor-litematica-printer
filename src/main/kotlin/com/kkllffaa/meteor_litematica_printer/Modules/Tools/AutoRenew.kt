@@ -14,9 +14,9 @@ import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
 
 class AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于阈值时，从背包内替换同类物品") {
-    private val sgGeneral: SettingGroup = settings.getDefaultGroup()
+    private val sgGeneral = settings.defaultGroup
 
-    private val Durability: Setting<Double?> = sgGeneral.add<Double?>(
+    private val Durability: Setting<Double> = sgGeneral.add(
         DoubleSetting.Builder()
             .name("percentage")
             .description("The durability percentage.")
@@ -26,7 +26,7 @@ class AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于
             .build()
     )
 
-    private val blacklist: Setting<MutableList<Item?>?> = sgGeneral.add<MutableList<Item?>?>(
+    private val blacklist: Setting<MutableList<Item>> = sgGeneral.add(
         ItemListSetting.Builder()
             .name("blacklist")
             .description("Items that should not be auto-renew in hand.")
@@ -62,18 +62,19 @@ class AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于
     )
 
     @EventHandler
-    private fun onTick(event: TickEvent.Post?) {
-        val mainHandStack = mc.player!!.getMainHandStack()
+    private fun onTick(event: TickEvent.Post) {
+        val player = mc.player ?: return
+        val mainHandStack = player.mainHandStack
 
-        if (!mainHandStack.isEmpty() && needRew(mainHandStack)) {
+        if (!mainHandStack.isEmpty && needRew(mainHandStack)) {
             val bestSlot = findBestReplacement(mainHandStack)
 
             if (bestSlot != -1) {
-                val selectedSlot = mc.player!!.getInventory().getSelectedSlot()
+                val selectedSlot = player.getInventory().selectedSlot
 
                 InvUtils.move().from(bestSlot).toHotbar(selectedSlot)
 
-                if (!mc.player!!.currentScreenHandler.getCursorStack().isEmpty()) {
+                if (!player.currentScreenHandler.cursorStack.isEmpty) {
                     val emptySlot = InvUtils.findEmpty()
                     if (emptySlot.found()) {
                         InvUtils.click().slot(emptySlot.slot())
@@ -93,8 +94,8 @@ class AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于
 
         for (i in 0..35) {
             val stack = mc.player!!.getInventory().getStack(i)
-            if (!stack.isEmpty() && stack.getItem() === referenceStack.getItem() && !needRew(stack)) { // 同类物品
-                val durability = stack.getMaxDamage() - stack.getDamage()
+            if (!stack.isEmpty && stack.item === referenceStack.item && !needRew(stack)) { // 同类物品
+                val durability = stack.maxDamage - stack.damage
                 if (durability > bestDurability) {
                     bestDurability = durability
                     bestSlot = i
@@ -105,7 +106,7 @@ class AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于
     }
 
     private fun needRew(itemStack: ItemStack): Boolean {
-        return (itemStack.getMaxDamage() - itemStack.getDamage()) < (itemStack.getMaxDamage() * Durability.get()!! / 100.0)
-                && !blacklist.get()!!.contains(itemStack.getItem())
+        return (itemStack.maxDamage - itemStack.damage) < (itemStack.maxDamage * Durability.get() / 100.0)
+                && !blacklist.get().contains(itemStack.item)
     }
 }
