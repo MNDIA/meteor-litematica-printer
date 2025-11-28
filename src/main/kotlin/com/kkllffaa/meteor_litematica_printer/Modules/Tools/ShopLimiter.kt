@@ -87,7 +87,6 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
         }
     }
 
-    // kotlinx.serialization 的 Json 配置
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true      // 忽略文件中的未知字段
@@ -102,7 +101,6 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
         override fun deserialize(decoder: Decoder): LocalDateTime = LocalDateTime.parse(decoder.decodeString())
     }
 
-    // 使用 @Serializable 注解，编译时生成序列化代码
     @Serializable
     private data class Data(
         @Serializable(with = LocalDateTimeSerializer::class)
@@ -140,10 +138,10 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
 
         // 恢复原始消息属性
         if (event.message !== originalText) {
-            event.setMessage(originalText)
+            event.message = originalText
         }
         if (event.indicator !== originalIndicator) {
-            event.setIndicator(originalIndicator)
+            event.indicator = originalIndicator
         }
         if (event.id != originalId) {
             event.id = originalId

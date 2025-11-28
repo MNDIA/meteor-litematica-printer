@@ -22,11 +22,12 @@ import kotlin.math.abs
 
 
 val BlockPos.canTouch get() = CommonSettings.playerCanTouchBlockPos(this)
-fun BlockPos.canBreakIt(blockState: BlockState? = null): Boolean =
-    canTouch && BlockUtils.canBreak(
+fun BlockPos.canBreakIt(blockState: BlockState? = null): Boolean {
+    return canTouch && BlockUtils.canBreak(
         this,
         blockState ?: mc.world?.getBlockState(this) ?: return false
     )
+}
 
 
 fun BlockPos.BreakIt() {

@@ -26,7 +26,7 @@ object InteractSettings : Module(Addon.SettingsForCRUD, "Interact", "Module to c
 
     private val sgGeneral = settings.defaultGroup
 
-    private val swingHand = sgGeneral.add<ActionMode>(
+    private val swingHand: Setting<ActionMode> = sgGeneral.add(
         EnumSetting.Builder<ActionMode>()
             .name("swing-hand")
             .description("swing hand post interact.")

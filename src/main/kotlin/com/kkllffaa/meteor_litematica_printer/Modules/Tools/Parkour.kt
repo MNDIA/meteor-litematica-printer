@@ -94,7 +94,7 @@ class Parkour : Module(Addon.TOOLS, "parkour", "Automatically jumps at the edges
 
 
     private val isPlayerInControl: Boolean
-        get() = (mc.currentScreen == null || !Modules.get()
-            .get(GUIMove::class.java).skip()) && !Modules.get()
-            .isActive(Freecam::class.java)
+        get() = (mc.currentScreen == null
+                || Modules.get().get(GUIMove::class.java)?.skip() == false)
+                && !Modules.get().isActive(Freecam::class.java)
 }

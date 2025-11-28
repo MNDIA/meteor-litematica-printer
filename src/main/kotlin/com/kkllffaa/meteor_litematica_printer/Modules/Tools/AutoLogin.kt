@@ -37,7 +37,7 @@ class AutoLogin : Module(Addon.TOOLS, "auto-login", "Automatically logs in when 
             .build()
     )
 
-    private val loginCommands: Setting<MutableList<String>> = sgGeneral.add<MutableList<String>>(
+    private val loginCommands: Setting<MutableList<String>> = sgGeneral.add(
         StringListSetting.Builder()
             .name("login-commands")
             .description("List of player name to command mappings. Format: player:login_command:standby_command:standby_state")
