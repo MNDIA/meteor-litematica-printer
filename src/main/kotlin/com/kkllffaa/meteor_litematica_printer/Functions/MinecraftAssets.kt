@@ -1,12 +1,8 @@
 package com.kkllffaa.meteor_litematica_printer.Functions
 
 import net.minecraft.block.*
-import net.minecraft.block.enums.*
 
-import net.minecraft.item.Items
-import net.minecraft.state.property.Properties
-
-val wallHangingSigns = listOf(
+val 墙上H告示牌 = setOf(
     Blocks.OAK_WALL_HANGING_SIGN,
     Blocks.SPRUCE_WALL_HANGING_SIGN,
     Blocks.BIRCH_WALL_HANGING_SIGN,
@@ -21,7 +17,7 @@ val wallHangingSigns = listOf(
     Blocks.BAMBOO_WALL_HANGING_SIGN
 )
 
-val CeilHangingSigns = listOf(
+val 天花板H告示牌 = setOf(
     Blocks.OAK_HANGING_SIGN,
     Blocks.SPRUCE_HANGING_SIGN,
     Blocks.BIRCH_HANGING_SIGN,
@@ -36,7 +32,7 @@ val CeilHangingSigns = listOf(
     Blocks.BAMBOO_HANGING_SIGN
 )
 
-val FloorSings = listOf(
+val 地面告示牌 = setOf(
     Blocks.OAK_SIGN,
     Blocks.SPRUCE_SIGN,
     Blocks.BIRCH_SIGN,
@@ -50,7 +46,7 @@ val FloorSings = listOf(
     Blocks.WARPED_SIGN,
     Blocks.BAMBOO_SIGN,
 )
-val WallSigns = listOf(
+val 墙上告示牌 = setOf(
     Blocks.OAK_WALL_SIGN,
     Blocks.SPRUCE_WALL_SIGN,
     Blocks.BIRCH_WALL_SIGN,
@@ -65,7 +61,7 @@ val WallSigns = listOf(
     Blocks.BAMBOO_WALL_SIGN,
 )
 
-val 原木log = listOf(
+val 原木log = setOf(
     Blocks.OAK_LOG,
     Blocks.SPRUCE_LOG,
     Blocks.BIRCH_LOG,
@@ -80,9 +76,9 @@ val 原木log = listOf(
     Blocks.BAMBOO_BLOCK,
 
 
-)
+    )
 
-val 去皮原木Slog = listOf(
+val 去皮原木log = setOf(
     Blocks.STRIPPED_OAK_LOG,
     Blocks.STRIPPED_SPRUCE_LOG,
     Blocks.STRIPPED_BIRCH_LOG,
@@ -97,7 +93,7 @@ val 去皮原木Slog = listOf(
     Blocks.STRIPPED_BAMBOO_BLOCK,
 )
 
-val 木块wood = listOf(
+val 木块wood = setOf(
     Blocks.OAK_WOOD,
     Blocks.SPRUCE_WOOD,
     Blocks.BIRCH_WOOD,
@@ -110,9 +106,9 @@ val 木块wood = listOf(
     Blocks.CRIMSON_HYPHAE,
     Blocks.WARPED_HYPHAE,
 
-)
+    )
 
-val 去皮木块Swood = listOf(
+val 去皮木块wood = setOf(
     Blocks.STRIPPED_OAK_WOOD,
     Blocks.STRIPPED_SPRUCE_WOOD,
     Blocks.STRIPPED_BIRCH_WOOD,
@@ -124,4 +120,415 @@ val 去皮木块Swood = listOf(
     Blocks.STRIPPED_MANGROVE_WOOD,
     Blocks.STRIPPED_CRIMSON_HYPHAE,
     Blocks.STRIPPED_WARPED_HYPHAE,
+)
+val 链 = setOf(
+    Blocks.IRON_CHAIN,
+    *Blocks.COPPER_CHAINS.all.toTypedArray()
+)
+val 个别AxisBlocks = setOf(
+    Blocks.BASALT,
+    Blocks.POLISHED_BASALT,
+    Blocks.PURPUR_PILLAR,
+    Blocks.QUARTZ_PILLAR,
+    Blocks.HAY_BLOCK,
+    Blocks.MUDDY_MANGROVE_ROOTS,
+    Blocks.BONE_BLOCK,
+    Blocks.OCHRE_FROGLIGHT,
+    Blocks.VERDANT_FROGLIGHT,
+    Blocks.PEARLESCENT_FROGLIGHT,
+    Blocks.CREAKING_HEART
+)
+
+
+val 潜影盒 = setOf(
+    Blocks.SHULKER_BOX,
+    Blocks.WHITE_SHULKER_BOX,
+    Blocks.ORANGE_SHULKER_BOX,
+    Blocks.MAGENTA_SHULKER_BOX,
+    Blocks.LIGHT_BLUE_SHULKER_BOX,
+    Blocks.YELLOW_SHULKER_BOX,
+    Blocks.LIME_SHULKER_BOX,
+    Blocks.PINK_SHULKER_BOX,
+    Blocks.GRAY_SHULKER_BOX,
+    Blocks.LIGHT_GRAY_SHULKER_BOX,
+    Blocks.CYAN_SHULKER_BOX,
+    Blocks.PURPLE_SHULKER_BOX,
+    Blocks.BLUE_SHULKER_BOX,
+    Blocks.BROWN_SHULKER_BOX,
+    Blocks.GREEN_SHULKER_BOX,
+    Blocks.RED_SHULKER_BOX,
+    Blocks.BLACK_SHULKER_BOX
+)
+
+val 灯笼 = setOf(
+    Blocks.LANTERN,
+    Blocks.SOUL_LANTERN,
+    *Blocks.COPPER_LANTERNS.all.toTypedArray()
+)
+
+val 地面火把 = setOf(
+    Blocks.TORCH,
+    Blocks.SOUL_TORCH,
+    Blocks.COPPER_TORCH,
+    Blocks.REDSTONE_TORCH,
+)
+
+val 墙上火把 = setOf(
+    Blocks.WALL_TORCH,
+    Blocks.SOUL_WALL_TORCH,
+    Blocks.COPPER_WALL_TORCH,
+    Blocks.REDSTONE_WALL_TORCH,
+)
+
+val 铁砧 = setOf(
+    Blocks.ANVIL,
+    Blocks.CHIPPED_ANVIL,
+    Blocks.DAMAGED_ANVIL
+)
+
+val 三框展示架 = setOf(
+    Blocks.ACACIA_SHELF,
+    Blocks.BAMBOO_SHELF,
+    Blocks.BIRCH_SHELF,
+    Blocks.CHERRY_SHELF,
+    Blocks.CRIMSON_SHELF,
+    Blocks.DARK_OAK_SHELF,
+    Blocks.JUNGLE_SHELF,
+    Blocks.MANGROVE_SHELF,
+    Blocks.OAK_SHELF,
+    Blocks.PALE_OAK_SHELF,
+    Blocks.SPRUCE_SHELF,
+    Blocks.WARPED_SHELF
+)
+val 铜灯 = setOf(
+    Blocks.COPPER_BULB,
+    Blocks.EXPOSED_COPPER_BULB,
+    Blocks.WEATHERED_COPPER_BULB,
+    Blocks.OXIDIZED_COPPER_BULB,
+    Blocks.WAXED_COPPER_BULB,
+    Blocks.WAXED_EXPOSED_COPPER_BULB,
+    Blocks.WAXED_WEATHERED_COPPER_BULB,
+    Blocks.WAXED_OXIDIZED_COPPER_BULB
+)
+val 开合箱子 = setOf(
+    Blocks.CHEST,
+    Blocks.TRAPPED_CHEST,
+    Blocks.ENDER_CHEST,
+    Blocks.COPPER_CHEST,
+    Blocks.EXPOSED_COPPER_CHEST,
+    Blocks.WEATHERED_COPPER_CHEST,
+    Blocks.OXIDIZED_COPPER_CHEST,
+    Blocks.WAXED_COPPER_CHEST,
+    Blocks.WAXED_EXPOSED_COPPER_CHEST,
+    Blocks.WAXED_WEATHERED_COPPER_CHEST,
+    Blocks.WAXED_OXIDIZED_COPPER_CHEST
+)
+
+val 避雷针 = setOf(
+    Blocks.LIGHTNING_ROD,
+    Blocks.EXPOSED_LIGHTNING_ROD,
+    Blocks.WEATHERED_LIGHTNING_ROD,
+    Blocks.OXIDIZED_LIGHTNING_ROD,
+    Blocks.WAXED_LIGHTNING_ROD,
+    Blocks.WAXED_EXPOSED_LIGHTNING_ROD,
+    Blocks.WAXED_WEATHERED_LIGHTNING_ROD,
+    Blocks.WAXED_OXIDIZED_LIGHTNING_ROD
+)
+
+val 床 = setOf(
+    Blocks.WHITE_BED,
+    Blocks.ORANGE_BED,
+    Blocks.MAGENTA_BED,
+    Blocks.LIGHT_BLUE_BED,
+    Blocks.YELLOW_BED,
+    Blocks.LIME_BED,
+    Blocks.PINK_BED,
+    Blocks.GRAY_BED,
+    Blocks.LIGHT_GRAY_BED,
+    Blocks.CYAN_BED,
+    Blocks.PURPLE_BED,
+    Blocks.BLUE_BED,
+    Blocks.BROWN_BED,
+    Blocks.GREEN_BED,
+    Blocks.RED_BED,
+    Blocks.BLACK_BED
+)
+
+val 蜡烛 = setOf(
+    Blocks.CANDLE,
+    Blocks.WHITE_CANDLE,
+    Blocks.ORANGE_CANDLE,
+    Blocks.MAGENTA_CANDLE,
+    Blocks.LIGHT_BLUE_CANDLE,
+    Blocks.YELLOW_CANDLE,
+    Blocks.LIME_CANDLE,
+    Blocks.PINK_CANDLE,
+    Blocks.GRAY_CANDLE,
+    Blocks.LIGHT_GRAY_CANDLE,
+    Blocks.CYAN_CANDLE,
+    Blocks.PURPLE_CANDLE,
+    Blocks.BLUE_CANDLE,
+    Blocks.BROWN_CANDLE,
+    Blocks.GREEN_CANDLE,
+    Blocks.RED_CANDLE,
+    Blocks.BLACK_CANDLE
+)
+
+val 地面旗帜 = setOf(
+    Blocks.WHITE_BANNER,
+    Blocks.ORANGE_BANNER,
+    Blocks.MAGENTA_BANNER,
+    Blocks.LIGHT_BLUE_BANNER,
+    Blocks.YELLOW_BANNER,
+    Blocks.LIME_BANNER,
+    Blocks.PINK_BANNER,
+    Blocks.GRAY_BANNER,
+    Blocks.LIGHT_GRAY_BANNER,
+    Blocks.CYAN_BANNER,
+    Blocks.PURPLE_BANNER,
+    Blocks.BLUE_BANNER,
+    Blocks.BROWN_BANNER,
+    Blocks.GREEN_BANNER,
+    Blocks.RED_BANNER,
+    Blocks.BLACK_BANNER,
+
+    )
+
+val 墙上旗帜 = setOf(
+    Blocks.WHITE_WALL_BANNER,
+    Blocks.ORANGE_WALL_BANNER,
+    Blocks.MAGENTA_WALL_BANNER,
+    Blocks.LIGHT_BLUE_WALL_BANNER,
+    Blocks.YELLOW_WALL_BANNER,
+    Blocks.LIME_WALL_BANNER,
+    Blocks.PINK_WALL_BANNER,
+    Blocks.GRAY_WALL_BANNER,
+    Blocks.LIGHT_GRAY_WALL_BANNER,
+    Blocks.CYAN_WALL_BANNER,
+    Blocks.PURPLE_WALL_BANNER,
+    Blocks.BLUE_WALL_BANNER,
+    Blocks.BROWN_WALL_BANNER,
+    Blocks.GREEN_WALL_BANNER,
+    Blocks.RED_WALL_BANNER,
+    Blocks.BLACK_WALL_BANNER
+)
+
+val 地面头颅 = setOf(
+    Blocks.SKELETON_SKULL,
+    Blocks.WITHER_SKELETON_SKULL,
+    Blocks.PLAYER_HEAD,
+    Blocks.ZOMBIE_HEAD,
+    Blocks.CREEPER_HEAD,
+    Blocks.PIGLIN_HEAD,
+    Blocks.DRAGON_HEAD,
+)
+
+val 墙上头颅 = setOf(
+    Blocks.SKELETON_WALL_SKULL,
+    Blocks.WITHER_SKELETON_WALL_SKULL,
+    Blocks.PLAYER_WALL_HEAD,
+    Blocks.ZOMBIE_WALL_HEAD,
+    Blocks.CREEPER_WALL_HEAD,
+    Blocks.PIGLIN_WALL_HEAD,
+    Blocks.DRAGON_WALL_HEAD,
+)
+
+val 铜雕像 = setOf(
+    Blocks.COPPER_GOLEM_STATUE,
+    Blocks.EXPOSED_COPPER_GOLEM_STATUE,
+    Blocks.WEATHERED_COPPER_GOLEM_STATUE,
+    Blocks.OXIDIZED_COPPER_GOLEM_STATUE,
+    Blocks.WAXED_COPPER_GOLEM_STATUE,
+    Blocks.WAXED_EXPOSED_COPPER_GOLEM_STATUE,
+    Blocks.WAXED_WEATHERED_COPPER_GOLEM_STATUE,
+    Blocks.WAXED_OXIDIZED_COPPER_GOLEM_STATUE
+)
+
+val 按钮 = setOf(
+    Blocks.STONE_BUTTON,
+    Blocks.OAK_BUTTON,
+    Blocks.SPRUCE_BUTTON,
+    Blocks.BIRCH_BUTTON,
+    Blocks.JUNGLE_BUTTON,
+    Blocks.ACACIA_BUTTON,
+    Blocks.CHERRY_BUTTON,
+    Blocks.DARK_OAK_BUTTON,
+    Blocks.PALE_OAK_BUTTON,
+    Blocks.MANGROVE_BUTTON,
+    Blocks.BAMBOO_BUTTON,
+    Blocks.CRIMSON_BUTTON,
+    Blocks.WARPED_BUTTON,
+    Blocks.POLISHED_BLACKSTONE_BUTTON
+)
+
+val 压力板 = setOf(
+    Blocks.STONE_PRESSURE_PLATE,
+    Blocks.OAK_PRESSURE_PLATE,
+    Blocks.SPRUCE_PRESSURE_PLATE,
+    Blocks.BIRCH_PRESSURE_PLATE,
+    Blocks.JUNGLE_PRESSURE_PLATE,
+    Blocks.ACACIA_PRESSURE_PLATE,
+    Blocks.CHERRY_PRESSURE_PLATE,
+    Blocks.DARK_OAK_PRESSURE_PLATE,
+    Blocks.PALE_OAK_PRESSURE_PLATE,
+    Blocks.MANGROVE_PRESSURE_PLATE,
+    Blocks.BAMBOO_PRESSURE_PLATE,
+    Blocks.LIGHT_WEIGHTED_PRESSURE_PLATE,
+    Blocks.HEAVY_WEIGHTED_PRESSURE_PLATE,
+    Blocks.CRIMSON_PRESSURE_PLATE,
+    Blocks.WARPED_PRESSURE_PLATE,
+    Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE
+)
+
+val 铁轨 = setOf(
+    Blocks.RAIL,
+    Blocks.POWERED_RAIL,
+    Blocks.DETECTOR_RAIL,
+    Blocks.ACTIVATOR_RAIL
+)
+
+val 门 = setOf(
+    Blocks.OAK_DOOR,
+    Blocks.IRON_DOOR,
+    Blocks.SPRUCE_DOOR,
+    Blocks.BIRCH_DOOR,
+    Blocks.JUNGLE_DOOR,
+    Blocks.ACACIA_DOOR,
+    Blocks.CHERRY_DOOR,
+    Blocks.DARK_OAK_DOOR,
+    Blocks.PALE_OAK_DOOR,
+    Blocks.MANGROVE_DOOR,
+    Blocks.BAMBOO_DOOR,
+    Blocks.CRIMSON_DOOR,
+    Blocks.WARPED_DOOR,
+    Blocks.COPPER_DOOR,
+    Blocks.EXPOSED_COPPER_DOOR,
+    Blocks.OXIDIZED_COPPER_DOOR,
+    Blocks.WEATHERED_COPPER_DOOR,
+    Blocks.WAXED_COPPER_DOOR,
+    Blocks.WAXED_EXPOSED_COPPER_DOOR,
+    Blocks.WAXED_OXIDIZED_COPPER_DOOR,
+    Blocks.WAXED_WEATHERED_COPPER_DOOR
+)
+
+val 活板门 = setOf(
+    Blocks.OAK_TRAPDOOR,
+    Blocks.IRON_TRAPDOOR,
+    Blocks.SPRUCE_TRAPDOOR,
+    Blocks.BIRCH_TRAPDOOR,
+    Blocks.JUNGLE_TRAPDOOR,
+    Blocks.ACACIA_TRAPDOOR,
+    Blocks.CHERRY_TRAPDOOR,
+    Blocks.DARK_OAK_TRAPDOOR,
+    Blocks.PALE_OAK_TRAPDOOR,
+    Blocks.MANGROVE_TRAPDOOR,
+    Blocks.BAMBOO_TRAPDOOR,
+    Blocks.CRIMSON_TRAPDOOR,
+    Blocks.WARPED_TRAPDOOR,
+    Blocks.COPPER_TRAPDOOR,
+    Blocks.EXPOSED_COPPER_TRAPDOOR,
+    Blocks.OXIDIZED_COPPER_TRAPDOOR,
+    Blocks.WEATHERED_COPPER_TRAPDOOR,
+    Blocks.WAXED_COPPER_TRAPDOOR,
+    Blocks.WAXED_EXPOSED_COPPER_TRAPDOOR,
+    Blocks.WAXED_OXIDIZED_COPPER_TRAPDOOR,
+    Blocks.WAXED_WEATHERED_COPPER_TRAPDOOR
+)
+
+val 栅栏门 = setOf(
+    Blocks.OAK_FENCE_GATE,
+    Blocks.SPRUCE_FENCE_GATE,
+    Blocks.BIRCH_FENCE_GATE,
+    Blocks.JUNGLE_FENCE_GATE,
+    Blocks.ACACIA_FENCE_GATE,
+    Blocks.CHERRY_FENCE_GATE,
+    Blocks.DARK_OAK_FENCE_GATE,
+    Blocks.PALE_OAK_FENCE_GATE,
+    Blocks.MANGROVE_FENCE_GATE,
+    Blocks.BAMBOO_FENCE_GATE,
+    Blocks.CRIMSON_FENCE_GATE,
+    Blocks.WARPED_FENCE_GATE
+)
+
+val 地毯 = setOf(
+    Blocks.WHITE_CARPET,
+    Blocks.ORANGE_CARPET,
+    Blocks.MAGENTA_CARPET,
+    Blocks.LIGHT_BLUE_CARPET,
+    Blocks.YELLOW_CARPET,
+    Blocks.LIME_CARPET,
+    Blocks.PINK_CARPET,
+    Blocks.GRAY_CARPET,
+    Blocks.LIGHT_GRAY_CARPET,
+    Blocks.CYAN_CARPET,
+    Blocks.PURPLE_CARPET,
+    Blocks.BLUE_CARPET,
+    Blocks.BROWN_CARPET,
+    Blocks.GREEN_CARPET,
+    Blocks.RED_CARPET,
+    Blocks.BLACK_CARPET,
+    Blocks.MOSS_CARPET,
+    Blocks.PALE_MOSS_CARPET
+)
+
+
+val 楼梯 = setOf(
+    Blocks.OAK_STAIRS,
+    Blocks.COBBLESTONE_STAIRS,
+    Blocks.BRICK_STAIRS,
+    Blocks.STONE_BRICK_STAIRS,
+    Blocks.MUD_BRICK_STAIRS,
+    Blocks.RESIN_BRICK_STAIRS,
+    Blocks.NETHER_BRICK_STAIRS,
+    Blocks.SANDSTONE_STAIRS,
+    Blocks.SPRUCE_STAIRS,
+    Blocks.BIRCH_STAIRS,
+    Blocks.JUNGLE_STAIRS,
+    Blocks.QUARTZ_STAIRS,
+    Blocks.ACACIA_STAIRS,
+    Blocks.CHERRY_STAIRS,
+    Blocks.DARK_OAK_STAIRS,
+    Blocks.PALE_OAK_STAIRS,
+    Blocks.MANGROVE_STAIRS,
+    Blocks.BAMBOO_STAIRS,
+    Blocks.BAMBOO_MOSAIC_STAIRS,
+    Blocks.PRISMARINE_STAIRS,
+    Blocks.PRISMARINE_BRICK_STAIRS,
+    Blocks.DARK_PRISMARINE_STAIRS,
+    Blocks.RED_SANDSTONE_STAIRS,
+    Blocks.PURPUR_STAIRS,
+    Blocks.POLISHED_GRANITE_STAIRS,
+    Blocks.SMOOTH_RED_SANDSTONE_STAIRS,
+    Blocks.MOSSY_STONE_BRICK_STAIRS,
+    Blocks.POLISHED_DIORITE_STAIRS,
+    Blocks.MOSSY_COBBLESTONE_STAIRS,
+    Blocks.END_STONE_BRICK_STAIRS,
+    Blocks.STONE_STAIRS,
+    Blocks.SMOOTH_SANDSTONE_STAIRS,
+    Blocks.SMOOTH_QUARTZ_STAIRS,
+    Blocks.GRANITE_STAIRS,
+    Blocks.ANDESITE_STAIRS,
+    Blocks.RED_NETHER_BRICK_STAIRS,
+    Blocks.POLISHED_ANDESITE_STAIRS,
+    Blocks.DIORITE_STAIRS,
+    Blocks.CRIMSON_STAIRS,
+    Blocks.WARPED_STAIRS,
+    Blocks.BLACKSTONE_STAIRS,
+    Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS,
+    Blocks.POLISHED_BLACKSTONE_STAIRS,
+    Blocks.TUFF_STAIRS,
+    Blocks.POLISHED_TUFF_STAIRS,
+    Blocks.TUFF_BRICK_STAIRS,
+    Blocks.OXIDIZED_CUT_COPPER_STAIRS,
+    Blocks.WEATHERED_CUT_COPPER_STAIRS,
+    Blocks.EXPOSED_CUT_COPPER_STAIRS,
+    Blocks.CUT_COPPER_STAIRS,
+    Blocks.WAXED_OXIDIZED_CUT_COPPER_STAIRS,
+    Blocks.WAXED_WEATHERED_CUT_COPPER_STAIRS,
+    Blocks.WAXED_EXPOSED_CUT_COPPER_STAIRS,
+    Blocks.WAXED_CUT_COPPER_STAIRS,
+    Blocks.COBBLED_DEEPSLATE_STAIRS,
+    Blocks.POLISHED_DEEPSLATE_STAIRS,
+    Blocks.DEEPSLATE_TILE_STAIRS,
+    Blocks.DEEPSLATE_BRICK_STAIRS
 )

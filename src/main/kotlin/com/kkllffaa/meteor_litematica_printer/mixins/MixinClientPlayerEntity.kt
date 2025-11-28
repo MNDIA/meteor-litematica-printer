@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.mixins
 
+import com.kkllffaa.meteor_litematica_printer.Functions.SignColorMode
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings.SignColorMode
 import com.mojang.authlib.GameProfile
 import fi.dy.masa.litematica.world.SchematicWorldHandler
 import net.minecraft.block.entity.SignBlockEntity

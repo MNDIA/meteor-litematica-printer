@@ -43,16 +43,14 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         BlockListSetting.Builder()
             .name("blacklist")
             .description("Blocks that cannot be placed against.(Click Face Center Pos is Air)")
-            .defaultValue( //面中心没有体积的砖
+            .defaultValue(
+                //面中心没有体积的砖
                 Blocks.SCAFFOLDING,
-                Blocks.WHITE_SHULKER_BOX, Blocks.ORANGE_SHULKER_BOX, Blocks.MAGENTA_SHULKER_BOX,
-                Blocks.LIGHT_BLUE_SHULKER_BOX, Blocks.YELLOW_SHULKER_BOX, Blocks.LIME_SHULKER_BOX,
-                Blocks.PINK_SHULKER_BOX, Blocks.GRAY_SHULKER_BOX, Blocks.LIGHT_GRAY_SHULKER_BOX,
-                Blocks.CYAN_SHULKER_BOX, Blocks.PURPLE_SHULKER_BOX, Blocks.BLUE_SHULKER_BOX,
-                Blocks.BROWN_SHULKER_BOX, Blocks.GREEN_SHULKER_BOX, Blocks.RED_SHULKER_BOX,
-                Blocks.BLACK_SHULKER_BOX,
                 Blocks.POINTED_DRIPSTONE,
-                Blocks.AMETHYST_CLUSTER
+                Blocks.AMETHYST_CLUSTER,
+                *潜影盒.toTypedArray(),
+                *地毯.toTypedArray(),
+                *压力板.toTypedArray(),
             )
             .visible { enableBlacklist.get() }
             .build()
@@ -96,7 +94,6 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .description("Blocks that cannot be placed in airplace.")
             .defaultValue(
                 Blocks.GRINDSTONE
-                // Blocks.LANTERN, Blocks.SOUL_LANTERN, *Blocks.COPPER_LANTERNS.all.toTypedArray()
             )
             .visible { airPlace.get() }
             .build()
@@ -145,18 +142,10 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         EnumSetting.Builder<SignColorMode>()
             .name("sign-text-with-color")
             .description("Use colored text for signs.")
-            .defaultValue(SignColorMode.None)
+            .defaultValue(SignColorMode.反三)
             .build()
     )
 
-    enum class SignColorMode {
-        None,
-        反三,
-        八字符号
-    }
-
-
-    // Directional Protection Settings
     private val directionProtection: Setting<Boolean> = sgDirectional.add(
         BoolSetting.Builder()
             .name("direction-protection")
@@ -176,222 +165,128 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .build()
     )
 
-    // Blocks that face the same direction as player (Forward)
-    private val dirForward: Setting<MutableList<Block>> = sgDirectional.add(
+    private val YawForward: Setting<MutableList<Block>> = sgDirectional.add(
         BlockListSetting.Builder()
-            .name("facing-forward")
+            .name("yaw-forward")
             .description("Blocks that should face the same direction as player.")
-            .defaultValue( // 侦测器、钟
-                Blocks.OBSERVER,
-                Blocks.BELL,  // 砂轮
-                Blocks.GRINDSTONE,  // 拉杆
-                Blocks.LEVER,  // 按钮
-
-                Blocks.STONE_BUTTON,
-                Blocks.OAK_BUTTON,
-                Blocks.SPRUCE_BUTTON,
-                Blocks.BIRCH_BUTTON,
-                Blocks.JUNGLE_BUTTON,
-                Blocks.ACACIA_BUTTON,
-                Blocks.DARK_OAK_BUTTON,
-                Blocks.CRIMSON_BUTTON,
-                Blocks.WARPED_BUTTON,
-                Blocks.MANGROVE_BUTTON,
-                Blocks.BAMBOO_BUTTON,
-                Blocks.CHERRY_BUTTON,
-                Blocks.POLISHED_BLACKSTONE_BUTTON,  // 铁轨
-                Blocks.RAIL,
-                Blocks.POWERED_RAIL,
-                Blocks.DETECTOR_RAIL,
-                Blocks.ACTIVATOR_RAIL,  // 楼梯
-                Blocks.OAK_STAIRS,
-                Blocks.SPRUCE_STAIRS,
-                Blocks.BIRCH_STAIRS,
-                Blocks.JUNGLE_STAIRS,
-                Blocks.ACACIA_STAIRS,
-                Blocks.DARK_OAK_STAIRS,
-                Blocks.STONE_STAIRS,
-                Blocks.COBBLESTONE_STAIRS,
-                Blocks.BRICK_STAIRS,
-                Blocks.STONE_BRICK_STAIRS,
-                Blocks.NETHER_BRICK_STAIRS,
-                Blocks.SANDSTONE_STAIRS,
-                Blocks.QUARTZ_STAIRS,
-                Blocks.RED_SANDSTONE_STAIRS,
-                Blocks.PURPUR_STAIRS,
-                Blocks.PRISMARINE_STAIRS,
-                Blocks.PRISMARINE_BRICK_STAIRS,
-                Blocks.DARK_PRISMARINE_STAIRS,
-                Blocks.GRANITE_STAIRS,
-                Blocks.DIORITE_STAIRS,
-                Blocks.ANDESITE_STAIRS,
-                Blocks.POLISHED_GRANITE_STAIRS,
-                Blocks.POLISHED_DIORITE_STAIRS,
-                Blocks.POLISHED_ANDESITE_STAIRS,
-                Blocks.MOSSY_STONE_BRICK_STAIRS,
-                Blocks.MOSSY_COBBLESTONE_STAIRS,
-                Blocks.SMOOTH_SANDSTONE_STAIRS,
-                Blocks.SMOOTH_RED_SANDSTONE_STAIRS,
-                Blocks.SMOOTH_QUARTZ_STAIRS,
-                Blocks.END_STONE_BRICK_STAIRS,
-                Blocks.BLACKSTONE_STAIRS,
-                Blocks.POLISHED_BLACKSTONE_STAIRS,
-                Blocks.POLISHED_BLACKSTONE_BRICK_STAIRS,
-                Blocks.CRIMSON_STAIRS,
-                Blocks.WARPED_STAIRS,
-                Blocks.MANGROVE_STAIRS,
-                Blocks.BAMBOO_STAIRS,
-                Blocks.BAMBOO_MOSAIC_STAIRS,
-                Blocks.CHERRY_STAIRS,
-                Blocks.COBBLED_DEEPSLATE_STAIRS,
-                Blocks.POLISHED_DEEPSLATE_STAIRS,
-                Blocks.DEEPSLATE_BRICK_STAIRS,
-                Blocks.DEEPSLATE_TILE_STAIRS,
-                Blocks.PALE_OAK_STAIRS,
-                Blocks.RED_NETHER_BRICK_STAIRS,
-                Blocks.RESIN_BRICK_STAIRS,
-                Blocks.MUD_BRICK_STAIRS,
-                Blocks.TUFF_BRICK_STAIRS,
-                Blocks.POLISHED_TUFF_STAIRS,
-                Blocks.TUFF_STAIRS,  // 栅栏门
-                Blocks.OAK_FENCE_GATE,
-                Blocks.SPRUCE_FENCE_GATE,
-                Blocks.BIRCH_FENCE_GATE,
-                Blocks.JUNGLE_FENCE_GATE,
-                Blocks.ACACIA_FENCE_GATE,
-                Blocks.DARK_OAK_FENCE_GATE,
-                Blocks.CRIMSON_FENCE_GATE,
-                Blocks.WARPED_FENCE_GATE,
-                Blocks.MANGROVE_FENCE_GATE,
-                Blocks.BAMBOO_FENCE_GATE,
-                Blocks.CHERRY_FENCE_GATE,
-                Blocks.PALE_OAK_FENCE_GATE,  // 床
-                Blocks.WHITE_BED,
-                Blocks.ORANGE_BED,
-                Blocks.MAGENTA_BED,
-                Blocks.LIGHT_BLUE_BED,
-                Blocks.YELLOW_BED,
-                Blocks.LIME_BED,
-                Blocks.PINK_BED,
-                Blocks.GRAY_BED,
-                Blocks.LIGHT_GRAY_BED,
-                Blocks.CYAN_BED,
-                Blocks.PURPLE_BED,
-                Blocks.BLUE_BED,
-                Blocks.BROWN_BED,
-                Blocks.GREEN_BED,
-                Blocks.RED_BED,
-                Blocks.BLACK_BED
+            .defaultValue(
+                Blocks.LEVER, // 拉杆
+                Blocks.CALIBRATED_SCULK_SENSOR, // 校准潜影传感器
+                Blocks.OBSERVER,// 侦测器
+                Blocks.GRINDSTONE,// 砂轮
+                Blocks.CAMPFIRE, // 篝火
+                Blocks.SOUL_CAMPFIRE, // 蓝篝火
+                Blocks.BELL, // 钟
+                Blocks.DECORATED_POT, // 装饰花盆
+                *地面头颅.toTypedArray(),
+                *按钮.toTypedArray(),
+                *铁轨.toTypedArray(),
+                *栅栏门.toTypedArray(),
+                *楼梯.toTypedArray(),
+                *门.toTypedArray(),//TODO: 旁边砖块个数和点击偏移决定左右门
+                *床.toTypedArray(),
             )
             .visible { directionProtection.get() }
             .build()
     )
 
-    // Blocks that face away from player (Backward)
-    private val dirBackward: Setting<MutableList<Block>> = sgDirectional.add(
+    private val YawBackward: Setting<MutableList<Block>> = sgDirectional.add(
         BlockListSetting.Builder()
-            .name("directional-backward")
-            .description("Blocks that should face away from player.")
-            .defaultValue( //合成器
-                Blocks.CRAFTER,  // 活塞
-                Blocks.PISTON,
-                Blocks.STICKY_PISTON,  // 箱子
-                Blocks.CHEST,
-                Blocks.TRAPPED_CHEST,
-                Blocks.ENDER_CHEST,  // 铁轨
-                Blocks.RAIL,
-                Blocks.POWERED_RAIL,
-                Blocks.DETECTOR_RAIL,
-                Blocks.ACTIVATOR_RAIL,  // 桶、切石机
-                Blocks.BARREL,
-                Blocks.STONECUTTER,  // 蜂箱、蜂巢
-                Blocks.BEE_NEST,
-                Blocks.BEEHIVE,  // 发射器、投掷器
-                Blocks.DISPENSER,
-                Blocks.DROPPER,  // 中继器、比较器
-                Blocks.REPEATER,
-                Blocks.COMPARATOR,  // 失水恶魂
-                Blocks.SOUL_SOIL,  // 雕刻南瓜、发光南瓜
-                Blocks.CARVED_PUMPKIN,
-                Blocks.JACK_O_LANTERN,  // 讲台
-                Blocks.LECTERN,  // 炉子
-                Blocks.FURNACE,
-                Blocks.BLAST_FURNACE,
-                Blocks.SMOKER,  // 雕文书架
-                Blocks.CHISELED_BOOKSHELF,  // 铁活板门
-                Blocks.IRON_TRAPDOOR,  // 木活板门
-                Blocks.OAK_TRAPDOOR,
-                Blocks.SPRUCE_TRAPDOOR,
-                Blocks.BIRCH_TRAPDOOR,
-                Blocks.JUNGLE_TRAPDOOR,
-                Blocks.ACACIA_TRAPDOOR,
-                Blocks.DARK_OAK_TRAPDOOR,
-                Blocks.CRIMSON_TRAPDOOR,
-                Blocks.PALE_OAK_TRAPDOOR,
-                Blocks.WARPED_TRAPDOOR,
-                Blocks.MANGROVE_TRAPDOOR,
-                Blocks.BAMBOO_TRAPDOOR,
-                Blocks.CHERRY_TRAPDOOR,  // 铜活板门
-                Blocks.COPPER_TRAPDOOR,
-                Blocks.EXPOSED_COPPER_TRAPDOOR,
-                Blocks.WEATHERED_COPPER_TRAPDOOR,
-                Blocks.OXIDIZED_COPPER_TRAPDOOR,
-                Blocks.WAXED_COPPER_TRAPDOOR,
-                Blocks.WAXED_EXPOSED_COPPER_TRAPDOOR,
-                Blocks.WAXED_WEATHERED_COPPER_TRAPDOOR,
-                Blocks.WAXED_OXIDIZED_COPPER_TRAPDOOR
-
+            .name("yaw-backward")
+            .description("Blocks that should face to player.")
+            .defaultValue(
+                Blocks.REPEATER,// 中继器
+                Blocks.COMPARATOR,// 比较器
+                Blocks.TRIPWIRE_HOOK, // 绊线钩
+                Blocks.LECTERN, // 讲台
+                Blocks.PISTON, // 活塞
+                Blocks.STICKY_PISTON, // 粘性活塞
+                Blocks.DISPENSER,// 发射器
+                Blocks.DROPPER,//投掷器
+                Blocks.CRAFTER, //合成器
+                Blocks.BARREL,// 木桶
+                Blocks.CHISELED_BOOKSHELF, // 雕文书架
+                Blocks.STONECUTTER,// 切石机
+                Blocks.LOOM, //织布机
+                Blocks.FURNACE, // 炉子
+                Blocks.SMOKER, // 食物炉子
+                Blocks.BLAST_FURNACE, // 矿炉子
+                Blocks.SOUL_SOIL, // 失水恶魂
+                Blocks.CARVED_PUMPKIN,   // 雕刻南瓜
+                Blocks.JACK_O_LANTERN,   // 发光南瓜
+                Blocks.BEE_NEST,// 蜂巢
+                Blocks.BEEHIVE,// 蜂箱
+                Blocks.BIG_DRIPLEAF,// 大滴水叶
+                Blocks.END_PORTAL_FRAME, // 末地传送门框架
+                Blocks.VAULT, // 宝库
+                *地面旗帜.toTypedArray(),
+                *墙上旗帜.toTypedArray(),
+                *墙上头颅.toTypedArray(),
+                *墙上火把.toTypedArray(),
+                *墙上告示牌.toTypedArray(),
+                *地面告示牌.toTypedArray(),
+                *天花板H告示牌.toTypedArray(),
+                *墙上H告示牌.toTypedArray(),
+                *开合箱子.toTypedArray(),
+                *三框展示架.toTypedArray(),
+                *活板门.toTypedArray(),
+                *铁轨.toTypedArray(),
+                *栅栏门.toTypedArray(),
+                *铜雕像.toTypedArray(),
             )
             .visible { directionProtection.get() }
             .build()
     )
 
-    // Blocks that face to the left of player
-    private val dirLeft: Setting<MutableList<Block>> = sgDirectional.add(
+    private val YawLeft: Setting<MutableList<Block>> = sgDirectional.add(
         BlockListSetting.Builder()
-            .name("directional-left")
+            .name("yaw-left")
             .description("Blocks that should face to the left of player.")
-            .defaultValue( // 铁砧
-                Blocks.ANVIL, Blocks.CHIPPED_ANVIL, Blocks.DAMAGED_ANVIL
-            )
             .visible { directionProtection.get() }
             .build()
     )
 
-    // Blocks that face to the right of player
-    private val dirRight: Setting<MutableList<Block>> = sgDirectional.add(
+    private val YawRight: Setting<MutableList<Block>> = sgDirectional.add(
         BlockListSetting.Builder()
-            .name("directional-right")
+            .name("yaw-right")
             .description("Blocks that should face to the right of player.")
+            .defaultValue(*铁砧.toTypedArray())
             .visible { directionProtection.get() }
             .build()
     )
 
-    // Blocks that face upward from player
-    private val dirUp: Setting<MutableList<Block>> = sgDirectional.add(
+    private val PitchForward: Setting<MutableList<Block>> = sgDirectional.add(
         BlockListSetting.Builder()
-            .name("directional-up")
-            .description("Blocks that should face upward from player.")
-            .visible { directionProtection.get() }
-            .build()
-    )
-
-    // Blocks that face downward from player
-    private val dirDown: Setting<MutableList<Block>> = sgDirectional.add(
-        BlockListSetting.Builder()
-            .name("directional-down")
-            .description("Blocks that should face downward from player.")
-            .visible { directionProtection.get() }
-            .build()
-    )
-
-
-    private val precisePlacement: Setting<Boolean> = sgClickFace.add(
-        BoolSetting.Builder()
-            .name("precise-placement")
-            .description(
-                "Use precise face-based placement for stairs, slabs, trapdoors etc. (ignores player orientation completely)"
+            .name("pitch-forward")
+            .description("Blocks that should face the same direction as player when UpDown")
+            .defaultValue(
+                Blocks.OBSERVER,// 侦测器
             )
+            .visible { directionProtection.get() }
+            .build()
+    )
+
+    private val PitchBackward: Setting<MutableList<Block>> = sgDirectional.add(
+        BlockListSetting.Builder()
+            .name("pitch-backward")
+            .description("Blocks that should face to player when UpDown")
+            .defaultValue(
+                Blocks.PISTON, // 活塞
+                Blocks.STICKY_PISTON, // 粘性活塞
+                Blocks.DISPENSER,// 发射器
+                Blocks.DROPPER,//投掷器
+                Blocks.CRAFTER, //合成器
+                Blocks.BARREL,// 木桶
+            )
+            .visible { directionProtection.get() }
+            .build()
+    )
+
+
+    private val clickProtection: Setting<Boolean> = sgClickFace.add(
+        BoolSetting.Builder()
+            .name("click-protection")
+            .description("Only place directional blocks when click-face is correct direction.")
             .defaultValue(true)
             .build()
     )
@@ -400,207 +295,55 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .name("free-face-of-default-torch")
             .description("Allow placing default torches without precise placement.")
             .defaultValue(false)
-            .visible { precisePlacement.get() }
+            .visible { clickProtection.get() }
             .build()
     )
 
-
-    // Precise Placement Face Lists
-    private val preciseForward: Setting<MutableList<Block>> = sgClickFace.add(
+    private val clickForward: Setting<MutableList<Block>> = sgClickFace.add(
         BlockListSetting.Builder()
-            .name("precise-facing-forward")
-            .description("Blocks for precise placement facing forward.")
-            .defaultValue( // 火把
-                Blocks.TORCH,
-                Blocks.SOUL_TORCH,
-                Blocks.REDSTONE_TORCH,  // 梯子
-                Blocks.LADDER,  // 拉杆
-                Blocks.LEVER,  // 按钮
+            .name("click-forward")
+            .description("Blocks that should face the same direction as click face.")
+            .defaultValue(
+                Blocks.LADDER,   // 梯子
+                Blocks.LEVER,   // 拉杆
+                Blocks.GRINDSTONE,  // 砂轮
+                Blocks.END_ROD, //末地烛 TODO:末地烛放在末地烛上反向特例
+                Blocks.TRIPWIRE_HOOK, // 绊线钩
+                *按钮.toTypedArray(),
+                *墙上旗帜.toTypedArray(),
+                *墙上头颅.toTypedArray(),
+                *墙上火把.toTypedArray(),
+                *墙上告示牌.toTypedArray(),
+                *潜影盒.toTypedArray(),
+                *活板门.toTypedArray(),
+                *避雷针.toTypedArray(),
 
-                Blocks.STONE_BUTTON,
-                Blocks.OAK_BUTTON,
-                Blocks.SPRUCE_BUTTON,
-                Blocks.BIRCH_BUTTON,
-                Blocks.JUNGLE_BUTTON,
-                Blocks.ACACIA_BUTTON,
-                Blocks.DARK_OAK_BUTTON,
-                Blocks.CRIMSON_BUTTON,
-                Blocks.WARPED_BUTTON,
-                Blocks.MANGROVE_BUTTON,
-                Blocks.BAMBOO_BUTTON,
-                Blocks.CHERRY_BUTTON,
-                Blocks.POLISHED_BLACKSTONE_BUTTON,  // 潜影盒
-                Blocks.SHULKER_BOX,
-                Blocks.WHITE_SHULKER_BOX,
-                Blocks.ORANGE_SHULKER_BOX,
-                Blocks.MAGENTA_SHULKER_BOX,
-                Blocks.LIGHT_BLUE_SHULKER_BOX,
-                Blocks.YELLOW_SHULKER_BOX,
-                Blocks.LIME_SHULKER_BOX,
-                Blocks.PINK_SHULKER_BOX,
-                Blocks.GRAY_SHULKER_BOX,
-                Blocks.LIGHT_GRAY_SHULKER_BOX,
-                Blocks.CYAN_SHULKER_BOX,
-                Blocks.PURPLE_SHULKER_BOX,
-                Blocks.BLUE_SHULKER_BOX,
-                Blocks.BROWN_SHULKER_BOX,
-                Blocks.GREEN_SHULKER_BOX,
-                Blocks.RED_SHULKER_BOX,
-                Blocks.BLACK_SHULKER_BOX,  // 铁活板门
-                Blocks.IRON_TRAPDOOR,  // 木活板门
-                Blocks.OAK_TRAPDOOR,
-                Blocks.SPRUCE_TRAPDOOR,
-                Blocks.BIRCH_TRAPDOOR,
-                Blocks.JUNGLE_TRAPDOOR,
-                Blocks.ACACIA_TRAPDOOR,
-                Blocks.DARK_OAK_TRAPDOOR,
-                Blocks.CRIMSON_TRAPDOOR,
-                Blocks.PALE_OAK_TRAPDOOR,
-                Blocks.WARPED_TRAPDOOR,
-                Blocks.MANGROVE_TRAPDOOR,
-                Blocks.BAMBOO_TRAPDOOR,
-                Blocks.CHERRY_TRAPDOOR,  // 铜活板门
-                Blocks.COPPER_TRAPDOOR,
-                Blocks.EXPOSED_COPPER_TRAPDOOR,
-                Blocks.WEATHERED_COPPER_TRAPDOOR,
-                Blocks.OXIDIZED_COPPER_TRAPDOOR,
-                Blocks.WAXED_COPPER_TRAPDOOR,
-                Blocks.WAXED_EXPOSED_COPPER_TRAPDOOR,
-                Blocks.WAXED_WEATHERED_COPPER_TRAPDOOR,
-                Blocks.WAXED_OXIDIZED_COPPER_TRAPDOOR,  //单头棍子
-
-                Blocks.END_ROD,
-                Blocks.LIGHTNING_ROD,  // 双头棍子
-
-                Blocks.HAY_BLOCK,
-                Blocks.IRON_CHAIN,  // 原木
-                Blocks.OAK_LOG,
-                Blocks.SPRUCE_LOG,
-                Blocks.BIRCH_LOG,
-                Blocks.JUNGLE_LOG,
-                Blocks.ACACIA_LOG,
-                Blocks.DARK_OAK_LOG,
-                Blocks.CRIMSON_STEM,
-                Blocks.PALE_OAK_LOG,
-                Blocks.WARPED_STEM,
-                Blocks.MANGROVE_LOG,
-                Blocks.CHERRY_LOG,  // 去皮原木
-                Blocks.STRIPPED_OAK_LOG,
-                Blocks.STRIPPED_SPRUCE_LOG,
-                Blocks.STRIPPED_BIRCH_LOG,
-                Blocks.STRIPPED_JUNGLE_LOG,
-                Blocks.STRIPPED_ACACIA_LOG,
-                Blocks.STRIPPED_DARK_OAK_LOG,
-                Blocks.STRIPPED_CRIMSON_STEM,
-                Blocks.STRIPPED_WARPED_STEM,
-                Blocks.STRIPPED_MANGROVE_LOG,
-                Blocks.STRIPPED_CHERRY_LOG,
-                Blocks.STRIPPED_PALE_OAK_LOG,  // 木头
-                Blocks.OAK_WOOD,
-                Blocks.SPRUCE_WOOD,
-                Blocks.BIRCH_WOOD,
-                Blocks.JUNGLE_WOOD,
-                Blocks.ACACIA_WOOD,
-                Blocks.DARK_OAK_WOOD,
-                Blocks.CRIMSON_HYPHAE,
-                Blocks.WARPED_HYPHAE,
-                Blocks.MANGROVE_WOOD,
-                Blocks.CHERRY_WOOD,
-                Blocks.PALE_OAK_WOOD,  // 去皮木头
-                Blocks.STRIPPED_OAK_WOOD,
-                Blocks.STRIPPED_SPRUCE_WOOD,
-                Blocks.STRIPPED_BIRCH_WOOD,
-                Blocks.STRIPPED_JUNGLE_WOOD,
-                Blocks.STRIPPED_ACACIA_WOOD,
-                Blocks.STRIPPED_DARK_OAK_WOOD,
-                Blocks.STRIPPED_CRIMSON_HYPHAE,
-                Blocks.STRIPPED_WARPED_HYPHAE,
-                Blocks.STRIPPED_MANGROVE_WOOD,
-                Blocks.STRIPPED_CHERRY_WOOD,
-                Blocks.STRIPPED_PALE_OAK_WOOD,  // 其他AXIS块
-                Blocks.BAMBOO_BLOCK,
-                Blocks.STRIPPED_BAMBOO_BLOCK,
-                Blocks.QUARTZ_PILLAR,
-                Blocks.BONE_BLOCK,
-                Blocks.PURPUR_PILLAR,
-                Blocks.BASALT,
-                Blocks.POLISHED_BASALT,  // 蛙鸣灯
-                Blocks.OCHRE_FROGLIGHT,
-                Blocks.PEARLESCENT_FROGLIGHT,
-                Blocks.VERDANT_FROGLIGHT
-
-
+                *链.toTypedArray(),
+                *原木log.toTypedArray(),
+                *去皮原木log.toTypedArray(),
+                *木块wood.toTypedArray(),
+                *去皮木块wood.toTypedArray(),
+                *个别AxisBlocks.toTypedArray(),
             )
-            .visible { precisePlacement.get() }
+            .visible { clickProtection.get() }
             .build()
     )
 
-    private val preciseBackward: Setting<MutableList<Block>> = sgClickFace.add(
+    private val clickBackward: Setting<MutableList<Block>> = sgClickFace.add(
         BlockListSetting.Builder()
-            .name("precise-facing-backward")
-            .description("Blocks for precise placement facing backward.")
-            .defaultValue( // 钟
-                Blocks.BELL,  // 漏斗
-                Blocks.HOPPER,  // 双头棍子
-                Blocks.HAY_BLOCK,
-                Blocks.IRON_CHAIN,  // 原木
-                Blocks.OAK_LOG,
-                Blocks.SPRUCE_LOG,
-                Blocks.BIRCH_LOG,
-                Blocks.JUNGLE_LOG,
-                Blocks.ACACIA_LOG,
-                Blocks.DARK_OAK_LOG,
-                Blocks.CRIMSON_STEM,
-                Blocks.PALE_OAK_LOG,
-                Blocks.WARPED_STEM,
-                Blocks.MANGROVE_LOG,
-                Blocks.CHERRY_LOG,  // 去皮原木
-                Blocks.STRIPPED_OAK_LOG,
-                Blocks.STRIPPED_SPRUCE_LOG,
-                Blocks.STRIPPED_BIRCH_LOG,
-                Blocks.STRIPPED_JUNGLE_LOG,
-                Blocks.STRIPPED_ACACIA_LOG,
-                Blocks.STRIPPED_DARK_OAK_LOG,
-                Blocks.STRIPPED_CRIMSON_STEM,
-                Blocks.STRIPPED_WARPED_STEM,
-                Blocks.STRIPPED_MANGROVE_LOG,
-                Blocks.STRIPPED_CHERRY_LOG,
-                Blocks.STRIPPED_PALE_OAK_LOG,  // 木头
-                Blocks.OAK_WOOD,
-                Blocks.SPRUCE_WOOD,
-                Blocks.BIRCH_WOOD,
-                Blocks.JUNGLE_WOOD,
-                Blocks.ACACIA_WOOD,
-                Blocks.DARK_OAK_WOOD,
-                Blocks.CRIMSON_HYPHAE,
-                Blocks.WARPED_HYPHAE,
-                Blocks.MANGROVE_WOOD,
-                Blocks.CHERRY_WOOD,
-                Blocks.PALE_OAK_WOOD,  // 去皮木头
-                Blocks.STRIPPED_OAK_WOOD,
-                Blocks.STRIPPED_SPRUCE_WOOD,
-                Blocks.STRIPPED_BIRCH_WOOD,
-                Blocks.STRIPPED_JUNGLE_WOOD,
-                Blocks.STRIPPED_ACACIA_WOOD,
-                Blocks.STRIPPED_DARK_OAK_WOOD,
-                Blocks.STRIPPED_CRIMSON_HYPHAE,
-                Blocks.STRIPPED_WARPED_HYPHAE,
-                Blocks.STRIPPED_MANGROVE_WOOD,
-                Blocks.STRIPPED_CHERRY_WOOD,
-                Blocks.STRIPPED_PALE_OAK_WOOD,  // 其他AXIS块
-                Blocks.BAMBOO_BLOCK,
-                Blocks.STRIPPED_BAMBOO_BLOCK,
-                Blocks.QUARTZ_PILLAR,
-                Blocks.BONE_BLOCK,
-                Blocks.PURPUR_PILLAR,
-                Blocks.BASALT,
-                Blocks.POLISHED_BASALT,  // 蛙鸣灯
-                Blocks.OCHRE_FROGLIGHT,
-                Blocks.PEARLESCENT_FROGLIGHT,
-                Blocks.VERDANT_FROGLIGHT
-
+            .name("click-backward")
+            .description("Blocks that should face to click face(back).")
+            .defaultValue(
+                Blocks.BELL,  // 钟
+                Blocks.HOPPER,    // 漏斗
+                *链.toTypedArray(),
+                *原木log.toTypedArray(),
+                *去皮原木log.toTypedArray(),
+                *木块wood.toTypedArray(),
+                *去皮木块wood.toTypedArray(),
+                *个别AxisBlocks.toTypedArray(),
             )
-            .visible { precisePlacement.get() }
+            .visible { clickProtection.get() }
             .build()
     )
 
@@ -608,16 +351,16 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         BlockListSetting.Builder()
             .name("precise-facing-left")
             .description("Blocks for precise placement facing left.")
-            .defaultValue(*wallHangingSigns.toTypedArray())
-            .visible { precisePlacement.get() }
+            .defaultValue(*墙上H告示牌.toTypedArray())
+            .visible { clickProtection.get() }
             .build()
     )
     private val preciseRight: Setting<MutableList<Block>> = sgClickFace.add(
         BlockListSetting.Builder()
             .name("precise-facing-right")
             .description("Blocks for precise placement facing right.")
-            .defaultValue(*wallHangingSigns.toTypedArray())
-            .visible { precisePlacement.get() }
+            .defaultValue(*墙上H告示牌.toTypedArray())
+            .visible { clickProtection.get() }
             .build()
     )
 
@@ -627,7 +370,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         // 检查点
         if (!required.canPlaceAt(world, pos)) return false //没有墙体支撑导致会实际放置状态fallback
         if (!BlockUtils.canPlace(pos) || !required.isMultiStructurePlacementAllowed) return false
-        
+
         // 检查面
         val block = required.block
         val isPlaceAllowedFromPlayerRotation by lazy { required.isPlaceAllowedFromPlayerRotation }
@@ -794,7 +537,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             ) {
                 continue
             }
-            if (precisePlacement.get() && !disableFaceProtection
+            if (clickProtection.get() && !disableFaceProtection
                 && !required.isPlaceAllowedFromClickFace(face)
             ) {
                 continue
@@ -863,8 +606,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val requiredDirection = this.ATagFaceOf6 ?: return true
 
         val block = this.block
-        val inListForward = block in preciseForward.get()
-        val inListBackward = block in preciseBackward.get()
+        val inListForward = block in clickForward.get()
+        val inListBackward = block in clickBackward.get()
         val inListLeft = block in preciseLeft.get()
         val inListRight = block in preciseRight.get()
         if (!(inListForward || inListBackward || inListLeft || inListRight)) return true
@@ -881,12 +624,12 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
     private val BlockState.isPlaceAllowedFromPlayerRotation: Boolean
         get() {
             val block = this.block
-            val inListUp = block in dirUp.get()
-            val inListDown = block in dirDown.get()
-            val inListForward = block in dirForward.get()
-            val inListBackward = block in dirBackward.get()
-            val inListLeft = block in dirLeft.get()
-            val inListRight = block in dirRight.get()
+            val inListUp = block in PitchForward.get()
+            val inListDown = block in PitchBackward.get()
+            val inListForward = block in YawForward.get()
+            val inListBackward = block in YawBackward.get()
+            val inListLeft = block in YawLeft.get()
+            val inListRight = block in YawRight.get()
             if (!(inListUp || inListDown || inListForward || inListBackward || inListLeft || inListRight)) return true
             val 容差 = angleRangeForDirectionProtection.get().toFloat()
 

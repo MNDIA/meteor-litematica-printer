@@ -3,7 +3,11 @@ package com.kkllffaa.meteor_litematica_printer.Functions
 import meteordevelopment.meteorclient.utils.render.color.SettingColor
 import kotlin.random.Random.Default
 
-
+enum class SignColorMode {
+        None,
+        反三,
+        八字符号
+    }
 enum class SafetyFaceMode {
     PlayerRotation,
     PlayerPosition,  // 射线方向

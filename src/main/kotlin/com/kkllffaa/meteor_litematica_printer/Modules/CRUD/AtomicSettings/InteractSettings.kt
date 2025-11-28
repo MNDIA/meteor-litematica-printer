@@ -55,63 +55,14 @@ object InteractSettings : Module(Addon.SettingsForCRUD, "Interact", "Module to c
             .name("state-blocks")
             .description("Blocks that need interaction to adjust their state.")
             .defaultValue(
-                // 中继器、比较器
-                Blocks.REPEATER,
-                Blocks.COMPARATOR,
-                // 音符盒
-                Blocks.NOTE_BLOCK,
-                // 拉杆
-                Blocks.LEVER,
-                // 日光传感器
-                Blocks.DAYLIGHT_DETECTOR,
-                // 活板门
-                Blocks.OAK_TRAPDOOR,
-                Blocks.SPRUCE_TRAPDOOR,
-                Blocks.BIRCH_TRAPDOOR,
-                Blocks.JUNGLE_TRAPDOOR,
-                Blocks.ACACIA_TRAPDOOR,
-                Blocks.DARK_OAK_TRAPDOOR,
-                Blocks.CRIMSON_TRAPDOOR,
-                Blocks.WARPED_TRAPDOOR,
-                Blocks.MANGROVE_TRAPDOOR,
-                Blocks.BAMBOO_TRAPDOOR,
-                Blocks.CHERRY_TRAPDOOR,
-                Blocks.PALE_OAK_TRAPDOOR,
-                Blocks.COPPER_TRAPDOOR,
-                Blocks.EXPOSED_COPPER_TRAPDOOR,
-                Blocks.WEATHERED_COPPER_TRAPDOOR,
-                Blocks.OXIDIZED_COPPER_TRAPDOOR,
-                // 门
-                Blocks.OAK_DOOR,
-                Blocks.SPRUCE_DOOR,
-                Blocks.BIRCH_DOOR,
-                Blocks.JUNGLE_DOOR,
-                Blocks.ACACIA_DOOR,
-                Blocks.DARK_OAK_DOOR,
-                Blocks.CRIMSON_DOOR,
-                Blocks.WARPED_DOOR,
-                Blocks.MANGROVE_DOOR,
-                Blocks.BAMBOO_DOOR,
-                Blocks.CHERRY_DOOR,
-                Blocks.PALE_OAK_DOOR,
-                Blocks.COPPER_DOOR,
-                Blocks.EXPOSED_COPPER_DOOR,
-                Blocks.WEATHERED_COPPER_DOOR,
-                Blocks.OXIDIZED_COPPER_DOOR,
-                // 栅栏门
-                Blocks.OAK_FENCE_GATE,
-                Blocks.SPRUCE_FENCE_GATE,
-                Blocks.BIRCH_FENCE_GATE,
-                Blocks.JUNGLE_FENCE_GATE,
-                Blocks.ACACIA_FENCE_GATE,
-                Blocks.DARK_OAK_FENCE_GATE,
-                Blocks.CRIMSON_FENCE_GATE,
-                Blocks.WARPED_FENCE_GATE,
-                Blocks.MANGROVE_FENCE_GATE,
-                Blocks.BAMBOO_FENCE_GATE,
-                Blocks.CHERRY_FENCE_GATE,
-                Blocks.PALE_OAK_FENCE_GATE
-                //TODO:1.21.10 添加更多默认项
+                Blocks.REPEATER, // 中继器
+                Blocks.COMPARATOR, // 比较器
+                Blocks.NOTE_BLOCK, // 音符盒
+                Blocks.LEVER,   // 拉杆
+                Blocks.DAYLIGHT_DETECTOR, // 日光传感器
+                *(活板门 - Blocks.IRON_TRAPDOOR).toTypedArray(),
+                *(门 - Blocks.IRON_DOOR).toTypedArray(),
+                *栅栏门.toTypedArray(),
             )
             .build()
     )
