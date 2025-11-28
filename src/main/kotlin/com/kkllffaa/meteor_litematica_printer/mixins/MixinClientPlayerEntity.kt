@@ -113,9 +113,4 @@ open class MixinClientPlayerEntity(world: ClientWorld, profile: GameProfile) :
     @Unique
     private fun getVanillaFormatting(color: TextColor): Formatting? =
         Formatting.entries.find { it.colorValue == color.rgb }
-
-    companion object {
-        @Unique
-        private const val didCheckForUpdates = false
-    }
 }
