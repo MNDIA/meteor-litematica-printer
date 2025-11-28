@@ -92,6 +92,22 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         BlockListSetting.Builder()
             .name("airplace-blacklist")
             .description("Blocks that cannot be placed in airplace.")
+            .defaultValue(
+                
+                Blocks.TRIPWIRE_HOOK, // 绊线钩
+                *天花板H告示牌.toTypedArray(),
+
+                *地面火把.toTypedArray(),
+                *墙上火把.toTypedArray(),
+                
+                *地面告示牌.toTypedArray(),
+                *墙上告示牌.toTypedArray(),
+                
+                *墙上旗帜.toTypedArray(),
+                *地面旗帜.toTypedArray(),
+                
+                *活板门.toTypedArray(),
+            )
             .visible { airPlace.get() }
             .build()
     )
@@ -632,10 +648,6 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         disableDirectionProtection = true
                     }
                 }
-            }
-
-            if (airPlaceAllowed) {
-                disableDirectionProtection = false
             }
 
             if (directionProtection.get() && !disableDirectionProtection
