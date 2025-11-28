@@ -94,7 +94,6 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
         encodeDefaults = true         // 编码默认值
     }
 
-    // LocalDateTime 序列化器
     private object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
         override fun serialize(encoder: Encoder, value: LocalDateTime) = encoder.encodeString(value.toString())
@@ -128,8 +127,7 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
             .replace("%count%", "(\\d+)")
             .replace("%item%", "(.+)")
 
-        val pattern = Regex(regex)
-        val matchResult = pattern.find(message) ?: return
+        val matchResult = Regex(regex).find(message) ?: return
 
         val (player, countStr, item) = matchResult.destructured
         val count = countStr.toIntOrNull() ?: return
@@ -159,10 +157,11 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
         // 立即写回文件
         writeData(data)
 
-        info("$player 买${count}个$item 总计：$newTotal")
+        val limit: Int? = getItemLimits()[item]
+        val 限量 = limit != null && limit > 0
 
-        val limit = getItemLimits()[item]
-        if (limit != null && limit > 0 && newTotal > limit) {
+        info("$player 买${count}个$item 总计：$newTotal/${if (限量) limit else "不限量"}")
+        if (限量 && newTotal > limit) {
             info("玩家 $player 超过了 $item 的限制 ($newTotal/$limit)")
             removePlayer(player)
         }

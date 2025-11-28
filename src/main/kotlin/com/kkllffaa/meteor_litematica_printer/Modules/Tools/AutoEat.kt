@@ -177,7 +177,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
         wasAura.clear()
         if (pauseAuras.get()) {
             for (klass in AURAS) {
-                val module: Module = Modules.get().get(klass)
+                val module = Modules.get().get(klass) ?: continue
 
                 if (module.isActive) {
                     wasAura.add(klass)
@@ -210,7 +210,7 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
         // Resume auras
         if (pauseAuras.get()) {
             for (klass in AURAS) {
-                val module: Module = Modules.get().get(klass)
+                val module = Modules.get().get(klass) ?: continue
 
                 if (klass in wasAura && !module.isActive) {
                     module.toggle()
