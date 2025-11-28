@@ -1,8 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.Functions
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.BreakSettings
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.InteractSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*
 import meteordevelopment.meteorclient.MeteorClient.mc
 import meteordevelopment.meteorclient.events.render.Render3DEvent
 import meteordevelopment.meteorclient.renderer.ShapeMode
@@ -47,9 +45,8 @@ fun BlockState.needInteractionCountsTo(targetState: BlockState): Int =
 
 fun BlockPos.TryInteractIt(count: Int = 1): Int =
     InteractSettings.TryInteractBlock(this, count)
-fun BlockState.TryPlaceIt(pos: Vec3i): Boolean {
-    return true
-}
+fun BlockState.TryPlaceIt(pos: BlockPos): Boolean = PlaceSettings.TryPlaceBlock(this,pos)
+
 
 val BlockState.isBlockShapeFullCube: Boolean
     get() {

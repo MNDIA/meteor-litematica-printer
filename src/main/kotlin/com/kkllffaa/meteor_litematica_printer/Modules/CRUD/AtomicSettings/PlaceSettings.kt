@@ -71,6 +71,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .visible { enableAddList.get() }
             .build()
     )
+
+
     private val swingHand: Setting<ActionMode> = sgGeneral.add(
         EnumSetting.Builder<ActionMode>()
             .name("swing-hand")
@@ -79,25 +81,21 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .build()
     )
 
-
     private val airPlace: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("air-place")
-            .description("Allow the bot to place in the air.")
+            .description("Allow placing in the air.")
             .defaultValue(true)
             .build()
     )
-
     private val airplaceBlacklist: Setting<MutableList<Block>> = sgGeneral.add(
         BlockListSetting.Builder()
             .name("airplace-blacklist")
             .description("Blocks that cannot be placed in airplace.")
-            .defaultValue(
-                Blocks.GRINDSTONE
-            )
             .visible { airPlace.get() }
             .build()
     )
+
     private val placeThroughWall: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("Place Through Wall")
@@ -108,7 +106,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
     private val safetyPlaceFaceMode: Setting<SafetyFaceMode> = sgGeneral.add(
         EnumSetting.Builder<SafetyFaceMode>()
-            .name("direction-mode")
+            .name("safetyPlace-mode")
             .description("Only place blocks on A safe faces.")
             .defaultValue(SafetyFaceMode.None)
             .build()
@@ -145,6 +143,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .defaultValue(SignColorMode.反三)
             .build()
     )
+
 
     private val directionProtection: Setting<Boolean> = sgDirectional.add(
         BoolSetting.Builder()
@@ -290,6 +289,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .defaultValue(true)
             .build()
     )
+
     private val freeFaceForDefaultTorch: Setting<Boolean> = sgClickFace.add(
         BoolSetting.Builder()
             .name("free-face-of-default-torch")
@@ -347,22 +347,128 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .build()
     )
 
-    private val preciseLeft: Setting<MutableList<Block>> = sgClickFace.add(
+    private val clickLeft: Setting<MutableList<Block>> = sgClickFace.add(
         BlockListSetting.Builder()
-            .name("precise-facing-left")
+            .name("click-left")
             .description("Blocks for precise placement facing left.")
             .defaultValue(*墙上H告示牌.toTypedArray())
             .visible { clickProtection.get() }
             .build()
     )
-    private val preciseRight: Setting<MutableList<Block>> = sgClickFace.add(
+
+    private val clickRight: Setting<MutableList<Block>> = sgClickFace.add(
         BlockListSetting.Builder()
-            .name("precise-facing-right")
+            .name("click-right")
             .description("Blocks for precise placement facing right.")
             .defaultValue(*墙上H告示牌.toTypedArray())
             .visible { clickProtection.get() }
             .build()
     )
+
+
+    private fun BlockState.isPlaceAllowedFromClickFace(clickFace: Direction): Boolean {
+        //方块能判断方向
+        val requiredDirection = this.ATagFaceOf6 ?: return true
+
+        val block = this.block
+        val inListForward = block in clickForward.get()
+        val inListBackward = block in clickBackward.get()
+        val inListLeft = block in clickLeft.get()
+        val inListRight = block in clickRight.get()
+        if (!(inListForward || inListBackward || inListLeft || inListRight)) return true
+        return when (requiredDirection) {
+            clickFace -> inListForward
+            clickFace.opposite -> inListBackward
+            clickFace.Left -> inListLeft
+            clickFace.Right -> inListRight
+            else -> false
+        }
+    }
+
+    private val BlockState.isPlaceAllowedFromPlayerRotation: Boolean
+        get() {
+            val block = this.block
+            val inListUp = block in PitchForward.get()
+            val inListDown = block in PitchBackward.get()
+            val inListForward = block in YawForward.get()
+            val inListBackward = block in YawBackward.get()
+            val inListLeft = block in YawLeft.get()
+            val inListRight = block in YawRight.get()
+            if (!(inListUp || inListDown || inListForward || inListBackward || inListLeft || inListRight)) return true
+            val 容差 = angleRangeForDirectionProtection.get().toFloat()
+
+
+            if (Properties.ROTATION in this) {
+                val YawInt16 = mc.player?.YawInt16By(容差 / 4) ?: return false
+                val BlockInt16 = this.get(Properties.ROTATION)
+                return when (BlockInt16) {
+                    YawInt16 -> inListForward
+                    YawInt16.opposite -> inListBackward
+                    YawInt16.Left -> inListLeft
+                    YawInt16.Right -> inListRight
+                    else -> false
+                }
+            }
+
+            val requiredDirection = this.ATagFaceOf6 ?: return true
+            val 六向砖 = inListUp || inListDown
+            val playerPitchDirection = mc.player?.PitchDirectionBy(容差)
+            val playerYawDirection = mc.player?.YawDirectionBy(容差)
+
+            if (六向砖 && (playerPitchDirection == Direction.UP || playerPitchDirection == Direction.DOWN)) {
+                if (Properties.ORIENTATION !in this || playerYawDirection?.let {
+                        this.get(Properties.ORIENTATION).name.endsWith(it.name)
+                    } == true
+                ) {
+                    return when (requiredDirection) {
+                        playerPitchDirection -> inListUp
+                        playerPitchDirection.opposite -> inListDown
+                        else -> false
+                    }
+                }
+            } else if (playerYawDirection != null && !(六向砖 && playerPitchDirection == null)) {
+                return when (requiredDirection) {
+                    playerYawDirection -> inListForward
+                    playerYawDirection.opposite -> inListBackward
+                    playerYawDirection.Left -> inListLeft
+                    playerYawDirection.Right -> inListRight
+                    else -> false
+                }
+            }
+            return false
+        }
+
+
+    private fun BlockState.canPlaceAgainst(neighbourPos: BlockPos, neighbourFace: Direction): Boolean {
+        val world = mc.world ?: return false
+        val player = mc.player ?: return false
+        val neighbour = world.getBlockState(neighbourPos)
+        val neighbourBlock = neighbour.block
+        return !neighbour.isAir && neighbour.fluidState.isEmpty//有砖
+                // 不出GUI
+                && (!BlockUtils.isClickable(neighbourBlock) || player.isSneaking)
+                // 不在额外黑名单
+                && !(enableBlacklist.get() && neighbourBlock in blacklist.get())
+                // 在白名单组合
+                && (neighbour.isBlockShapeFullCube
+                || neighbourBlock === Blocks.GLASS
+                || neighbourBlock is StainedGlassBlock
+                || neighbourBlock is StairsBlock
+                || (enableAddList.get() && neighbourBlock in addList.get())
+                //不会重叠的半砖
+                || (neighbourBlock is SlabBlock
+                && (this.block !== neighbour.block //类型不同不会融合
+                || neighbour.get<SlabType>(SlabBlock.TYPE) == SlabType.DOUBLE //邻居双层不会融合
+                || !(//同类型,邻居单层半砖 附带不会融合约束
+                //从上向下放到半砖底 会融合
+                (neighbour.get<SlabType>(SlabBlock.TYPE) == SlabType.BOTTOM && neighbourFace == Direction.UP)
+                        //从下向上放到半砖顶 会融合
+                        || (neighbour.get<SlabType>(SlabBlock.TYPE) == SlabType.TOP && neighbourFace == Direction.DOWN)
+                        //两半砖顶底不同时 从侧面放置 会融合
+                        || (neighbourFace != Direction.UP && neighbourFace != Direction.DOWN //侧面放置
+                        && neighbour.get<SlabType>(SlabBlock.TYPE) != this.get<SlabType>(SlabBlock.TYPE)) //顶底不同
+                ))))
+    }
 
     fun TryPlaceBlock(required: BlockState, pos: BlockPos): Boolean {
         val player = mc.player ?: return false
@@ -600,112 +706,6 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         }
         return false
     }
-
-    private fun BlockState.isPlaceAllowedFromClickFace(clickFace: Direction): Boolean {
-        //方块能判断方向
-        val requiredDirection = this.ATagFaceOf6 ?: return true
-
-        val block = this.block
-        val inListForward = block in clickForward.get()
-        val inListBackward = block in clickBackward.get()
-        val inListLeft = block in preciseLeft.get()
-        val inListRight = block in preciseRight.get()
-        if (!(inListForward || inListBackward || inListLeft || inListRight)) return true
-        return when (requiredDirection) {
-            clickFace -> inListForward
-            clickFace.opposite -> inListBackward
-            clickFace.Left -> inListLeft
-            clickFace.Right -> inListRight
-            else -> false
-        }
-
-    }
-
-    private val BlockState.isPlaceAllowedFromPlayerRotation: Boolean
-        get() {
-            val block = this.block
-            val inListUp = block in PitchForward.get()
-            val inListDown = block in PitchBackward.get()
-            val inListForward = block in YawForward.get()
-            val inListBackward = block in YawBackward.get()
-            val inListLeft = block in YawLeft.get()
-            val inListRight = block in YawRight.get()
-            if (!(inListUp || inListDown || inListForward || inListBackward || inListLeft || inListRight)) return true
-            val 容差 = angleRangeForDirectionProtection.get().toFloat()
-
-
-            if (Properties.ROTATION in this) {
-                val YawInt16 = mc.player?.YawInt16By(容差 / 4) ?: return false
-                val BlockInt16 = this.get(Properties.ROTATION)
-                return when (BlockInt16) {
-                    YawInt16 -> inListForward
-                    YawInt16.opposite -> inListBackward
-                    YawInt16.Left -> inListLeft
-                    YawInt16.Right -> inListRight
-                    else -> false
-                }
-            }
-
-            val requiredDirection = this.ATagFaceOf6 ?: return true
-            val 六向砖 = inListUp || inListDown
-            val playerPitchDirection = mc.player?.PitchDirectionBy(容差)
-            val playerYawDirection = mc.player?.YawDirectionBy(容差)
-
-            if (六向砖 && (playerPitchDirection == Direction.UP || playerPitchDirection == Direction.DOWN)) {
-                if (Properties.ORIENTATION !in this || playerYawDirection?.let {
-                        this.get(Properties.ORIENTATION).name.endsWith(it.name)
-                    } == true
-                ) {
-                    return when (requiredDirection) {
-                        playerPitchDirection -> inListUp
-                        playerPitchDirection.opposite -> inListDown
-                        else -> false
-                    }
-                }
-            } else if (playerYawDirection != null && !(六向砖 && playerPitchDirection == null)) {
-                return when (requiredDirection) {
-                    playerYawDirection -> inListForward
-                    playerYawDirection.opposite -> inListBackward
-                    playerYawDirection.Left -> inListLeft
-                    playerYawDirection.Right -> inListRight
-                    else -> false
-                }
-            }
-            return false
-        }
-
-
-    private fun BlockState.canPlaceAgainst(neighbourPos: BlockPos, neighbourFace: Direction): Boolean {
-        val world = mc.world ?: return false
-        val player = mc.player ?: return false
-        val neighbour = world.getBlockState(neighbourPos)
-        val neighbourBlock = neighbour.block
-        return !neighbour.isAir && neighbour.fluidState.isEmpty//有砖
-                // 不出GUI
-                && (!BlockUtils.isClickable(neighbourBlock) || player.isSneaking)
-                // 不在额外黑名单
-                && !(enableBlacklist.get() && neighbourBlock in blacklist.get())
-                // 在白名单组合
-                && (neighbour.isBlockShapeFullCube
-                || neighbourBlock === Blocks.GLASS
-                || neighbourBlock is StainedGlassBlock
-                || neighbourBlock is StairsBlock
-                || (enableAddList.get() && neighbourBlock in addList.get())
-                //不会重叠的半砖
-                || (neighbourBlock is SlabBlock
-                && (this.block !== neighbour.block //类型不同不会融合
-                || neighbour.get<SlabType>(SlabBlock.TYPE) == SlabType.DOUBLE //邻居双层不会融合
-                || !(//同类型,邻居单层半砖 附带不会融合约束
-                //从上向下放到半砖底 会融合
-                (neighbour.get<SlabType>(SlabBlock.TYPE) == SlabType.BOTTOM && neighbourFace == Direction.UP)
-                        //从下向上放到半砖顶 会融合
-                        || (neighbour.get<SlabType>(SlabBlock.TYPE) == SlabType.TOP && neighbourFace == Direction.DOWN)
-                        //两半砖顶底不同时 从侧面放置 会融合
-                        || (neighbourFace != Direction.UP && neighbourFace != Direction.DOWN //侧面放置
-                        && neighbour.get<SlabType>(SlabBlock.TYPE) != this.get<SlabType>(SlabBlock.TYPE)) //顶底不同
-                ))))
-    }
-
 
     private fun place(blockHitResult: BlockHitResult): Boolean {
         val result = mc.interactionManager?.interactBlock(mc.player, Hand.MAIN_HAND, blockHitResult)
