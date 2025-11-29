@@ -40,10 +40,16 @@ fun BlockPos.TryBreakIt(blockState: BlockState? = null): Boolean {
     return false
 }
 
-fun BlockState.needInteractionCountsTo(targetState: BlockState): Int = InteractSettings.calculateRequiredInteractions(targetState, this)
+fun BlockState.needInteractionCountsTo(targetState: BlockState): Int =
+    InteractSettings.calculateRequiredInteractions(targetState, this)
+
 fun BlockPos.TryInteractIt(count: Int = 1): Int = InteractSettings.TryInteractBlock(this, count)
 
 fun BlockState.TryPlaceIt(pos: BlockPos): Boolean = PlaceSettings.TryPlaceBlock(this, pos)
+
+
+
+
 
 val BlockState.isBlockCollisionFullCube: Boolean
     get() {
@@ -171,5 +177,3 @@ private val FACE_OFFSETS_WEST_OUT = arrayOf(
 )
 
 //endregion
-
-

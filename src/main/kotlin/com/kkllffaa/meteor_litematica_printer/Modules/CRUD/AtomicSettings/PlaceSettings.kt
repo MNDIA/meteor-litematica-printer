@@ -15,6 +15,7 @@ import net.minecraft.util.hit.BlockHitResult
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.Vec3d
+import net.minecraft.world.World
 
 object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configure AtomicSettings.") {
     override fun toggle() {
@@ -487,8 +488,18 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val player = mc.player ?: return false
         val world = mc.world ?: return false
         // 检查点
-        if (!required.canPlaceAt(world, pos)) return false //没有墙体支撑导致会实际放置状态fallback
-        if (!BlockUtils.canPlace(pos) || !required.isMultiStructurePlacementAllowed) return false
+
+        if (!World.isValid(pos) || !required.canPlaceAt(
+                world,
+                pos
+            ) || !required.isMultiStructurePlacementAllowed
+        ) return false
+
+        // Check if current block is replaceable
+        if (!(world.getBlockState(pos).isReplaceable)) return false
+
+        // Check if intersects entities
+        if (world.canPlace(Blocks.OBSIDIAN.defaultState, pos, ShapeContext.absent())) return false
 
         // 检查面
         val block = required.block
