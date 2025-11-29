@@ -94,19 +94,19 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .description("Blocks that cannot be placed in airplace.")
             .defaultValue(
 
-                Blocks.TRIPWIRE_HOOK, // 绊线钩
-                *天花板H告示牌.toTypedArray(),
+                // Blocks.TRIPWIRE_HOOK, // 绊线钩
+                // *天花板H告示牌.toTypedArray(),
 
-                *地面火把.toTypedArray(),
-                *墙上火把.toTypedArray(),
+                // *地面火把.toTypedArray(),
+                // *墙上火把.toTypedArray(),
 
-                *地面告示牌.toTypedArray(),
-                *墙上告示牌.toTypedArray(),
+                // *地面告示牌.toTypedArray(),
+                // *墙上告示牌.toTypedArray(),
 
-                *墙上旗帜.toTypedArray(),
-                *地面旗帜.toTypedArray(),
+                // *墙上旗帜.toTypedArray(),
+                // *地面旗帜.toTypedArray(),
 
-                )
+            )
             .visible { airPlace.get() }
             .build()
     )
@@ -496,14 +496,13 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val block = required.block
         val isPlaceAllowedFromPlayerRotation by lazy { required.isPlaceAllowedFromPlayerRotation }
         val posCenterVisible by lazy { pos.Center.isVisible }
-        val airPlaceAllowed by lazy { airPlace.get() && block !in airplaceBlacklist.get() }
+        val enableAirPlace by lazy { airPlace.get() && block !in airplaceBlacklist.get() }
         for (face in Direction.entries) {
-
             var tempHitPos = Vec3d(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
             // 特殊砖:根据状态属性/点击面有 不同的 点击面保护和视角保护的变化/点击点偏移/面不能点
-
             var disableDirectionProtection = false
             var disableFaceProtection = false
+            var disableAirPlace = false
             if (block is WallTorchBlock || block is WallRedstoneTorchBlock) {//墙火把 面不同禁用不同保护/面不能点
                 when (face) {
                     Direction.UP -> continue
@@ -511,7 +510,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     else -> disableDirectionProtection = true
                 }
             } else if (block is TorchBlock || block is RedstoneTorchBlock) {// 直立式火把  面不能点
-                if (!freeFaceForDefaultTorch.get() && face != Direction.UP)  continue
+                if (!freeFaceForDefaultTorch.get() && face != Direction.UP) continue
             } else if (block is TrapdoorBlock) { //活板门 面不同禁用不同保护/点击点偏移/面不能点
                 val blockHalf = required.get<BlockHalf>(Properties.BLOCK_HALF)
                 when {
@@ -521,13 +520,14 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         disableFaceProtection = true//方向依据玩家
                     }
 
-                    else -> {//侧面方向取决于点击面
-                        disableDirectionProtection = true
+                    else -> {
                         if (blockHalf == BlockHalf.TOP) {
                             tempHitPos = tempHitPos.add(0.0, 0.25, 0.0)
                         } else {
+                            disableAirPlace = true
                             tempHitPos = tempHitPos.add(0.0, -0.25, 0.0)
                         }
+                        disableDirectionProtection = true//侧面方向取决于点击面
                     }
                 }
             } else if (block is StairsBlock) { //楼梯 点击点偏移/面不能点
@@ -628,42 +628,69 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     }
                 }
             }
-            if (directionProtection.get() && !disableDirectionProtection && !isPlaceAllowedFromPlayerRotation) continue
-            if (clickProtection.get() && !disableFaceProtection && !required.isPlaceAllowedFromClickFace(face)) continue
-
-            // 已经初步确定face (除了半砖融合等)，计算neighbour和hitPos(面中心+侧方半砖偏移)
-            val neighbour = if (airPlaceAllowed) pos else {
-                val oppositeFace = face.opposite
-                val neighborPos = pos.offset(oppositeFace)
-                if (!required.canPlaceAgainst(neighborPos, face)) continue
-                tempHitPos =
-                    tempHitPos.add(oppositeFace.offsetX * 0.5, oppositeFace.offsetY * 0.5, oppositeFace.offsetZ * 0.5)
-                neighborPos
+            val airPlaceAllowed = !disableAirPlace && enableAirPlace
+            val isPlaceAllowedFromClickFace by lazy { required.isPlaceAllowedFromClickFace(face) }
+            val isFaceSafe by lazy {
+                when (safetyPlaceFaceMode.get()) {
+                    SafetyFaceMode.PlayerRotation -> BlockUtils.getDirection(pos)
+                    SafetyFaceMode.PlayerPosition -> pos.PickAFaceFromPlayerPosition(player)
+                    SafetyFaceMode.None -> null
+                }?.let {
+                    face == it
+                } ?: true
             }
-            val hitPos = tempHitPos
 
-            // 已经确定了face hitPos neighbour
+            for (i in 0..1) {
+                val useAirPlace = i == 0
+                if (useAirPlace && !airPlaceAllowed) continue
 
-            if (hitPos.distanceTo(player.eyePos) > PlayerHandDistance) continue
+                if (useAirPlace) {
+                    disableDirectionProtection = false
+                    disableFaceProtection = true
+                }
+                if (directionProtection.get() && !disableDirectionProtection && !isPlaceAllowedFromPlayerRotation) continue
+                if (clickProtection.get() && !disableFaceProtection && !isPlaceAllowedFromClickFace) continue
 
-            when (safetyPlaceFaceMode.get()) {
-                SafetyFaceMode.PlayerRotation -> BlockUtils.getDirection(pos)
-                SafetyFaceMode.PlayerPosition -> pos.PickAFaceFromPlayerPosition(player)
-                SafetyFaceMode.None -> null
-            }?.let {
-                if (face != it) continue
+
+                val neighbour = if (useAirPlace) pos else {
+                    val oppositeFace = face.opposite
+                    val neighborPos = pos.offset(oppositeFace)
+                    if (!required.canPlaceAgainst(neighborPos, face)) continue
+                    neighborPos
+                }
+                val hitPos = if (useAirPlace) tempHitPos else {
+                    val oppositeFace = face.opposite
+                    tempHitPos.add(
+                        oppositeFace.offsetX * 0.5,
+                        oppositeFace.offsetY * 0.5,
+                        oppositeFace.offsetZ * 0.5
+                    )
+                }
+
+                // 已经确定了face hitPos neighbour
+
+                if (hitPos.distanceTo(player.eyePos) > PlayerHandDistance) continue
+
+
+                if (!isFaceSafe) break
+
+                if (!placeThroughWall.get()) {
+                    val isVisible =
+                        if (useAirPlace) posCenterVisible else (neighbour to face).isVisible
+                    if (!isVisible) continue
+                }
+                if (onlyPlaceOnLookFace.get() && !player.RotationInTheFaceOfBlock(neighbour, face)) continue
+
+
+                var item = required.block.asItem()
+                if (dirtgrass.get() && item === Items.GRASS_BLOCK) item = Items.DIRT
+                val result = player.switchItem(item, returnHand.get()) {
+                    place(BlockHitResult(hitPos, face, neighbour, false))
+                }
+                if (!result) info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
+                return result
             }
-            if (!placeThroughWall.get()) {
-                val isVisible = if (airPlaceAllowed) posCenterVisible else (neighbour to face).isVisible
-                if (!isVisible) continue
-            }
-            if (onlyPlaceOnLookFace.get() && !player.RotationInTheFaceOfBlock(neighbour, face)) continue
 
-            var item = required.block.asItem()
-            if (dirtgrass.get() && item === Items.GRASS_BLOCK) item = Items.DIRT
-            return player.switchItem(item, returnHand.get()) {
-                place(BlockHitResult(hitPos, face, neighbour, false))
-            }
         }
         return false
     }
