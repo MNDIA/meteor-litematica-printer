@@ -489,10 +489,9 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val world = mc.world ?: return false
         // 检查点
 
-        if (!World.isValid(pos) || !required.canPlaceAt(
-                world,
-                pos
-            ) || !required.isMultiStructurePlacementAllowed
+        if (!World.isValid(pos)
+            || !required.canPlaceAt(world, pos)
+            || !required.isMultiStructurePlacementAllowed
         ) return false
 
         // Check if current block is replaceable
