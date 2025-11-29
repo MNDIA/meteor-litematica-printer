@@ -634,11 +634,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     }
                 }
             } else if (Properties.HANGING in required) { //灯笼 面不能点
-                if (required.get<Boolean>(Properties.HANGING)) { // 吊着的
-                    if (face != Direction.DOWN) continue  // 只能放在邻居下方
-                } else {   // 不吊着的
-                    if (face == Direction.DOWN) continue  // 不能放在邻居下方
-                }
+                if (required.get<Boolean>(Properties.HANGING) == (face != Direction.DOWN)) continue
             } else if (Properties.BLOCK_FACE in required) { //拉杆 按钮 磨石 block is WallMountedBlock 属性不同禁用不同保护/面不能点
                 when (required.get<BlockFace>(Properties.BLOCK_FACE)) {
                     BlockFace.FLOOR -> {
@@ -662,7 +658,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         disableDirectionProtection = true
                     }
                 }
-            } else if (block is TripwireHookBlock) {//绊线钩 特例 禁用方向保护
+            } else if (block is TripwireHookBlock) {//绊线钩
                 when (face) {
                     Direction.UP, Direction.DOWN -> disableFaceProtection = true
                     else -> disableDirectionProtection = true
