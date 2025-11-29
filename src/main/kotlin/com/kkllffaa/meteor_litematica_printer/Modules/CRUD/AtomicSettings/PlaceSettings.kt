@@ -543,6 +543,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 }
             } else if (block is TorchBlock || block is RedstoneTorchBlock) {// 直立式火把  面不能点
                 if (!freeFaceForDefaultTorch.get() && face != Direction.UP) continue
+                disableAirPlace = true
             } else if (block is TrapdoorBlock) { //活板门 面不同禁用不同保护/点击点偏移/面不能点
                 val blockHalf = required.get<BlockHalf>(Properties.BLOCK_HALF)
                 when {
@@ -614,6 +615,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
                     else -> {
                         disableDirectionProtection = true //方向取决于点击面
+                        disableAirPlace = true
                     }
                 }
             } else if (block is SignBlock || block is SkullBlock || block is BannerBlock) {
