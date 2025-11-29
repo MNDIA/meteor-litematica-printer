@@ -494,14 +494,15 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             || !required.isMultiStructurePlacementAllowed
         ) return false
 
+        val worldPosState = world.getBlockState(pos)
+        val block = required.block
         // Check if current block is replaceable
-        if (!(world.getBlockState(pos).isReplaceable)) return false
+        if (!(worldPosState.isReplaceable || (block == worldPosState.block && (block is SlabBlock || block is AbstractCandleBlock)))) return false
 
         // Check if intersects entities
         if (world.canPlace(Blocks.OBSIDIAN.defaultState, pos, ShapeContext.absent())) return false
 
         // 检查面
-        val block = required.block
         val isPlaceAllowedFromPlayerRotation by lazy { required.isPlaceAllowedFromPlayerRotation }
         val posCenterVisible by lazy { pos.Center.isVisible }
         val enableAirPlace by lazy { airPlace.get() && block !in airplaceBlacklist.get() }
