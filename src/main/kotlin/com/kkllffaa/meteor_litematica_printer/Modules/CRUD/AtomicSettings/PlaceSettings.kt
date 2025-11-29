@@ -31,9 +31,9 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
     private val sgClickFace = settings.createGroup("Click Face")
     private val sgNeighbor = settings.createGroup("Place On Neighbor Blocks")
 
-    private val enableBlacklist: Setting<Boolean> = sgNeighbor.add(
+    private val BlacklistforFullCube: Setting<Boolean> = sgNeighbor.add(
         BoolSetting.Builder()
-            .name("enable-blacklist")
+            .name("Black-list-for-FullCube")
             .description("Enable blacklist for neighbor blocks.")
             .defaultValue(false)
             .build()
@@ -42,17 +42,12 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
     private val blacklist: Setting<MutableList<Block>> = sgNeighbor.add(
         BlockListSetting.Builder()
             .name("blacklist")
-            .description("Blocks that cannot be placed against.(Click Face Center Pos is Air)")
+            .description("Blocks that cannot be placed against.(CollisionFullCube but cannot be clicked)")
             .defaultValue(
-                //面中心没有体积的砖
-                Blocks.SCAFFOLDING,
-                Blocks.POINTED_DRIPSTONE,
-                Blocks.AMETHYST_CLUSTER,
-                *潜影盒.toTypedArray(),
-                *地毯.toTypedArray(),
-                *压力板.toTypedArray(),
+                //碰撞箱完整但是不能放的
+                // *潜影盒.toTypedArray(),
             )
-            .visible { enableBlacklist.get() }
+            .visible { BlacklistforFullCube.get() }
             .build()
     )
 
@@ -95,7 +90,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .defaultValue(
 
                 // Blocks.TRIPWIRE_HOOK, // 绊线钩
-                // *天花板H告示牌.toTypedArray(),
+                *墙上H告示牌.toTypedArray(),
 
                 // *地面火把.toTypedArray(),
                 // *墙上火把.toTypedArray(),
@@ -459,13 +454,16 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val player = mc.player ?: return false
         val neighbour = world.getBlockState(neighbourPos)
         val neighbourBlock = neighbour.block
+        val neighbourisBlockCollisionFullCube by lazy { neighbour.isBlockCollisionFullCube }
         return !neighbour.isAir && neighbour.fluidState.isEmpty//有砖
                 // 不出GUI
                 && (!BlockUtils.isClickable(neighbourBlock) || player.isSneaking)
+                // 特例
+                && !(this.block is WallHangingSignBlock && !neighbourisBlockCollisionFullCube)
                 // 不在额外黑名单
-                && !(enableBlacklist.get() && neighbourBlock in blacklist.get())
+                && !(BlacklistforFullCube.get() && neighbourBlock in blacklist.get())
                 // 在白名单组合
-                && (neighbour.isBlockShapeFullCube
+                && (neighbourisBlockCollisionFullCube
                 || neighbourBlock === Blocks.GLASS
                 || neighbourBlock is StainedGlassBlock
                 || neighbourBlock is StairsBlock
@@ -693,6 +691,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     place(BlockHitResult(hitPos, face, neighbour, false))
                 }
                 if (!result) info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
+                // else  info("$block 成功放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
                 return result
             }
 

@@ -48,7 +48,7 @@ fun BlockPos.TryInteractIt(count: Int = 1): Int =
 fun BlockState.TryPlaceIt(pos: BlockPos): Boolean = PlaceSettings.TryPlaceBlock(this,pos)
 
 
-val BlockState.isBlockShapeFullCube: Boolean
+val BlockState.isBlockCollisionFullCube: Boolean
     get() {
         try {
             return Block.isShapeFullCube(getCollisionShape(null, null))
