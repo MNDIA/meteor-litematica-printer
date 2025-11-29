@@ -37,9 +37,9 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
         IntSetting.Builder()
             .name("printing-range")
             .description("The block place range.")
-            .defaultValue(2)
+            .defaultValue(6)
             .min(1).sliderMin(1)
-            .max(6).sliderMax(6)
+            .max(1024).sliderMax(6)
             .build()
     )
 
@@ -231,7 +231,6 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
         placed_fade.forEach(Consumer { s: Pair<Int, BlockPos> -> s.left = s.getLeft() - 1 })
         placed_fade.removeIf { s: Pair<Int, BlockPos> -> s.getLeft() <= 0 }
 
-        // Cache cleanup timer - clears cache periodically to prevent stale entries
         if (enableCache.get()) {
             cacheCleanupTickTimer++
 
@@ -240,8 +239,7 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
                 cacheCleanupTickTimer = 0
             }
         }
-        val worldSchematic = SchematicWorldHandler.getSchematicWorld()
-        if (worldSchematic == null) {
+        val worldSchematic = SchematicWorldHandler.getSchematicWorld() ?: run {
             placed_fade.clear()
             toggle()
             return
@@ -253,8 +251,8 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
 
         if (timer >= printing_delay.get()) {
             BlockIterator.register(
-                printing_range.get() + 1,
-                printing_range.get() + 1
+                printing_range.get(),
+                printing_range.get()
             ) { pos: BlockPos, blockState: BlockState ->
                 val required = worldSchematic.getBlockState(pos)
                 if (启用交互.get() && !pendingInteractions.containsKey(pos)) {
@@ -266,7 +264,7 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
                 if (!(isPositionCached(pos))
                     && DataManager.getRenderLayerRange().isPositionWithinRange(pos)
                 ) {
-                    if (!whitelistenabled.get() || whitelist.get().contains(required.block)) {
+                    if (!whitelistenabled.get() || required.block in whitelist.get()) {
                         toSort.add(BlockPos(pos))
                     }
                 }
