@@ -682,13 +682,13 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 val useAirPlace = i == 0
                 if (useAirPlace && !airPlaceAllowed) continue
 
-                if (useAirPlace) {
-                    disableDirectionProtection = false
-                    disableFaceProtection = true
-                }
-                if (directionProtection.get() && !disableDirectionProtection && !isPlaceAllowedFromPlayerRotation) continue
-                if (clickProtection.get() && !disableFaceProtection && !isPlaceAllowedFromClickFace) continue
 
+                val disableDP = if (useAirPlace) false else disableDirectionProtection
+                val disableFP = if (useAirPlace) true else disableFaceProtection
+
+
+                if (directionProtection.get() && !disableDP && !isPlaceAllowedFromPlayerRotation) continue
+                if (clickProtection.get() && !disableFP && !isPlaceAllowedFromClickFace) continue
 
                 val neighbour = if (useAirPlace) pos else {
                     val oppositeFace = face.opposite
