@@ -343,7 +343,7 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
         })
     }
 
-    enum class SortAlgorithm(val applySecondSorting: Boolean, algorithm: Comparator<BlockPos>) {
+    enum class SortAlgorithm(val applySecondSorting: Boolean, val algorithm: Comparator<BlockPos>) {
         None(false, Comparator { a: BlockPos, b: BlockPos -> 0 }),
         TopDown(true, Comparator.comparingInt<BlockPos>(ToIntFunction { value: BlockPos -> value.y * -1 })),
         DownTop(true, Comparator.comparingInt<BlockPos>(ToIntFunction { obj: BlockPos -> obj.y })),
@@ -377,22 +377,12 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
         );
 
 
-        val algorithm: Comparator<BlockPos>
-
-        init {
-            this.algorithm = algorithm
-        }
     }
 
-    enum class SortingSecond(algorithm: Comparator<BlockPos>) {
+    enum class SortingSecond(val algorithm: Comparator<BlockPos>) {
         None(SortAlgorithm.None.algorithm),
         Nearest(SortAlgorithm.Nearest.algorithm),
         Furthest(SortAlgorithm.Furthest.algorithm);
 
-        val algorithm: Comparator<BlockPos>
-
-        init {
-            this.algorithm = algorithm
-        }
     }
 }
