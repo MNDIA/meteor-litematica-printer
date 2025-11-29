@@ -69,3 +69,13 @@ tasks.register('printMCVersion') {
         println(project.minecraft_version)
     }
 }
+
+if (file('local.gradle').exists()) {
+    apply from: 'local.gradle'
+}
+
+if (project.hasProperty('customJarDir')) {
+    remapJar {
+        destinationDirectory = file(project.customJarDir)
+    }
+}
