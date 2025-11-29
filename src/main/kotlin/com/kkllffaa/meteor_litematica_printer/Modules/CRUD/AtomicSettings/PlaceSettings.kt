@@ -663,7 +663,10 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     }
                 }
             } else if (block is TripwireHookBlock) {//绊线钩 特例 禁用方向保护
-                disableDirectionProtection = true
+                when (face) {
+                    Direction.UP, Direction.DOWN -> disableFaceProtection = true
+                    else -> disableDirectionProtection = true
+                }
             }
             val airPlaceAllowed = !disableAirPlace && enableAirPlace
             val isPlaceAllowedFromClickFace by lazy { required.isPlaceAllowedFromClickFace(face) }
