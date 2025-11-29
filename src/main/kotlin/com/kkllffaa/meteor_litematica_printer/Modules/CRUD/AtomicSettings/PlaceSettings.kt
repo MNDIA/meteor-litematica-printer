@@ -607,10 +607,10 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 if (attached != player.isSneaking) continue
             } else if (block is WallSignBlock || block is WallSkullBlock || block is WallBannerBlock) {
                 when (face) {
-                    Direction.UP -> continue
-                    Direction.DOWN -> {//TODO:确保fallback的前提是目标侧墙有砖
-                        disableFaceProtection = true // 方向取决于玩家
-                    }
+                    Direction.UP, Direction.DOWN -> continue
+                    // Direction.DOWN -> {//TODO:确保fallback的前提是目标侧墙有砖
+                    //     disableFaceProtection = true // 方向取决于玩家
+                    // }
 
                     else -> {
                         disableDirectionProtection = true //方向取决于点击面
@@ -725,7 +725,9 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 val result = player.switchItem(item, returnHand.get()) {
                     place(BlockHitResult(hitPos, face, neighbour, false))
                 }
-                if (!result) {info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")}
+                if (!result) {
+                    info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
+                }
                 // else  info("$block 成功放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
                 return result
             }
