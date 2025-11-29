@@ -93,16 +93,13 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 // Blocks.TRIPWIRE_HOOK, // 绊线钩
                 *墙上H告示牌.toTypedArray(),
 
-                // *地面火把.toTypedArray(),
-                // *墙上火把.toTypedArray(),
+                *地面火把.toTypedArray(),
+                *地面告示牌.toTypedArray(),
+                *地面旗帜.toTypedArray(),
+                *墙上头颅.toTypedArray(),
+                *地面头颅.toTypedArray(),
 
-                // *地面告示牌.toTypedArray(),
-                // *墙上告示牌.toTypedArray(),
-
-                // *墙上旗帜.toTypedArray(),
-                // *地面旗帜.toTypedArray(),
-
-            )
+                )
             .visible { airPlace.get() }
             .build()
     )
@@ -543,7 +540,6 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 }
             } else if (block is TorchBlock || block is RedstoneTorchBlock) {// 直立式火把  面不能点
                 if (!freeFaceForDefaultTorch.get() && face != Direction.UP) continue
-                disableAirPlace = true
             } else if (block is TrapdoorBlock) { //活板门 面不同禁用不同保护/点击点偏移/面不能点
                 val blockHalf = required.get<BlockHalf>(Properties.BLOCK_HALF)
                 when {
@@ -608,19 +604,18 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 if (attached != player.isSneaking) continue
             } else if (block is WallSignBlock || block is WallSkullBlock || block is WallBannerBlock) {
                 when (face) {
-                    Direction.UP, Direction.DOWN -> continue
-                    // Direction.DOWN -> {//TODO:确保fallback的前提是目标侧墙有砖
-                    //     disableFaceProtection = true // 方向取决于玩家
-                    // }
+                    Direction.UP -> continue
+                    Direction.DOWN -> {
+                        if (block is WallSkullBlock) continue
+                        disableFaceProtection = true // 方向取决于玩家
+                    }
 
                     else -> {
                         disableDirectionProtection = true //方向取决于点击面
-                        disableAirPlace = true
                     }
                 }
             } else if (block is SignBlock || block is SkullBlock || block is BannerBlock) {
                 if (face != Direction.UP) continue
-                disableAirPlace = true
             } else if (Properties.ATTACHMENT in required) { //钟既 属性不同禁用不同保护/面不能点
                 when (required.get<Attachment>(Properties.ATTACHMENT)) {
                     Attachment.FLOOR -> {
