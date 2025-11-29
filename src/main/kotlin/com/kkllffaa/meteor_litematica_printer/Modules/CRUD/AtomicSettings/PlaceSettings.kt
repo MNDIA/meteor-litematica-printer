@@ -618,6 +618,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 }
             } else if (block is SignBlock || block is SkullBlock || block is BannerBlock) {
                 if (face != Direction.UP) continue
+                disableAirPlace = true
             } else if (Properties.ATTACHMENT in required) { //钟既 属性不同禁用不同保护/面不能点
                 when (required.get<Attachment>(Properties.ATTACHMENT)) {
                     Attachment.FLOOR -> {
