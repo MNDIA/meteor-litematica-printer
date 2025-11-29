@@ -25,15 +25,15 @@ val Float.AsPitchToDirectionUD: Direction?
         else -> null
     }
 
-val Direction.Left: Direction
+val Direction.Left: Direction?
     get() = when (this) {
         Direction.NORTH -> Direction.WEST
         Direction.SOUTH -> Direction.EAST
         Direction.WEST -> Direction.SOUTH
         Direction.EAST -> Direction.NORTH
-        else -> throw IllegalArgumentException("No LR for UP or DOWN")
+        else -> null
     }
-val Direction.Right: Direction get() = Left.opposite
+val Direction.Right: Direction? get() = Left?.opposite
 
 val Int.opposite: Int get() = (this + 8) % 16
 val Int.Left: Int get() = (this + 12) % 16

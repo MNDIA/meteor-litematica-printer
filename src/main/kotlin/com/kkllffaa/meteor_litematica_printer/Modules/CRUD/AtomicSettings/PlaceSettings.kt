@@ -713,8 +713,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     val facing = required.get<Direction>(DoorBlock.FACING)
                     val 铰链位置 = required.get<DoorHinge>(DoorBlock.HINGE)
                     val 偏移方向 = when (铰链位置) {
-                        DoorHinge.LEFT -> facing.Left
-                        DoorHinge.RIGHT -> facing.Right
+                        DoorHinge.LEFT -> facing.Left!!
+                        DoorHinge.RIGHT -> facing.Right!!
                     }
                     hitPos1.add(
                         偏移方向.offsetX * 0.25,
