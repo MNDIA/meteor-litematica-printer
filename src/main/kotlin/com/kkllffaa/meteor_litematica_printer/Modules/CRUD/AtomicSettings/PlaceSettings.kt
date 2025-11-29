@@ -701,13 +701,28 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     if (!required.canPlaceAgainst(neighborPos, face)) continue
                     neighborPos
                 }
-                val hitPos = if (useAirPlace) tempHitPos else {
+                val hitPos1 = if (useAirPlace) tempHitPos else {
                     val oppositeFace = face.opposite
                     tempHitPos.add(
                         oppositeFace.offsetX * 0.5,
                         oppositeFace.offsetY * 0.5,
                         oppositeFace.offsetZ * 0.5
                     )
+                }
+                val hitPos = if (block is DoorBlock) {
+                    val facing = required.get<Direction>(DoorBlock.FACING)
+                    val 铰链位置 = required.get<DoorHinge>(DoorBlock.HINGE)
+                    val 偏移方向 = when (铰链位置) {
+                        DoorHinge.LEFT -> facing.Left
+                        DoorHinge.RIGHT -> facing.Right
+                    }
+                    hitPos1.add(
+                        偏移方向.offsetX * 0.25,
+                        0.0,
+                        偏移方向.offsetZ * 0.25
+                    )
+                } else {
+                    hitPos1
                 }
 
                 // 已经确定了face hitPos neighbour
