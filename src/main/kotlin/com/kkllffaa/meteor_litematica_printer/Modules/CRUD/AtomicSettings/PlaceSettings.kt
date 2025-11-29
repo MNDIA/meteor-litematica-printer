@@ -93,21 +93,20 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .name("airplace-blacklist")
             .description("Blocks that cannot be placed in airplace.")
             .defaultValue(
-                
+
                 Blocks.TRIPWIRE_HOOK, // 绊线钩
                 *天花板H告示牌.toTypedArray(),
 
                 *地面火把.toTypedArray(),
                 *墙上火把.toTypedArray(),
-                
+
                 *地面告示牌.toTypedArray(),
                 *墙上告示牌.toTypedArray(),
-                
+
                 *墙上旗帜.toTypedArray(),
                 *地面旗帜.toTypedArray(),
-                
-                *活板门.toTypedArray(),
-            )
+
+                )
             .visible { airPlace.get() }
             .build()
     )
@@ -508,31 +507,21 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             if (block is WallTorchBlock || block is WallRedstoneTorchBlock) {//墙火把 面不同禁用不同保护/面不能点
                 when (face) {
                     Direction.UP -> continue
-                    Direction.DOWN -> {
-                        // 方向取决于玩家，禁用点击面保护
-                        disableFaceProtection = true
-                    }
-
-                    else -> {//侧面
-                        //方向取决于点击面，禁用方向保护
-                        disableDirectionProtection = true
-                    }
+                    Direction.DOWN -> disableFaceProtection = true
+                    else -> disableDirectionProtection = true
                 }
             } else if (block is TorchBlock || block is RedstoneTorchBlock) {// 直立式火把  面不能点
-                if (!freeFaceForDefaultTorch.get() && face != Direction.UP) {//只能放在邻居上面
-                    continue
-                }
+                if (!freeFaceForDefaultTorch.get() && face != Direction.UP)  continue
             } else if (block is TrapdoorBlock) { //活板门 面不同禁用不同保护/点击点偏移/面不能点
                 val blockHalf = required.get<BlockHalf>(Properties.BLOCK_HALF)
                 when {
                     (blockHalf == BlockHalf.TOP && face == Direction.UP)
                             || (blockHalf == BlockHalf.BOTTOM && face == Direction.DOWN) -> continue// 半砖类型会错误
                     face == Direction.UP || face == Direction.DOWN -> {
-                        //方向依据玩家，禁用点击面保护
-                        disableFaceProtection = true
+                        disableFaceProtection = true//方向依据玩家
                     }
 
-                    else -> {//侧面方向取决于点击面，禁用方向保护，设置半砖偏移
+                    else -> {//侧面方向取决于点击面
                         disableDirectionProtection = true
                         if (blockHalf == BlockHalf.TOP) {
                             tempHitPos = tempHitPos.add(0.0, 0.25, 0.0)
@@ -573,56 +562,46 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         }
                     }
                 }
-            } else if (block is HangingSignBlock) {//悬挂告示牌 面不能点
+            } else if (block is WallHangingSignBlock) {//墙面悬挂告示牌 面不能点
+                if (face == Direction.DOWN || face == Direction.UP) continue
+            } else if (block is HangingSignBlock) {//天花板悬挂告示牌 面不能点
+                if (face != Direction.DOWN) continue
                 val attached = required.get<Boolean>(Properties.ATTACHED)
-                if (attached) {
-                    if (!(face == Direction.DOWN && player.isSneaking)) continue
-                } else {
-                    if (!(face == Direction.DOWN && !player.isSneaking)) continue
+                if (attached != player.isSneaking) continue
+            } else if (block is WallSignBlock || block is WallSkullBlock || block is WallBannerBlock) {
+                when (face) {
+                    Direction.UP -> continue
+                    Direction.DOWN -> {//TODO:确保fallback的前提是目标侧墙有砖
+                        disableFaceProtection = true // 方向取决于玩家
+                    }
+
+                    else -> {
+                        disableDirectionProtection = true //方向取决于点击面
+                    }
                 }
-            } else if (block is SignBlock) {
-
-            } else if (block is WallSignBlock) {
-
-            } else if (block is SkullBlock) {
-
-            } else if (block is WallSkullBlock) {
-
-            } else if (block is BannerBlock) {
-
-            } else if (block is WallBannerBlock) {
-
-
+            } else if (block is SignBlock || block is SkullBlock || block is BannerBlock) {
+                if (face != Direction.UP) continue
             } else if (Properties.ATTACHMENT in required) { //钟既 属性不同禁用不同保护/面不能点
                 when (required.get<Attachment>(Properties.ATTACHMENT)) {
                     Attachment.FLOOR -> {
                         if (face != Direction.UP) continue  // 只能放在邻居上方
-
-                        // 方向取决于玩家，禁用点击面保护
-                        disableFaceProtection = true
+                        disableFaceProtection = true  // 方向取决于玩家
                     }
 
                     Attachment.CEILING -> {
                         if (face != Direction.DOWN) continue  // 只能放在邻居下方
-
-                        // 没有方向，禁用全部
-                        disableFaceProtection = true
-                        disableDirectionProtection = true
+                        disableFaceProtection = true  // 方向取决于玩家
                     }
 
                     else -> {
                         if (face == Direction.UP || face == Direction.DOWN) continue  // 只能放在邻居四周
-
-                        //放置在四周方向取决于点击面，禁用方向保护
-                        disableDirectionProtection = true
+                        disableDirectionProtection = true//方向取决于点击面
                     }
                 }
             } else if (Properties.HANGING in required) { //灯笼 面不能点
-                if (required.get<Boolean>(Properties.HANGING)) {
-                    // 吊着的
+                if (required.get<Boolean>(Properties.HANGING)) { // 吊着的
                     if (face != Direction.DOWN) continue  // 只能放在邻居下方
-                } else {
-                    // 不吊着的
+                } else {   // 不吊着的
                     if (face == Direction.DOWN) continue  // 不能放在邻居下方
                 }
             } else if (Properties.BLOCK_FACE in required) { //拉杆 按钮 磨石 block is WallMountedBlock 属性不同禁用不同保护/面不能点
@@ -649,45 +628,24 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     }
                 }
             }
+            if (directionProtection.get() && !disableDirectionProtection && !isPlaceAllowedFromPlayerRotation) continue
+            if (clickProtection.get() && !disableFaceProtection && !required.isPlaceAllowedFromClickFace(face)) continue
 
-            if (directionProtection.get() && !disableDirectionProtection
-                && !isPlaceAllowedFromPlayerRotation
-            ) {
-                continue
-            }
-            if (clickProtection.get() && !disableFaceProtection
-                && !required.isPlaceAllowedFromClickFace(face)
-            ) {
-                continue
-            }
-
-            // 确定要点一个邻居面不会导致状态错误的话，计算邻居和点击位置(面中心+侧方半砖偏移)
-
-            val neighbour: BlockPos
-
-            if (airPlaceAllowed) {
-                neighbour = pos
-            } else {
-                val OppositeFace = face.opposite
-                neighbour = pos.offset(OppositeFace)
-                if (!required.canPlaceAgainst(neighbour, face)) {
-                    continue
-                }
-                tempHitPos = tempHitPos.add(
-                    OppositeFace.offsetX * 0.5, OppositeFace.offsetY * 0.5,
-                    OppositeFace.offsetZ * 0.5
-                )
+            // 已经初步确定face (除了半砖融合等)，计算neighbour和hitPos(面中心+侧方半砖偏移)
+            val neighbour = if (airPlaceAllowed) pos else {
+                val oppositeFace = face.opposite
+                val neighborPos = pos.offset(oppositeFace)
+                if (!required.canPlaceAgainst(neighborPos, face)) continue
+                tempHitPos =
+                    tempHitPos.add(oppositeFace.offsetX * 0.5, oppositeFace.offsetY * 0.5, oppositeFace.offsetZ * 0.5)
+                neighborPos
             }
             val hitPos = tempHitPos
 
-            // 确定了face 邻居坐标 点击位置
+            // 已经确定了face hitPos neighbour
 
-            // 距离保护
-            if (hitPos.distanceTo(player.eyePos) > PlayerHandDistance) {
-                continue
-            }
+            if (hitPos.distanceTo(player.eyePos) > PlayerHandDistance) continue
 
-            // 筛出不安全的面
             when (safetyPlaceFaceMode.get()) {
                 SafetyFaceMode.PlayerRotation -> BlockUtils.getDirection(pos)
                 SafetyFaceMode.PlayerPosition -> pos.PickAFaceFromPlayerPosition(player)
@@ -695,21 +653,12 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             }?.let {
                 if (face != it) continue
             }
-
             if (!placeThroughWall.get()) {
-                if (airPlaceAllowed) {
-                    if (!posCenterVisible) {
-                        continue
-                    }
-                } else {
-                    if (!(neighbour to face).isVisible) {
-                        continue
-                    }
-                }
+                val isVisible = if (airPlaceAllowed) posCenterVisible else (neighbour to face).isVisible
+                if (!isVisible) continue
             }
-            if (onlyPlaceOnLookFace.get() && !player.RotationInTheFaceOfBlock(neighbour, face)) {
-                continue
-            }
+            if (onlyPlaceOnLookFace.get() && !player.RotationInTheFaceOfBlock(neighbour, face)) continue
+
             var item = required.block.asItem()
             if (dirtgrass.get() && item === Items.GRASS_BLOCK) item = Items.DIRT
             return player.switchItem(item, returnHand.get()) {
