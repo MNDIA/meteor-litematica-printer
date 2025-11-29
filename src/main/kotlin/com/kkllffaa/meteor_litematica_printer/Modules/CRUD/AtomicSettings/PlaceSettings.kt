@@ -494,7 +494,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
         if (!World.isValid(pos) || !required.canPlaceAt(world, pos)) return false
 
-        var 已经放好了: Boolean =
+        val 已经放好了: Boolean =
             worldPosState.block === block && when (block) {
                 is SlabBlock if required.get(SlabBlock.TYPE) == SlabType.DOUBLE -> {
                     worldPosState.get<SlabType>(SlabBlock.TYPE) == SlabType.DOUBLE
@@ -511,14 +511,15 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 is TurtleEggBlock -> {
                     worldPosState.get<Int>(TurtleEggBlock.EGGS) >= required.get<Int>(TurtleEggBlock.EGGS)
                 }
+
                 else -> true
             }
 
         if (已经放好了) return false
+        val 可替换 = worldPosState.isReplaceable
+                || (block === worldPosState.block && (block is SlabBlock || block is CandleBlock || block is SeaPickleBlock || block is TurtleEggBlock))
 
-        if (!worldPosState.isReplaceable
-            && !(block === worldPosState.block && (block is SlabBlock || block is AbstractCandleBlock))
-        ) return false
+        if (!可替换) return false
 
         // Check if intersects entities
         // if (player.boundingBox.intersects(Vec3d.of(pos), Vec3d.of(pos).add(1.0, 1.0, 1.0))) return false
