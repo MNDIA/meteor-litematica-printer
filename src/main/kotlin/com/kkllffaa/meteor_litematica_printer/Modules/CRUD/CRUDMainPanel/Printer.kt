@@ -20,8 +20,6 @@ import net.minecraft.block.BlockState
 import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.util.Pair
 import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Vec3d
-import java.util.function.BiConsumer
 import java.util.function.Consumer
 import java.util.function.ToDoubleFunction
 import java.util.function.ToIntFunction
@@ -256,31 +254,28 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
         if (timer >= printing_delay.get()) {
             BlockIterator.register(
                 printing_range.get() + 1,
-                printing_range.get() + 1,
-                BiConsumer { pos: BlockPos, blockState: BlockState ->
-                    val required = worldSchematic.getBlockState(pos)
-                    if (启用交互.get() && !pendingInteractions.containsKey(pos)) {
-                        val requiredInteractions = blockState.needInteractionCountsTo(required)
-                        if (requiredInteractions > 0) {
-                            pendingInteractions[BlockPos(pos)] = requiredInteractions
-                        }
+                printing_range.get() + 1
+            ) { pos: BlockPos, blockState: BlockState ->
+                val required = worldSchematic.getBlockState(pos)
+                if (启用交互.get() && !pendingInteractions.containsKey(pos)) {
+                    val requiredInteractions = blockState.needInteractionCountsTo(required)
+                    if (requiredInteractions > 0) {
+                        pendingInteractions[BlockPos(pos)] = requiredInteractions
                     }
-                    if (player.blockPos.isWithinDistance(pos, printing_range.get().toDouble())
-                        && blockState.isReplaceable
-                        && required.fluidState.isEmpty
-                        && !required.isAir && blockState.block !== required.block && DataManager.getRenderLayerRange()
-                            .isPositionWithinRange(pos)
-                        && !player.boundingBox.intersects(
-                            Vec3d.of(pos),
-                            Vec3d.of(pos).add(1.0, 1.0, 1.0)
-                        ) && required.canPlaceAt(world, pos)
-                        && !(isPositionCached(pos))
-                    ) {
-                        if (!whitelistenabled.get() || whitelist.get().contains(required.block)) {
-                            toSort.add(BlockPos(pos))
-                        }
+                }
+                if (player.blockPos.isWithinDistance(pos, printing_range.get().toDouble())
+                    && blockState.isReplaceable
+                    && required.fluidState.isEmpty
+                    && !required.isAir && blockState.block !== required.block && DataManager.getRenderLayerRange()
+                        .isPositionWithinRange(pos)
+
+                    && !(isPositionCached(pos))
+                ) {
+                    if (!whitelistenabled.get() || whitelist.get().contains(required.block)) {
+                        toSort.add(BlockPos(pos))
                     }
-                })
+                }
+            }
 
             BlockIterator.after {
                 if (firstAlgorithm.get() != SortAlgorithm.None) {

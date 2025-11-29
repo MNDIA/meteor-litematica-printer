@@ -500,7 +500,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         if (!(worldPosState.isReplaceable || (block == worldPosState.block && (block is SlabBlock || block is AbstractCandleBlock)))) return false
 
         // Check if intersects entities
-        if (world.canPlace(Blocks.OBSIDIAN.defaultState, pos, ShapeContext.absent())) return false
+        // if (player.boundingBox.intersects(Vec3d.of(pos), Vec3d.of(pos).add(1.0, 1.0, 1.0))) return false
+        if (!world.canPlace(Blocks.OBSIDIAN.defaultState, pos, ShapeContext.absent())) return false
 
         // 检查面
         val isPlaceAllowedFromPlayerRotation by lazy { required.isPlaceAllowedFromPlayerRotation }
