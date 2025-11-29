@@ -724,7 +724,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 val result = player.switchItem(item, returnHand.get()) {
                     place(BlockHitResult(hitPos, face, neighbour, false))
                 }
-                if (!result) info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
+                if (!result) {info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")}
                 // else  info("$block 成功放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
                 return result
             }
