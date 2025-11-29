@@ -487,17 +487,38 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
     fun TryPlaceBlock(required: BlockState, pos: BlockPos): Boolean {
         val player = mc.player ?: return false
         val world = mc.world ?: return false
-        // 检查点
-
-        if (!World.isValid(pos)
-            || !required.canPlaceAt(world, pos)
-            || !required.isMultiStructurePlacementAllowed
-        ) return false
-
         val worldPosState = world.getBlockState(pos)
         val block = required.block
-        // Check if current block is replaceable
-        if (!(worldPosState.isReplaceable || (block == worldPosState.block && (block is SlabBlock || block is AbstractCandleBlock)))) return false
+        // 检查点
+        if (!required.fluidState.isEmpty || required.isAir || !required.isMultiStructurePlacementAllowed) return false//无法放置的东西
+
+        if (!World.isValid(pos) || !required.canPlaceAt(world, pos)) return false
+
+        var 已经放好了: Boolean =
+            worldPosState.block === block && when (block) {
+                is SlabBlock if required.get(SlabBlock.TYPE) == SlabType.DOUBLE -> {
+                    worldPosState.get<SlabType>(SlabBlock.TYPE) == SlabType.DOUBLE
+                }
+
+                is CandleBlock -> {
+                    worldPosState.get<Int>(CandleBlock.CANDLES) >= required.get<Int>(CandleBlock.CANDLES)
+                }
+
+                is SeaPickleBlock -> {
+                    worldPosState.get<Int>(SeaPickleBlock.PICKLES) >= required.get<Int>(SeaPickleBlock.PICKLES)
+                }
+
+                is TurtleEggBlock -> {
+                    worldPosState.get<Int>(TurtleEggBlock.EGGS) >= required.get<Int>(TurtleEggBlock.EGGS)
+                }
+                else -> true
+            }
+
+        if (已经放好了) return false
+
+        if (!worldPosState.isReplaceable
+            && !(block === worldPosState.block && (block is SlabBlock || block is AbstractCandleBlock))
+        ) return false
 
         // Check if intersects entities
         // if (player.boundingBox.intersects(Vec3d.of(pos), Vec3d.of(pos).add(1.0, 1.0, 1.0))) return false

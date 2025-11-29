@@ -263,13 +263,8 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
                         pendingInteractions[BlockPos(pos)] = requiredInteractions
                     }
                 }
-                if (player.blockPos.isWithinDistance(pos, printing_range.get().toDouble())
-                    && blockState.isReplaceable
-                    && required.fluidState.isEmpty
-                    && !required.isAir && blockState.block !== required.block && DataManager.getRenderLayerRange()
-                        .isPositionWithinRange(pos)
-
-                    && !(isPositionCached(pos))
+                if (!(isPositionCached(pos))
+                    && DataManager.getRenderLayerRange().isPositionWithinRange(pos)
                 ) {
                     if (!whitelistenabled.get() || whitelist.get().contains(required.block)) {
                         toSort.add(BlockPos(pos))
