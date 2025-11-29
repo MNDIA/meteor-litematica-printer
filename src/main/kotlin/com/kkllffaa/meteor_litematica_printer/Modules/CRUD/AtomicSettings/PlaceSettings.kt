@@ -542,6 +542,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         if (blockHalf == BlockHalf.TOP) {
                             tempHitPos = tempHitPos.add(0.0, 0.25, 0.0)
                         } else {
+                            disableAirPlace = true
                             tempHitPos = tempHitPos.add(0.0, -0.25, 0.0)
                         }
                     }
@@ -557,7 +558,11 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     else -> {//侧面设置半砖偏移
                         when (slabTpye) {
                             SlabType.TOP -> tempHitPos = tempHitPos.add(0.0, 0.25, 0.0)
-                            SlabType.BOTTOM -> tempHitPos = tempHitPos.add(0.0, -0.25, 0.0)
+                            SlabType.BOTTOM -> {
+                                disableAirPlace = true
+                                tempHitPos = tempHitPos.add(0.0, -0.25, 0.0)
+                            }
+
                             SlabType.DOUBLE -> {}
                         }
                     }
