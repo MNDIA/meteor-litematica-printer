@@ -647,6 +647,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
                         // 方向取决于玩家，禁用点击面保护
                         disableFaceProtection = true
+                        disableAirPlace = true
                     }
 
                     BlockFace.CEILING -> {
@@ -654,6 +655,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
                         // 方向取决于玩家，禁用点击面保护
                         disableFaceProtection = true
+                        disableAirPlace = true
                     }
 
                     BlockFace.WALL -> {
