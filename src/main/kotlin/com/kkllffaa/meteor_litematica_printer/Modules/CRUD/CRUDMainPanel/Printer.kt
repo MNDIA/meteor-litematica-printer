@@ -251,8 +251,8 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
 
         if (timer >= printing_delay.get()) {
             BlockIterator.register(
-                printing_range.get(),
-                printing_range.get()
+                printing_range.get()+1,
+                printing_range.get()+1
             ) { pos: BlockPos, blockState: BlockState ->
                 val required = worldSchematic.getBlockState(pos)
                 if (启用交互.get() && !pendingInteractions.containsKey(pos)) {
