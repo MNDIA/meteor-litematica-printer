@@ -96,8 +96,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 *地面火把.toTypedArray(),
                 *地面告示牌.toTypedArray(),
                 *地面旗帜.toTypedArray(),
-                *墙上头颅.toTypedArray(),
                 *地面头颅.toTypedArray(),
+                *墙上头颅.toTypedArray(),
 
                 )
             .visible { airPlace.get() }
@@ -662,6 +662,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         disableDirectionProtection = true
                     }
                 }
+            } else if (block is TripwireHookBlock) {//绊线钩 特例 禁用方向保护
+                disableDirectionProtection = true
             }
             val airPlaceAllowed = !disableAirPlace && enableAirPlace
             val isPlaceAllowedFromClickFace by lazy { required.isPlaceAllowedFromClickFace(face) }
