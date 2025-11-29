@@ -89,8 +89,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .name("airplace-blacklist")
             .description("Blocks that cannot be placed in airplace.")
             .defaultValue(
-
-                // Blocks.TRIPWIRE_HOOK, // 绊线钩
+                Blocks.GRINDSTONE,// 砂轮
+                *天花板H告示牌.toTypedArray(),
                 *墙上H告示牌.toTypedArray(),
 
                 *地面火把.toTypedArray(),
