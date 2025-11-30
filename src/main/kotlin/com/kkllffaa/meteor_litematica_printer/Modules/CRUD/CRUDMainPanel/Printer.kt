@@ -251,7 +251,17 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
                     }
                 }
             }
+        }
+    }
 
+    @EventHandler
+    private fun onTick(event: TickEvent.Pre) {
+        val worldSchematic = SchematicWorldHandler.getSchematicWorld() ?: run {
+            placedFade.clear()
+            toggle()
+            return
+        }
+        if (timer >= printing_delay.get()) {
             BlockIterator.after {
                 // Apply sorting algorithms
                 if (firstAlgorithm.get() != SortAlgorithm.None) {

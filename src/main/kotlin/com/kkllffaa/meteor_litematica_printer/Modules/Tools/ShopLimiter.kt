@@ -117,8 +117,8 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
     @EventHandler
     private fun onReceiveMessage(event: ReceiveMessageEvent) {
         val originalText = event.message
-        val originalIndicator = event.indicator
-        val originalId = event.id
+        // val originalIndicator = event.indicator
+        // val originalId = event.id
 
         val message = originalText.string
 
@@ -135,15 +135,15 @@ object ShopLimiter : Module(Addon.TOOLS, "shop-limiter", "Limits shop purchases 
         processPurchase(player, count, item)
 
         // 恢复原始消息属性
-        if (event.message !== originalText) {
-            event.message = originalText
-        }
-        if (event.indicator !== originalIndicator) {
-            event.indicator = originalIndicator
-        }
-        if (event.id != originalId) {
-            event.id = originalId
-        }
+        // if (event.message !== originalText) {
+        //     event.message = originalText
+        // }
+        // if (event.indicator !== originalIndicator) {
+        //     event.indicator = originalIndicator
+        // }
+        // if (event.id != originalId) {
+        //     event.id = originalId
+        // }
     }
 
     private fun processPurchase(player: String, count: Int, item: String) {
