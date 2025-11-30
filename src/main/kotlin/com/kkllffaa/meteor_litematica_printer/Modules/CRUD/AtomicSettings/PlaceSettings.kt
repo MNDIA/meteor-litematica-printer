@@ -481,10 +481,10 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                 ))))
     }
 
-    fun TryPlaceBlock(required: BlockState, pos: BlockPos): Boolean {
+    fun TryPlaceBlock(required: BlockState, pos: BlockPos, worldPoState: BlockState?): Boolean {
         val player = mc.player ?: return false
         val world = mc.world ?: return false
-        val worldPosState = world.getBlockState(pos)
+        val worldPosState = worldPoState ?: world.getBlockState(pos)
         val block = required.block
         // 检查点
         if (!required.fluidState.isEmpty || required.isAir || !required.isMultiStructurePlacementAllowed) return false//无法放置的东西
@@ -526,6 +526,33 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val isPlaceAllowedFromPlayerRotation by lazy { required.isPlaceAllowedFromPlayerRotation }
         val posCenterVisible by lazy { pos.Center.isVisible }
         val enableAirPlace by lazy { airPlace.get() && block !in airplaceBlacklist.get() }
+        val 铰链方向 by lazy {
+            val facing = required.get<Direction>(DoorBlock.FACING)
+            val 铰链位置 = required.get<DoorHinge>(DoorBlock.HINGE)
+            when (铰链位置) {
+                DoorHinge.LEFT -> facing.Left!!
+                DoorHinge.RIGHT -> facing.Right!!
+            }
+        }
+
+        val 铰链比对立多 by lazy {
+            // 门高两格，计算铰链侧和对立侧各有多少个固体方块 (0-2)
+            fun countSolidBlocks(dir: Direction): Int {
+                var count = 0
+                for (dy in 0..1) {
+                    val checkPos = pos.offset(dir).up(dy)
+                    val state = world.getBlockState(checkPos)
+                    if (state.isSolidBlock(world, checkPos)) count++
+                }
+                return count
+            }
+
+            val 铰链侧方块数 = countSolidBlocks(铰链方向)
+            val 对立侧方块数 = countSolidBlocks(铰链方向.opposite)
+            铰链侧方块数 - 对立侧方块数
+        }
+
+
         for (face in Direction.entries) {
             var tempHitPos = Vec3d(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
             // 特殊砖:根据状态属性/点击面有 不同的 点击面保护和视角保护的变化/点击点偏移/面不能点
@@ -670,6 +697,19 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     Direction.UP, Direction.DOWN -> disableFaceProtection = true
                     else -> disableDirectionProtection = true
                 }
+            } else if (block is DoorBlock) {//门 点击点偏移
+                if (铰链比对立多 == 0) {
+                    if (face == 铰链方向) continue
+                    if (face != 铰链方向.opposite) {
+                        tempHitPos = tempHitPos.add(
+                            铰链方向.offsetX * 0.25,
+                            0.0,
+                            铰链方向.offsetZ * 0.25
+                        )
+                    }
+                } else if (铰链比对立多 < 0) {
+                    return false
+                }
             }
             val airPlaceAllowed = !disableAirPlace && enableAirPlace
             val isPlaceAllowedFromClickFace by lazy { required.isPlaceAllowedFromClickFace(face) }
@@ -689,7 +729,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
 
                 val disableDP = if (useAirPlace) false else disableDirectionProtection
-                val disableFP = if (useAirPlace) true else disableFaceProtection
+                val disableFP = disableFaceProtection
 
 
                 if (directionProtection.get() && !disableDP && !isPlaceAllowedFromPlayerRotation) continue
@@ -701,28 +741,13 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     if (!required.canPlaceAgainst(neighborPos, face)) continue
                     neighborPos
                 }
-                val hitPos1 = if (useAirPlace) tempHitPos else {
+                val hitPos = if (useAirPlace) tempHitPos else {
                     val oppositeFace = face.opposite
                     tempHitPos.add(
                         oppositeFace.offsetX * 0.5,
                         oppositeFace.offsetY * 0.5,
                         oppositeFace.offsetZ * 0.5
                     )
-                }
-                val hitPos = if (block is DoorBlock) {
-                    val facing = required.get<Direction>(DoorBlock.FACING)
-                    val 铰链位置 = required.get<DoorHinge>(DoorBlock.HINGE)
-                    val 偏移方向 = when (铰链位置) {
-                        DoorHinge.LEFT -> facing.Left!!
-                        DoorHinge.RIGHT -> facing.Right!!
-                    }
-                    hitPos1.add(
-                        偏移方向.offsetX * 0.25,
-                        0.0,
-                        偏移方向.offsetZ * 0.25
-                    )
-                } else {
-                    hitPos1
                 }
 
                 // 已经确定了face hitPos neighbour

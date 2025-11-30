@@ -45,10 +45,8 @@ fun BlockState.needInteractionCountsTo(targetState: BlockState): Int =
 
 fun BlockPos.TryInteractIt(count: Int = 1): Int = InteractSettings.TryInteractBlock(this, count)
 
-fun BlockState.TryPlaceIt(pos: BlockPos): Boolean = PlaceSettings.TryPlaceBlock(this, pos)
-
-
-
+fun BlockState.TryPlaceIt(pos: BlockPos, worldPosState: BlockState? = null): Boolean =
+    PlaceSettings.TryPlaceBlock(this, pos, worldPosState)
 
 
 val BlockState.isBlockCollisionFullCube: Boolean

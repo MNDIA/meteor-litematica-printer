@@ -17,12 +17,7 @@ import meteordevelopment.meteorclient.utils.world.BlockIterator
 import meteordevelopment.orbit.EventHandler
 import net.minecraft.block.Block
 import net.minecraft.block.BlockState
-import net.minecraft.client.network.ClientPlayerEntity
-import net.minecraft.util.Pair
 import net.minecraft.util.math.BlockPos
-import java.util.function.Consumer
-import java.util.function.ToDoubleFunction
-import java.util.function.ToIntFunction
 import kotlin.math.min
 
 class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints open schematics") {
@@ -171,34 +166,31 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
 
 
     //endregion
-    private var timer = 0
-    private val toSort: MutableList<BlockPos> = ArrayList<BlockPos>()
-    private val placed_fade: MutableList<Pair<Int, BlockPos>> = ArrayList()
 
-    // Position cache to prevent repeated placement attempts
-    private val positionCache = LinkedHashSet<BlockPos>()
+    private var timer = 0
+    private val toSort = mutableListOf<BlockPos>()
+
+    // Fade rendering: position -> remaining ticks
+    private val placedFade = mutableListOf<FadeEntry>()
+
+    // LRU cache using LinkedHashMap with accessOrder=true for automatic eviction
+    private val positionCache = object : LinkedHashMap<BlockPos, Unit>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<BlockPos, Unit>?): Boolean =
+            size > cacheSize.get()
+    }
     private var cacheCleanupTickTimer = 0
 
     // Pending interactions: position -> remaining interactions needed
-    private val pendingInteractions: MutableMap<BlockPos, Int> = HashMap()
+    private val pendingInteractions = mutableMapOf<BlockPos, Int>()
 
-    private fun isPositionCached(pos: BlockPos): Boolean {
-        return enableCache.get() && pos in positionCache
-    }
+    private data class FadeEntry(var remainingTicks: Int, val pos: BlockPos)
+
+    private fun isPositionCached(pos: BlockPos): Boolean =
+        enableCache.get() && pos in positionCache
 
     private fun addToCache(pos: BlockPos) {
-        if (!enableCache.get()) return
-
-        positionCache.add(pos)
-
-
-        // Remove oldest entries if cache exceeds limit
-        while (positionCache.size > cacheSize.get()) {
-            val iterator = positionCache.iterator()
-            if (iterator.hasNext()) {
-                iterator.next()
-                iterator.remove()
-            }
+        if (enableCache.get()) {
+            positionCache[pos] = Unit
         }
     }
 
@@ -207,7 +199,7 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
     }
 
     override fun onDeactivate() {
-        placed_fade.clear()
+        placedFade.clear()
         positionCache.clear()
         cacheCleanupTickTimer = 0
         pendingInteractions.clear()
@@ -215,167 +207,138 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
 
     @EventHandler
     private fun onTick(event: TickEvent.Post) {
-        // TODO: if (Deleter.isBusy){
-        // 	return;
-        // }
+        val player = mc.player ?: return placedFade.clear()
+        val world = mc.world ?: return placedFade.clear()
 
-        val player: ClientPlayerEntity = mc.player ?: run {
-            placed_fade.clear()
-            return
-        }
-        val world = mc.world ?: run {
-            placed_fade.clear()
-            return
-        }
+        // Update fade entries and remove expired ones
+        placedFade.onEach { it.remainingTicks-- }
+            .removeIf { it.remainingTicks <= 0 }
 
-        placed_fade.forEach(Consumer { s: Pair<Int, BlockPos> -> s.left = s.getLeft() - 1 })
-        placed_fade.removeIf { s: Pair<Int, BlockPos> -> s.getLeft() <= 0 }
-
+        // Periodic cache cleanup
         if (enableCache.get()) {
             cacheCleanupTickTimer++
-
             if (cacheCleanupTickTimer >= cacheCleanupInterval.get() * 20) {
                 positionCache.clear()
                 cacheCleanupTickTimer = 0
             }
         }
+
         val worldSchematic = SchematicWorldHandler.getSchematicWorld() ?: run {
-            placed_fade.clear()
+            placedFade.clear()
             toggle()
             return
         }
 
-
         toSort.clear()
 
-
         if (timer >= printing_delay.get()) {
-            BlockIterator.register(
-                printing_range.get()+1,
-                printing_range.get()+1
-            ) { pos: BlockPos, blockState: BlockState ->
+            val range = printing_range.get() + 1
+            BlockIterator.register(range, range) { pos, blockState ->
                 val required = worldSchematic.getBlockState(pos)
-                if (启用交互.get() && !pendingInteractions.containsKey(pos)) {
-                    val requiredInteractions = blockState.needInteractionCountsTo(required)
-                    if (requiredInteractions > 0) {
-                        pendingInteractions[BlockPos(pos)] = requiredInteractions
-                    }
+
+                // Handle pending interactions
+                if (启用交互.get() && pos !in pendingInteractions) {
+                    blockState.needInteractionCountsTo(required)
+                        .takeIf { it > 0 }
+                        ?.let { pendingInteractions[BlockPos(pos)] = it }
                 }
-                if (!(isPositionCached(pos))
-                    && DataManager.getRenderLayerRange().isPositionWithinRange(pos)
-                ) {
+
+                // Add to sort list if valid
+                if (!isPositionCached(pos) && DataManager.getRenderLayerRange().isPositionWithinRange(pos)) {
                     if (!whitelistenabled.get() || required.block in whitelist.get()) {
-                        toSort.add(BlockPos(pos))
+                        toSort += BlockPos(pos)
                     }
                 }
             }
 
             BlockIterator.after {
+                // Apply sorting algorithms
                 if (firstAlgorithm.get() != SortAlgorithm.None) {
-                    if (firstAlgorithm.get().applySecondSorting) {
-                        if (secondAlgorithm.get() != SortingSecond.None) {
-                            toSort.sortWith(secondAlgorithm.get().algorithm)
-                        }
+                    if (firstAlgorithm.get().applySecondSorting && secondAlgorithm.get() != SortingSecond.None) {
+                        toSort.sortWith(secondAlgorithm.get().algorithm)
                     }
                     toSort.sortWith(firstAlgorithm.get().algorithm)
                 }
+
                 var placed = 0
 
-                val iterator = pendingInteractions.entries.iterator()
-                while (iterator.hasNext() && placed < blocksPerTick.get()) {
-                    val entry = iterator.next()
-                    val pos = entry.key
-                    val remaining: Int = entry.value
-                    if (remaining > 0) {
+                // Process pending interactions using iterator with removal
+                pendingInteractions.entries.iterator().run {
+                    while (hasNext() && placed < blocksPerTick.get()) {
+                        val (pos, remaining) = next()
+                        if (remaining <= 0) {
+                            remove()
+                            return@run
+                        }
+
                         val toDo = min(remaining, blocksPerTick.get() - placed)
                         val did = pos.TryInteractIt(toDo)
-                        if (did > 0) {
-                            timer = 0
-                        }
+
+                        if (did > 0) timer = 0
                         placed += did
+
                         val newRemaining = remaining - did
-                        if (newRemaining <= 0) {
-                            iterator.remove()
-                        } else {
-                            entry.setValue(newRemaining)
-                        }
-                    } else {
-                        iterator.remove()
+                        if (newRemaining <= 0) remove()
+                        else pendingInteractions[pos] = newRemaining
                     }
                 }
-                for (pos in toSort) {
-                    val state = worldSchematic.getBlockState(pos)
 
+                // Place blocks
+                for (pos in toSort) {
+                    if (placed >= blocksPerTick.get()) break
+
+                    val state = worldSchematic.getBlockState(pos)
                     if (state.TryPlaceIt(pos)) {
                         timer = 0
                         placed++
                         addToCache(pos)
 
                         if (renderBlocks.get()) {
-                            placed_fade.add(Pair<Int, BlockPos>(fadeTime.get(), BlockPos(pos)))
-                        }
-                        if (placed >= blocksPerTick.get()) {
-                            return@after
+                            placedFade += FadeEntry(fadeTime.get(), BlockPos(pos))
                         }
                     }
                 }
             }
-        } else timer++
+        } else {
+            timer++
+        }
     }
 
     @EventHandler
     private fun onRender(event: Render3DEvent) {
-        placed_fade.forEach(Consumer { fadeEntry: Pair<Int, BlockPos> ->
-            val remainingTicks: Int = fadeEntry.getLeft()
+        placedFade.forEach { (remainingTicks, blockPos) ->
             val alphaRatio = remainingTicks.toFloat() / fadeTime.get()
             val alpha = (alphaRatio * colour.get().a).toInt()
             val sideColor = Color(colour.get().r, colour.get().g, colour.get().b, alpha)
-
-            val blockPos = fadeEntry.getRight()
             event.renderer.box(blockPos, sideColor, null, ShapeMode.Sides, 0)
-        })
+        }
     }
 
     enum class SortAlgorithm(val applySecondSorting: Boolean, val algorithm: Comparator<BlockPos>) {
-        None(false, Comparator { a: BlockPos, b: BlockPos -> 0 }),
-        TopDown(true, Comparator.comparingInt<BlockPos>(ToIntFunction { value: BlockPos -> value.y * -1 })),
-        DownTop(true, Comparator.comparingInt<BlockPos>(ToIntFunction { obj: BlockPos -> obj.y })),
-        Nearest(
-            false,
-            Comparator.comparingDouble<BlockPos>(ToDoubleFunction { value: BlockPos ->
-                val player = MeteorClient.mc.player
-                if (player != null) Utils.squaredDistance(
-                    player.x,
-                    player.y,
-                    player.z,
-                    value.x + 0.5,
-                    value.y + 0.5,
-                    value.z + 0.5
-                ) else 0.0
-            })
-        ),
-        Furthest(
-            false,
-            Comparator.comparingDouble<BlockPos>(ToDoubleFunction { value: BlockPos ->
-                val player = MeteorClient.mc.player
-                if (player != null) (Utils.squaredDistance(
-                    player.x,
-                    player.y,
-                    player.z,
-                    value.x + 0.5,
-                    value.y + 0.5,
-                    value.z + 0.5
-                )) * -1 else 0.0
-            })
-        );
-
-
+        None(false, Comparator { _, _ -> 0 }),
+        TopDown(true, compareBy { -it.y }),
+        DownTop(true, compareBy { it.y }),
+        Nearest(false, compareBy {
+            MeteorClient.mc.player?.let { player ->
+                Utils.squaredDistance(
+                    player.x, player.y, player.z,
+                    it.x + 0.5, it.y + 0.5, it.z + 0.5
+                )
+            } ?: 0.0
+        }),
+        Furthest(false, compareByDescending {
+            MeteorClient.mc.player?.let { player ->
+                Utils.squaredDistance(
+                    player.x, player.y, player.z,
+                    it.x + 0.5, it.y + 0.5, it.z + 0.5
+                )
+            } ?: 0.0
+        });
     }
 
     enum class SortingSecond(val algorithm: Comparator<BlockPos>) {
         None(SortAlgorithm.None.algorithm),
         Nearest(SortAlgorithm.Nearest.algorithm),
         Furthest(SortAlgorithm.Furthest.algorithm);
-
     }
 }
