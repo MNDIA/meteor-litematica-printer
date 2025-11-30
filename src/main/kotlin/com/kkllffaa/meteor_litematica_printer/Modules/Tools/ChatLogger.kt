@@ -2,22 +2,17 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 import com.kkllffaa.meteor_litematica_printer.Addon
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent
-import meteordevelopment.meteorclient.settings.Setting
 import meteordevelopment.meteorclient.settings.StringSetting
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.orbit.EventHandler
-import java.io.FileWriter
-import java.io.IOException
-import java.io.PrintWriter
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a file.") {
     private val sgGeneral = settings.defaultGroup
 
-    private val filePath: Setting<String> = sgGeneral.add(
+    private val filePath = sgGeneral.add(
         StringSetting.Builder()
             .name("file-path")
             .description("The file path to save chat logs. Use absolute path or relative to game directory.")
@@ -27,26 +22,14 @@ class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a f
 
     @EventHandler
     private fun onReceiveMessage(event: ReceiveMessageEvent) {
-        val message = event.message ?: return
-        val messageString = message.string
-        if (messageString == null || messageString.trim { it <= ' ' }.isEmpty()) return
+        val messageString = event.message?.string?.takeIf { it.isNotBlank() } ?: return
+        val path = filePath.get()?.takeIf { it.isNotBlank() } ?: return
+
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        val logEntry = "[$timestamp]$messageString\n"
 
-        val logEntry = String.format("[%s]%s%n", timestamp, messageString)
-
-        val path = filePath.get()
-        if (path == null || path.trim { it <= ' ' }.isEmpty()) return
-
-        try {
-            val logFilePath = Paths.get(path)
-            if (logFilePath.parent != null && !Files.exists(logFilePath.parent)) {
-                Files.createDirectories(logFilePath.parent)
-            }
-            PrintWriter(FileWriter(logFilePath.toFile(), true)).use { writer ->
-                writer.print(logEntry)
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
+        // runCatching {
+        File(path).apply { parentFile?.mkdirs() }.appendText(logEntry)
+        // }.onFailure { it.printStackTrace() }
     }
 }
