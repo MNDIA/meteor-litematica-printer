@@ -38,7 +38,14 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .visible { distanceProtection.get() == DistanceMode.Max }
             .build()
     )
-
+    val SignMaxTextWidth: Setting<Int> = sgGeneral.add(
+        IntSetting.Builder()
+            .name("Sign-max-text-width")
+            .description("0 for default auto")
+            .defaultValue(99999)
+            .min(0)
+            .build()
+    )
     val PlayerHandDistance: Double
         get() = when (distanceProtection.get()) {
             DistanceMode.Auto -> {
