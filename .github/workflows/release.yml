@@ -13,14 +13,19 @@ jobs:
       - name: Wrapper Validation
         uses: gradle/actions/wrapper-validation@v4
 
-      - name: Setup JDK 25
+      - name: Setup JDK
         uses: actions/setup-java@v5
         with:
           java-version: 25
           distribution: temurin
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: current
+
       - name: Build with Gradle
-        run: gradlew build
+        run: gradle build
 
       - name: Get Versions
         run: |
