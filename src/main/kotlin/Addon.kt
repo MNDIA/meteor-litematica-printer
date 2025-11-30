@@ -34,7 +34,7 @@ class Addon : MeteorAddon() {
         Modules.get().add(AutoTool)
         Modules.get().add(AutoEat)
         Modules.get().add(HangUp)
-
+        Modules.get().add(SwingHand)
         Modules.get().add(ItemFinder)
         Modules.get().add(Parkour)
         Modules.get().add(MidiParser)
