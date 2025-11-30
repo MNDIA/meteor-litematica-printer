@@ -13,7 +13,7 @@ import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
 
-class AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于阈值时，从背包内替换同类物品") {
+object AutoRenew : Module(Addon.TOOLS, "auto-renew", "手持工具耐久度低于阈值时，从背包内替换同类物品") {
     private val sgGeneral = settings.defaultGroup
 
     private val Durability: Setting<Double> = sgGeneral.add(

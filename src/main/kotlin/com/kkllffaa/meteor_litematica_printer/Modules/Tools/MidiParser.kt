@@ -6,7 +6,7 @@ import meteordevelopment.meteorclient.settings.Setting
 import meteordevelopment.meteorclient.settings.StringSetting
 import meteordevelopment.meteorclient.systems.modules.Module
 
-class MidiParser : Module(Addon.TOOLS, "midi-parser", "Parses MIDI files.") {
+object MidiParser : Module(Addon.TOOLS, "midi-parser", "Parses MIDI files.") {
     private val sgGeneral = settings.defaultGroup
 
     private val midiFilePath: Setting<String> = sgGeneral.add(

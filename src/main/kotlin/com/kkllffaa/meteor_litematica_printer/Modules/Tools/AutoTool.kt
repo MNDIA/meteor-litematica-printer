@@ -25,7 +25,7 @@ import net.minecraft.registry.tag.BlockTags
 import net.minecraft.registry.tag.ItemTags
 import java.util.function.Predicate
 
-class AutoTool :
+object AutoTool :
     Module(Addon.TOOLS, "auto-tool-+", "Automatically switches to the most effective tool when performing an action.") {
     private val sgGeneral = settings.defaultGroup
     private val sgWhitelist = settings.createGroup("Whitelist")
@@ -275,69 +275,68 @@ class AutoTool :
         Blacklist
     }
 
-    companion object {
-        //endregion
-        var busyTick: Int = -1
-        fun getScore(
-            itemStack: ItemStack,
-            state: BlockState,
-            silkTouchEnderChest: Boolean,
-            fortuneOre: Boolean,
-            enchantPreference: EnchantPreference,
-            good: Predicate<ItemStack>
-        ): Double {
-            if (!good.test(itemStack) || !isTool(itemStack)) return -1.0
-            if (!itemStack.isSuitableFor(state) && !(itemStack.isIn(ItemTags.SWORDS) && (state.block is BambooBlock || state.block is BambooShootBlock)) && !(itemStack.item is ShearsItem && state.block is LeavesBlock || state.isIn(
-                    BlockTags.WOOL
-                ))
-            ) return -1.0
+    //endregion
+    var busyTick: Int = -1
+    fun getScore(
+        itemStack: ItemStack,
+        state: BlockState,
+        silkTouchEnderChest: Boolean,
+        fortuneOre: Boolean,
+        enchantPreference: EnchantPreference,
+        good: Predicate<ItemStack>
+    ): Double {
+        if (!good.test(itemStack) || !isTool(itemStack)) return -1.0
+        if (!itemStack.isSuitableFor(state) && !(itemStack.isIn(ItemTags.SWORDS) && (state.block is BambooBlock || state.block is BambooShootBlock)) && !(itemStack.item is ShearsItem && state.block is LeavesBlock || state.isIn(
+                BlockTags.WOOL
+            ))
+        ) return -1.0
 
-            if (silkTouchEnderChest
-                && state.block === Blocks.ENDER_CHEST && !Utils.hasEnchantments(itemStack, Enchantments.SILK_TOUCH)
-            ) {
-                return -1.0
-            }
-
-            if (fortuneOre
-                && isFortunable(state.block)
-                && !Utils.hasEnchantments(itemStack, Enchantments.FORTUNE)
-            ) {
-                return -1.0
-            }
-
-            var score = 0.0
-
-            score += (itemStack.getMiningSpeedMultiplier(state) * 1000).toDouble()
-            score += Utils.getEnchantmentLevel(itemStack, Enchantments.UNBREAKING).toDouble()
-            score += Utils.getEnchantmentLevel(itemStack, Enchantments.EFFICIENCY).toDouble()
-            score += Utils.getEnchantmentLevel(itemStack, Enchantments.MENDING).toDouble()
-
-            if (enchantPreference == EnchantPreference.Fortune)
-                score += Utils.getEnchantmentLevel(itemStack, Enchantments.FORTUNE).toDouble()
-            if (enchantPreference == EnchantPreference.SilkTouch)
-                score += Utils.getEnchantmentLevel(itemStack, Enchantments.SILK_TOUCH).toDouble()
-
-            if (itemStack.isIn(ItemTags.SWORDS) && (state.block is BambooBlock || state.block is BambooShootBlock))
-                score += (9000 +
-                        ((itemStack.get(DataComponentTypes.TOOL)?.getSpeed(state) ?: 0f) * 1000)
-                        ).toDouble()
-
-            return score
+        if (silkTouchEnderChest
+            && state.block === Blocks.ENDER_CHEST && !Utils.hasEnchantments(itemStack, Enchantments.SILK_TOUCH)
+        ) {
+            return -1.0
         }
 
-        fun isTool(item: Item): Boolean {
-            return isTool(item.defaultStack)
+        if (fortuneOre
+            && isFortunable(state.block)
+            && !Utils.hasEnchantments(itemStack, Enchantments.FORTUNE)
+        ) {
+            return -1.0
         }
 
-        fun isTool(itemStack: ItemStack): Boolean {
-            return itemStack.isIn(ItemTags.AXES) || itemStack.isIn(ItemTags.HOES) || itemStack.isIn(ItemTags.PICKAXES) || itemStack.isIn(
-                ItemTags.SHOVELS
-            ) || itemStack.item is ShearsItem
-        }
+        var score = 0.0
 
-        private fun isFortunable(block: Block): Boolean {
-            if (block === Blocks.ANCIENT_DEBRIS) return false
-            return Xray.ORES.contains(block) || block is CropBlock
-        }
+        score += (itemStack.getMiningSpeedMultiplier(state) * 1000).toDouble()
+        score += Utils.getEnchantmentLevel(itemStack, Enchantments.UNBREAKING).toDouble()
+        score += Utils.getEnchantmentLevel(itemStack, Enchantments.EFFICIENCY).toDouble()
+        score += Utils.getEnchantmentLevel(itemStack, Enchantments.MENDING).toDouble()
+
+        if (enchantPreference == EnchantPreference.Fortune)
+            score += Utils.getEnchantmentLevel(itemStack, Enchantments.FORTUNE).toDouble()
+        if (enchantPreference == EnchantPreference.SilkTouch)
+            score += Utils.getEnchantmentLevel(itemStack, Enchantments.SILK_TOUCH).toDouble()
+
+        if (itemStack.isIn(ItemTags.SWORDS) && (state.block is BambooBlock || state.block is BambooShootBlock))
+            score += (9000 +
+                    ((itemStack.get(DataComponentTypes.TOOL)?.getSpeed(state) ?: 0f) * 1000)
+                    ).toDouble()
+
+        return score
     }
+
+    fun isTool(item: Item): Boolean {
+        return isTool(item.defaultStack)
+    }
+
+    fun isTool(itemStack: ItemStack): Boolean {
+        return itemStack.isIn(ItemTags.AXES) || itemStack.isIn(ItemTags.HOES) || itemStack.isIn(ItemTags.PICKAXES) || itemStack.isIn(
+            ItemTags.SHOVELS
+        ) || itemStack.item is ShearsItem
+    }
+
+    private fun isFortunable(block: Block): Boolean {
+        if (block === Blocks.ANCIENT_DEBRIS) return false
+        return Xray.ORES.contains(block) || block is CropBlock
+    }
+
 }

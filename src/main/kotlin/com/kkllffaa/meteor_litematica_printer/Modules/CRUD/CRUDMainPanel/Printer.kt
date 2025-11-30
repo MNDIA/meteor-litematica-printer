@@ -20,7 +20,7 @@ import net.minecraft.block.BlockState
 import net.minecraft.util.math.BlockPos
 import kotlin.math.min
 
-class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints open schematics") {
+object Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints open schematics") {
     private val sgGeneral = settings.defaultGroup
     private val sgWhitelist = settings.createGroup("Whitelist")
     private val sgRendering = settings.createGroup("Rendering")

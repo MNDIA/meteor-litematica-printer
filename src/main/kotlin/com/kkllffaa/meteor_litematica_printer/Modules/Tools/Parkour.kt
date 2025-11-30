@@ -16,7 +16,7 @@ import net.minecraft.block.Blocks
 import net.minecraft.util.shape.VoxelShape
 import kotlin.math.sqrt
 
-class Parkour : Module(Addon.TOOLS, "parkour", "Automatically jumps at the edges of blocks.") {
+object Parkour : Module(Addon.TOOLS, "parkour", "Automatically jumps at the edges of blocks.") {
     private val sgGeneral = settings.defaultGroup
 
     private val edgeDistance: Setting<Double> = sgGeneral.add(

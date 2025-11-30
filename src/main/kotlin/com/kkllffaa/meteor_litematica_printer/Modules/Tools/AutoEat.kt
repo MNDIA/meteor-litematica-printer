@@ -27,7 +27,7 @@ import net.minecraft.item.Items
 import java.util.function.BiPredicate
 
 // import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter;
-class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
+object AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     // Settings groups
     private val sgGeneral = settings.defaultGroup
     private val sgThreshold = settings.createGroup("Threshold")
@@ -291,13 +291,12 @@ class AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
         fun test(health: Boolean, hunger: Boolean): Boolean = predicate.test(health, hunger)
     }
 
-    companion object {
-        private val AURAS = arrayOf(
-            KillAura::class.java,
-            CrystalAura::class.java,
-            AnchorAura::class.java,
-            BedAura::class.java,  // Deleter.class,
-            Printer::class.java
-        )
-    }
+    private val AURAS = arrayOf(
+        KillAura::class.java,
+        CrystalAura::class.java,
+        AnchorAura::class.java,
+        BedAura::class.java,  // Deleter.class,
+        Printer::class.java
+    )
+
 }

@@ -14,7 +14,7 @@ import net.minecraft.client.gui.screen.ingame.GenericContainerScreen
 import net.minecraft.text.Text
 import net.minecraft.util.Hand
 
-class AutoLogin : Module(Addon.TOOLS, "auto-login", "Automatically logs in when receiving specific messages.") {
+object AutoLogin : Module(Addon.TOOLS, "auto-login", "Automatically logs in when receiving specific messages.") {
     private enum class LoginState {
         预备登录,
         等待登陆成功,

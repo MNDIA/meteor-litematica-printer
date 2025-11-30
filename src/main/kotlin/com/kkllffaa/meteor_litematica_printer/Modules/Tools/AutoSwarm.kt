@@ -12,7 +12,7 @@ import meteordevelopment.meteorclient.systems.modules.misc.swarm.SwarmHost
 import meteordevelopment.meteorclient.systems.modules.misc.swarm.SwarmWorker
 import meteordevelopment.orbit.EventHandler
 
-class AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm instances.") {
+object AutoSwarm : Module(Addon.TOOLS, "auto-swarm", "Automatically manages swarm instances.") {
     private val sgGeneral = settings.defaultGroup
 
     private val checkCycle: Setting<Int> = sgGeneral.add(

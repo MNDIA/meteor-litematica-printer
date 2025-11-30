@@ -8,7 +8,7 @@ import meteordevelopment.meteorclient.utils.misc.input.Input
 import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.gui.screen.ingame.InventoryScreen
 
-class HangUp : Module(Addon.TOOLS, "HangUp", "Hang up the player.") {
+object HangUp : Module(Addon.TOOLS, "HangUp", "Hang up the player.") {
     init {
         if (isActive) toggle()
     }

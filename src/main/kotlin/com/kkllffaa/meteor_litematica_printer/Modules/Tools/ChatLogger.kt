@@ -10,7 +10,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.io.path.*
 
-class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a file.") {
+object ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a file.") {
     private val sgGeneral = settings.defaultGroup
 
     private val filePath = sgGeneral.add(

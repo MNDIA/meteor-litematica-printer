@@ -21,7 +21,7 @@ import net.minecraft.item.BlockItem
 import net.minecraft.util.math.MathHelper
 import org.joml.Vector3d
 
-class ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through walls.") {
+object ItemFinder : Module(Addon.TOOLS, "esp-Item-Entity", "Renders items through walls.") {
     private val sgGeneral = settings.defaultGroup
     private val sgColors = settings.createGroup("Colors")
 

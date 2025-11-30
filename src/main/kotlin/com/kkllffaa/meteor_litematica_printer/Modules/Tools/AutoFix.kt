@@ -14,7 +14,7 @@ import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.Items
 
-class AutoFix : Module(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手") {
+object AutoFix : Module(Addon.TOOLS, "auto-fix", "把背包中和物品栏中(排除装备的盔甲栏)需要修复的物品切换到副手") {
     private val sgGeneral = settings.defaultGroup
 
     private val Durability: Setting<Double> = sgGeneral.add(
