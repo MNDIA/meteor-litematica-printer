@@ -185,8 +185,9 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
 
     private data class FadeEntry(var remainingTicks: Int, val pos: BlockPos)
 
-    private val BlockPos.isPositionCached: Boolean get() =
-        enableCache.get() && this in positionCache
+    private val BlockPos.isPositionCached: Boolean
+        get() =
+            enableCache.get() && this in positionCache
 
     private fun addToCache(pos: BlockPos) {
         if (enableCache.get()) {
@@ -244,7 +245,7 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
                 }
 
                 // Add to sort list if valid
-                if (!isPositionCached(pos) && DataManager.getRenderLayerRange().isPositionWithinRange(pos)) {
+                if (!pos.isPositionCached && DataManager.getRenderLayerRange().isPositionWithinRange(pos)) {
                     if (!whitelistenabled.get() || required.block in whitelist.get()) {
                         toSort += BlockPos(pos)
                     }
