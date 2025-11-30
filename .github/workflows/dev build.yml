@@ -10,18 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+
+      - name: Wrapper Validation
+        uses: gradle/actions/wrapper-validation@v4
 
       - name: Setup JDK 25
-        uses: actions/setup-java@v3.10.0
+        uses: actions/setup-java@v5
         with:
           java-version: 25
-          distribution: adopt
+          distribution: temurin
 
-      - name: Build
-        run: |
-          chmod +x ./gradlew
-          ./gradlew build
+      - name: Build with Gradle
+        run: gradlew build
 
       - name: Get Versions
         run: |
@@ -35,14 +36,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Artifacts
-          path: ./build/libs/*.jar
+          path: build/libs/*.jar
 
       # - name: Create Build release
       #   uses: marvinpinto/action-automatic-releases@latest
       #   with:
       #     repo_token: '${{ secrets.GITHUB_TOKEN }}'
       #     automatic_release_tag: "${{ env.MC_VERSION }}-${{ env.PROJECT_VERSION }}"
-      #     prerelease: false
+      #     prerelease: true
       #     title: "Version ${{ env.PROJECT_VERSION }} for Minecraft ${{ env.MC_VERSION }}"
       #     files: |
       #       ./build/libs/*.jar

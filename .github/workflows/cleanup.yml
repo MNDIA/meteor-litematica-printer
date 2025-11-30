@@ -10,11 +10,8 @@ jobs:
       actions: write 
 
     steps:
-      - name: Checkout (optional)
-        uses: actions/checkout@v4
-
       - name: Delete Successful Runs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { owner, repo } = context.repo;
