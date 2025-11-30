@@ -5,9 +5,10 @@ import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent
 import meteordevelopment.meteorclient.settings.StringSetting
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.orbit.EventHandler
-import java.io.File
+import java.nio.file.StandardOpenOption
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.io.path.*
 
 class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a file.") {
     private val sgGeneral = settings.defaultGroup
@@ -28,8 +29,7 @@ class ChatLogger : Module(Addon.TOOLS, "chat-logger", "Logs chat messages to a f
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         val logEntry = "[$timestamp]$messageString\n"
 
-        // runCatching {
-        File(path).apply { parentFile?.mkdirs() }.appendText(logEntry)
-        // }.onFailure { it.printStackTrace() }
+        Path(path).also { it.createParentDirectories() }
+            .writeText(logEntry, options = arrayOf(StandardOpenOption.CREATE, StandardOpenOption.APPEND))
     }
 }
