@@ -6,7 +6,8 @@
   "client": [
     "ClientPlayerInteractionManagerMixin",
     "MixinClientPlayerEntity",
-    "SignBlockEntityMixin"
+    "SignBlockEntityMixin",
+    "StringHelperMixin"
   ],
   "injectors": {
     "defaultRequire": 1
