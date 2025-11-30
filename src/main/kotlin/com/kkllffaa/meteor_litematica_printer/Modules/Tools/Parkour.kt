@@ -2,6 +2,7 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 import com.google.common.collect.Streams
 import com.kkllffaa.meteor_litematica_printer.Addon
+import com.kkllffaa.meteor_litematica_printer.Functions.*
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.BoolSetting
 import meteordevelopment.meteorclient.settings.DoubleSetting
@@ -57,7 +58,7 @@ object Parkour : Module(Addon.TOOLS, "parkour", "Automatically jumps at the edge
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
         mc.options.jumpKey.isPressed =
-            needEdgeJumping || (Input.isPressed(mc.options.jumpKey) && this.isPlayerInControl)
+            needEdgeJumping || (Input.isPressed(mc.options.jumpKey) && isPlayerInControl)
     }
 
     @EventHandler
@@ -93,8 +94,5 @@ object Parkour : Module(Addon.TOOLS, "parkour", "Automatically jumps at the edge
     }
 
 
-    private val isPlayerInControl: Boolean
-        get() = (mc.currentScreen == null
-                || Modules.get().get(GUIMove::class.java)?.skip() == false)
-                && !Modules.get().isActive(Freecam::class.java)
+    
 }

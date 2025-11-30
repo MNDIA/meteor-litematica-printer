@@ -11,6 +11,10 @@ import meteordevelopment.meteorclient.utils.player.InvUtils
 import net.minecraft.item.Item
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket
 
+import meteordevelopment.meteorclient.systems.modules.movement.GUIMove
+import meteordevelopment.meteorclient.systems.modules.render.Freecam
+import meteordevelopment.meteorclient.systems.modules.Module
+import meteordevelopment.meteorclient.systems.modules.Modules
 import net.minecraft.util.Hand
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket
 import kotlin.math.floor
@@ -213,3 +217,8 @@ fun ClientPlayerEntity.swing(hand: Hand = Hand.MAIN_HAND, swingMode: ActionMode 
         ActionMode.Normal -> swingHand(hand)
     }
 }
+
+val isPlayerInControl: Boolean
+    get() = (mc.currentScreen == null
+            || Modules.get().get(GUIMove::class.java)?.skip() == false)
+            && !Modules.get().isActive(Freecam::class.java)
