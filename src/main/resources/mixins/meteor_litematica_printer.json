@@ -7,7 +7,7 @@
     "ClientPlayerInteractionManagerMixin",
     "MixinClientPlayerEntity",
     "SignBlockEntityMixin",
-    "StringHelperMixin"
+    "AnvilScreenHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
