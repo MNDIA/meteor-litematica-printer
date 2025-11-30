@@ -1,14 +1,12 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 import com.kkllffaa.meteor_litematica_printer.Addon
-import meteordevelopment.meteorclient.settings.SettingGroup
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.utils.misc.input.Input
-import net.minecraft.util.Hand
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
 import meteordevelopment.orbit.EventHandler
-import meteordevelopment.orbit.EventPriority
+import net.minecraft.util.Hand
 
 object SwingHand : Module(Addon.TOOLS, "SwingHand", "Swing your hands with LR Click when module is enabled.") {
     private val sgGeneral = settings.defaultGroup
@@ -31,13 +29,53 @@ object SwingHand : Module(Addon.TOOLS, "SwingHand", "Swing your hands with LR Cl
             .build()
     )
 
-    @EventHandler
-    private fun onTick(event: TickEvent.Pre) {
-        val player = mc.player ?: return
+    private var wasAttackPressed = false
+    private var wasUsePressed = false
+
+    private var tickCounter = 0
+    override fun onActivate() {
+        wasAttackPressed = false
+        wasUsePressed = false
+        tickCounter = 0
     }
 
     @EventHandler
-    private fun onTick(event: TickEvent.Post) {
+    private fun onTick(event: TickEvent.Pre) {
         val player = mc.player ?: return
+        val options = mc.options ?: return
+
+        // 获取物理按键的真实状态
+        val attackPressed = Input.isPressed(options.attackKey)
+        val usePressed = Input.isPressed(options.useKey)
+
+        // 拦截游戏的按键输入，阻止原始行为
+        options.attackKey.isPressed = false
+        options.useKey.isPressed = false
+
+
+        if (持续连续挥手.get()) {
+            tickCounter++
+            // 持续挥手模式：按住时按间隔持续挥手
+            val interval = 持续挥手间隔tick.get()
+
+            if (attackPressed && tickCounter % interval == 0) {
+                player.swingHand(Hand.MAIN_HAND)
+            }
+            if (usePressed && tickCounter % interval == 0) {
+                player.swingHand(Hand.OFF_HAND)
+            }
+        } else {
+            if (attackPressed && !wasAttackPressed) {
+                player.swingHand(Hand.MAIN_HAND)
+            }
+            if (usePressed && !wasUsePressed) {
+                player.swingHand(Hand.OFF_HAND)
+            }
+            // 更新上一次的按键状态
+            wasAttackPressed = attackPressed
+            wasUsePressed = usePressed
+        }
+
     }
+
 }

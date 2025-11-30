@@ -3,19 +3,17 @@ package com.kkllffaa.meteor_litematica_printer.Functions
 
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
 import meteordevelopment.meteorclient.MeteorClient.mc
+import meteordevelopment.meteorclient.utils.player.InvUtils
+import meteordevelopment.meteorclient.systems.modules.movement.GUIMove
+import meteordevelopment.meteorclient.systems.modules.render.Freecam
+import meteordevelopment.meteorclient.systems.modules.Modules
 import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.util.math.Vec3d
 import net.minecraft.util.math.Vec3i
 import net.minecraft.util.math.Direction
-import meteordevelopment.meteorclient.utils.player.InvUtils
+import net.minecraft.util.Hand
 import net.minecraft.item.Item
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket
-
-import meteordevelopment.meteorclient.systems.modules.movement.GUIMove
-import meteordevelopment.meteorclient.systems.modules.render.Freecam
-import meteordevelopment.meteorclient.systems.modules.Module
-import meteordevelopment.meteorclient.systems.modules.Modules
-import net.minecraft.util.Hand
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket
 import kotlin.math.floor
 
