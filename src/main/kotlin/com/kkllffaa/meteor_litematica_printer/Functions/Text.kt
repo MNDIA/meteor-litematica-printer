@@ -1,13 +1,9 @@
 package com.kkllffaa.meteor_litematica_printer.Functions
 
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings
-import net.minecraft.text.StringVisitable.StyledVisitor
-import net.minecraft.text.Style
-import net.minecraft.text.Text
-import net.minecraft.text.TextColor
+import net.minecraft.text.*
 import net.minecraft.util.Formatting
-import java.util.Locale
-
+import java.util.*
 
 fun getFormattedLine(text: Text): String {
     val mode = PlaceSettings.SignTextWithColor.get()
@@ -16,46 +12,65 @@ fun getFormattedLine(text: Text): String {
         SignColorMode.`§` -> '§'
         SignColorMode.`&` -> '&'
     }
-    var lastStyle = Style.EMPTY
-    val builder = StringBuilder()
 
-    text.visit(StyledVisitor<Unit> { style, string ->
-        if (style != lastStyle) {
-            if (!lastStyle.isEmpty) {
-                builder.append(controlChar).append('r')
+    val result = StringBuilder()
+    var lastStyle: Style? = null
+
+    text.visit({ style, content ->
+        if (content.isNotEmpty()) {
+            if (style != lastStyle) {
+                result.append(styleToFormattingCodes(style, controlChar))
+                lastStyle = style
             }
-            appendStyleCodes(builder, style, controlChar)
-            lastStyle = style
+            result.append(content)
         }
-        builder.append(string)
-        java.util.Optional.empty<Unit>()
+        Optional.empty<Unit>()
     }, Style.EMPTY)
 
-    return builder.toString()
+    return result.toString()
 }
 
 
-private fun appendStyleCodes(builder: StringBuilder, style: Style, controlChar: Char) {
-    style.color?.let { appendColorCode(builder, it, controlChar) }
-    if (style.isObfuscated) builder.append(controlChar).append('k')
-    if (style.isBold) builder.append(controlChar).append('l')
-    if (style.isStrikethrough) builder.append(controlChar).append('m')
-    if (style.isUnderlined) builder.append(controlChar).append('n')
-    if (style.isItalic) builder.append(controlChar).append('o')
-}
+private fun styleToFormattingCodes(style: Style, controlChar: Char): String {
+    if (style.isEmpty) return ""
 
+    val codes = StringBuilder()
 
-private fun appendColorCode(builder: StringBuilder, color: TextColor, controlChar: Char) {
-    getVanillaFormatting(color)?.let {
-        builder.append(controlChar).append(it.code)
-        return
+    style.color?.let { textColor ->
+        val formatting = getFormattingFromColor(textColor)
+        if (formatting != null) {
+            codes.append(controlChar).append(formatting.code)
+        }
     }
 
-    val hex = "%06X".format(Locale.ROOT, color.rgb)
-    builder.append(controlChar).append('x')
-    hex.forEach { builder.append(controlChar).append(it.lowercaseChar()) }
+    if (style.isBold) {
+        codes.append(controlChar).append(Formatting.BOLD.code)
+    }
+    if (style.isItalic) {
+        codes.append(controlChar).append(Formatting.ITALIC.code)
+    }
+    if (style.isUnderlined) {
+        codes.append(controlChar).append(Formatting.UNDERLINE.code)
+    }
+    if (style.isStrikethrough) {
+        codes.append(controlChar).append(Formatting.STRIKETHROUGH.code)
+    }
+    if (style.isObfuscated) {
+        codes.append(controlChar).append(Formatting.OBFUSCATED.code)
+    }
+
+    return codes.toString()
 }
 
 
-private fun getVanillaFormatting(color: TextColor): Formatting? =
-    Formatting.entries.find { it.colorValue == color.rgb }
+private fun getFormattingFromColor(textColor: TextColor): Formatting? {
+    for (formatting in Formatting.entries) {
+        if (formatting.isColor) {
+            val colorValue = formatting.colorValue
+            if (colorValue != null && colorValue == textColor.rgb) {
+                return formatting
+            }
+        }
+    }
+    return null
+}
