@@ -12,8 +12,11 @@ import org.spongepowered.asm.mixin.Overwrite
 
 @Mixin(StringHelper::class)
 class StringHelperMixin {
-    @Overwrite
-    fun isValidChar(c: Int): Boolean {
-        return true
+    companion object {
+        @JvmStatic
+        @Overwrite
+        fun isValidChar(c: Int): Boolean {
+            return true
+        }
     }
 }
