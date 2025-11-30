@@ -33,10 +33,14 @@ object SwingHand : Module(Addon.TOOLS, "SwingHand", "Swing your hands with LR Cl
     private var wasUsePressed = false
 
     private var tickCounter = 0
+    // 用于交替挥手：true = 主手, false = 副手
+    private var nextHandIsMain = true
+
     override fun onActivate() {
         wasAttackPressed = false
         wasUsePressed = false
         tickCounter = 0
+        nextHandIsMain = true
     }
 
     @EventHandler
@@ -50,29 +54,37 @@ object SwingHand : Module(Addon.TOOLS, "SwingHand", "Swing your hands with LR Cl
         options.attackKey.isPressed = false
         options.useKey.isPressed = false
 
+        // 收集本tick需要挥动的手
+        val handsToSwing = mutableListOf<Hand>()
 
         if (持续连续挥手.get()) {
             tickCounter++
             val interval = 持续挥手间隔tick.get()
 
-            if (attackPressed && tickCounter % interval == 0) {
-                player.swingHand(Hand.OFF_HAND)
-            }
-            if (usePressed && tickCounter % interval == 0) {
-                player.swingHand(Hand.MAIN_HAND)
+            if (tickCounter % interval == 0) {
+                if (attackPressed) handsToSwing.add(Hand.OFF_HAND)
+                if (usePressed) handsToSwing.add(Hand.MAIN_HAND)
             }
         } else {
             if (attackPressed && !wasAttackPressed) {
-                player.swingHand(Hand.OFF_HAND)
+                handsToSwing.add(Hand.OFF_HAND)
             }
             if (usePressed && !wasUsePressed) {
-                player.swingHand(Hand.MAIN_HAND)
+                handsToSwing.add(Hand.MAIN_HAND)
             }
             // 更新上一次的按键状态
             wasAttackPressed = attackPressed
             wasUsePressed = usePressed
         }
 
+        // 如果需要挥动两只手，则根据交替状态只挥动一只
+        if (handsToSwing.size >= 2) {
+            val hand = if (nextHandIsMain) Hand.MAIN_HAND else Hand.OFF_HAND
+            player.swingHand(hand)
+            nextHandIsMain = !nextHandIsMain
+        } else if (handsToSwing.size == 1) {
+            player.swingHand(handsToSwing[0])
+        }
     }
 
 }
