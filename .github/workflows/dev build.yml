@@ -28,14 +28,6 @@ jobs:
 
       - name: Build with Gradle
         run: gradle build
-
-      - name: Get Versions
-        run: |
-          MC_VERSION=$(./gradlew -q printMCVersion)
-          PROJECT_VERSION=$(./gradlew -q printVersion)
-
-          echo "MC_VERSION=$MC_VERSION" >> $GITHUB_ENV
-          echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
       
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4
