@@ -32,7 +32,7 @@ object SwingHand : Module(Addon.TOOLS, "SwingHand", "Swing your hands with LR Cl
         IntSetting.Builder()
             .name("swing-interval-tick")
             .description("The interval tick for continuously swinging hand.")
-            .defaultValue(5)
+            .defaultValue(4)
             .min(1).sliderMin(4)
             .max(1024).sliderMax(10)
             .visible { 持续连续挥手.get() }
