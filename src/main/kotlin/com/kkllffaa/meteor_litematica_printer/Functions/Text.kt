@@ -11,11 +11,11 @@ import java.util.Locale
 
 fun getFormattedLine(text: Text): String {
     val mode = PlaceSettings.SignTextWithColor.get()
-    if (mode == SignColorMode.None) {
-        return text.string
+    val controlChar = when (mode) {
+        SignColorMode.None -> return text.string
+        SignColorMode.反三 -> '§'
+        SignColorMode.八字符号 -> '&'
     }
-
-    val controlChar = if (mode == SignColorMode.反三) '§' else '&'
     var lastStyle = Style.EMPTY
     val builder = StringBuilder()
 
