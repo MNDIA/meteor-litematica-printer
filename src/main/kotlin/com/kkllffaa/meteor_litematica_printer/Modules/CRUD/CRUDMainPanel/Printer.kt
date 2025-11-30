@@ -185,8 +185,8 @@ class Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints o
 
     private data class FadeEntry(var remainingTicks: Int, val pos: BlockPos)
 
-    private fun isPositionCached(pos: BlockPos): Boolean =
-        enableCache.get() && pos in positionCache
+    private val BlockPos.isPositionCached: Boolean get() =
+        enableCache.get() && this in positionCache
 
     private fun addToCache(pos: BlockPos) {
         if (enableCache.get()) {
