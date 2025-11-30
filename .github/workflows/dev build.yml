@@ -12,17 +12,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@latest
 
-      - name: Wrapper Validation
-        uses: gradle/actions/wrapper-validation@latest
 
-      - name: Setup JDK 25
+      - name: Setup JDK
         uses: actions/setup-java@latest
         with:
           java-version: 25
           distribution: temurin
 
+      - name: Wrapper Validation
+        uses: gradle/actions/wrapper-validation@latest
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@latest
+        with:
+          gradle-version: current
+
       - name: Build with Gradle
-        run: ./gradlew build
+        run: gradle build
 
       - name: Get Versions
         run: |
