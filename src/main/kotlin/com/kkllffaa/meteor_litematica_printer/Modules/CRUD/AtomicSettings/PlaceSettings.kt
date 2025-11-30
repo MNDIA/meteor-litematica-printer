@@ -148,7 +148,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         EnumSetting.Builder<SignColorMode>()
             .name("sign-text-with-color")
             .description("Use colored text for signs.")
-            .defaultValue(SignColorMode.反三)
+            .defaultValue(SignColorMode.`§`)
             .build()
     )
 

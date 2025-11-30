@@ -5,8 +5,8 @@ import kotlin.random.Random.Default
 
 enum class SignColorMode {
         None,
-        反三,
-        八字符号
+        `§`,
+        `&`
     }
 enum class SafetyFaceMode {
     PlayerRotation,

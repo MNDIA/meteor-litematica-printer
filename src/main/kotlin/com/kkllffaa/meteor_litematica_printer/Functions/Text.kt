@@ -13,8 +13,8 @@ fun getFormattedLine(text: Text): String {
     val mode = PlaceSettings.SignTextWithColor.get()
     val controlChar = when (mode) {
         SignColorMode.None -> return text.string
-        SignColorMode.反三 -> '§'
-        SignColorMode.八字符号 -> '&'
+        SignColorMode.`§` -> '§'
+        SignColorMode.`&` -> '&'
     }
     var lastStyle = Style.EMPTY
     val builder = StringBuilder()
