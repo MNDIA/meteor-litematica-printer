@@ -2,8 +2,10 @@ package com.kkllffaa.meteor_litematica_printer.mixins
 
 import net.minecraft.screen.AnvilScreenHandler
 import org.spongepowered.asm.mixin.Mixin
-import org.spongepowered.asm.mixin.Overwrite
 import org.spongepowered.asm.mixin.Shadow
+import org.spongepowered.asm.mixin.injection.At
+import org.spongepowered.asm.mixin.injection.Inject
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 import net.minecraft.component.DataComponentTypes
 import net.minecraft.text.Text
 import net.minecraft.util.StringHelper
@@ -20,8 +22,8 @@ class AnvilScreenHandlerMixin {
     @Shadow
     fun updateResult() = Unit
 
-    @Overwrite
-    fun setNewItemName(newItemName: String): Boolean {
+    @Inject(method = ["setNewItemName"], at = [At("HEAD")], cancellable = true)
+    fun setNewItemName(newItemName: String, cir: CallbackInfoReturnable<Boolean>) {
         if (newItemName != this.newItemName) {
             this.newItemName = newItemName;
             if (this.getSlot(2)!!.hasStack()) {
@@ -34,10 +36,11 @@ class AnvilScreenHandlerMixin {
             }
 
             this.updateResult();
-            return true;
+            cir.returnValue = true;
         } else {
-            return false;
+            cir.returnValue = false;
         }
+        cir.cancel();
     }
 
 }
