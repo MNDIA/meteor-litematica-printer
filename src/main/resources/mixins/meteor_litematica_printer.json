@@ -8,6 +8,7 @@
     "MixinClientPlayerEntity",
     "SignBlockEntityMixin",
     "AnvilScreenHandlerMixin",
+    "TextFieldWidgetMixin",
     "LavaFogModifierMixin",
     "StringHelperMixin",
     "FormattingMixin"

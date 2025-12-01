@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 import net.minecraft.util.StringHelper
+import net.minecraft.util.Formatting
 
 @Mixin(StringHelper::class)
 class StringHelperMixin {
@@ -29,6 +30,19 @@ class StringHelperMixin {
         @Inject(method = ["stripTextFormat"], at = [At("HEAD")], cancellable = true)
         @JvmStatic
         private fun stripTextFormat(string: String?, ci: CallbackInfoReturnable<String?>) {
+            if (CommonSettings.EveryCharIsValid.get()) ci.returnValue = string
+        }
+    }
+
+}
+
+
+@Mixin(Formatting::class)
+class FormattingMixin {
+    private companion object {
+        @Inject(method = ["strip"], at = [At("HEAD")], cancellable = true)
+        @JvmStatic
+        private fun strip(string: String?, ci: CallbackInfoReturnable<String?>) {
             if (CommonSettings.EveryCharIsValid.get()) ci.returnValue = string
         }
     }
