@@ -2,7 +2,6 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
-import com.kkllffaa.meteor_litematica_printer.Functions.*
 import com.kkllffaa.meteor_litematica_printer.Addon
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.events.world.TickEvent
@@ -21,10 +20,10 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
     }
 
     private val sgGeneral = settings.defaultGroup
-    private val tickDelay = sgGeneral.add(
+    private val RotationtickDelay = sgGeneral.add(
         IntSetting.Builder()
-            .name("tick-delay")
-            .description("Server animation updates don't work well if you update every tick.")
+            .name("Rotation-tick-delay")
+            .description("Server animation updates don't work well if you rotation every tick.")
             .defaultValue(3)
             .min(1).sliderMax(10)
             .build()
@@ -46,6 +45,10 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
 
     override fun onDeactivate() {
         mc.options.sneakKey.isPressed = Input.isPressed(mc.options.sneakKey)
+        mc.options.forwardKey.isPressed = Input.isPressed(mc.options.forwardKey)
+        mc.options.backKey.isPressed = Input.isPressed(mc.options.backKey)
+        mc.options.rightKey.isPressed = Input.isPressed(mc.options.rightKey)
+        mc.options.leftKey.isPressed = Input.isPressed(mc.options.leftKey)
 
         mc.player?.yaw = MathHelper.wrapDegrees(CommonSettings.cameraYaw)
         mc.player?.pitch = MathHelper.clamp(CommonSettings.cameraPitch, -90f, 90f)
@@ -59,7 +62,7 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
         val player = mc.player ?: return
-        if (tickCounter % tickDelay.get() == 0) {
+        if (tickCounter % RotationtickDelay.get() == 0) {
             var yaw = Random.nextFloat() * 360f
             while (abs(MathHelper.wrapDegrees((player.yaw - yaw))) < 130F) {
                 yaw = Random.nextFloat() * 360f
@@ -72,12 +75,26 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
             player.pitch = pitch
         }
         mc.options.sneakKey.isPressed = !mc.options.sneakKey.isPressed
-        tickCounter++
-
         if (tickCounter % 4 == 0) {
             player.swingHand(if (tickCounter % 2 == 0) Hand.MAIN_HAND else Hand.OFF_HAND)
         }
+        tickCounter++
 
+        val intentForward =
+            (if (Input.isPressed(mc.options.forwardKey)) 1f else 0f) - (if (Input.isPressed(mc.options.backKey)) 1f else 0f)
+        val intentRight =
+            (if (Input.isPressed(mc.options.rightKey)) 1f else 0f) - (if (Input.isPressed(mc.options.leftKey)) 1f else 0f)
+
+        val yawDiff = Math.toRadians((CommonSettings.cameraYaw - player.yaw).toDouble())
+        val cos = kotlin.math.cos(yawDiff).toFloat()
+        val sin = kotlin.math.sin(yawDiff).toFloat()
+
+        val actualForward = intentForward * cos - intentRight * sin
+        val actualRight = intentForward * sin + intentRight * cos
+
+        mc.options.forwardKey.isPressed = actualForward > 0.1f
+        mc.options.backKey.isPressed = actualForward < -0.1f
+        mc.options.rightKey.isPressed = actualRight > 0.1f
+        mc.options.leftKey.isPressed = actualRight < -0.1f
     }
-
 }
