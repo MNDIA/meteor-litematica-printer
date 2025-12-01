@@ -80,14 +80,14 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         }
         tickCounter++
 
+        val yawDiff = Math.toRadians((CommonSettings.cameraYaw - player.yaw).toDouble())
+        val cos = kotlin.math.cos(yawDiff).toFloat()
+        val sin = kotlin.math.sin(yawDiff).toFloat()
+
         val intentForward =
             (if (Input.isPressed(mc.options.forwardKey)) 1f else 0f) - (if (Input.isPressed(mc.options.backKey)) 1f else 0f)
         val intentRight =
             (if (Input.isPressed(mc.options.rightKey)) 1f else 0f) - (if (Input.isPressed(mc.options.leftKey)) 1f else 0f)
-
-        val yawDiff = Math.toRadians((CommonSettings.cameraYaw - player.yaw).toDouble())
-        val cos = kotlin.math.cos(yawDiff).toFloat()
-        val sin = kotlin.math.sin(yawDiff).toFloat()
 
         val actualForward = intentForward * cos - intentRight * sin
         val actualRight = intentForward * sin + intentRight * cos
