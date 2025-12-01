@@ -11,7 +11,9 @@
     "TextFieldWidgetMixin",
     "LavaFogModifierMixin",
     "StringHelperMixin",
-    "FormattingMixin"
+    "FormattingMixin",
+    "EntityMixin",
+    "CameraMixin"
   ],
   "injectors": {
     "defaultRequire": 1
