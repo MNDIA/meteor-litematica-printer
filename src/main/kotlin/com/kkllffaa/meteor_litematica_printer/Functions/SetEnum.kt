@@ -19,7 +19,7 @@ enum class ColorScheme(val sideColor: SettingColor, val lineColor: SettingColor)
     蓝(SettingColor(0, 0, 204, 10), SettingColor(0, 0, 204, 255)),
     黄(SettingColor(204, 204, 0, 10), SettingColor(204, 204, 0, 255)),
     紫(SettingColor(204, 0, 204, 10), SettingColor(204, 0, 204, 255)),
-    青(SettingColor(0, 204, 204, 10), SettingColor(0, 204, 204, 255));
+    青(SettingColor(0, 204, 204, 10), SettingColor(0, 204, 204, 255))
 }
 enum class RandomDelayMode(private val delays: IntArray?) {
     None(null),

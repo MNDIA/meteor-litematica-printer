@@ -28,12 +28,11 @@ class LavaFogModifierMixin {
         ci: CallbackInfo
     ) {
         if (CommonSettings.NoFogInLava.get()) {
+            data.environmentalStart = -8.0F
+            data.environmentalEnd = viewDistance * 0.5F
 
-            data.environmentalStart = -8.0F;
-            data.environmentalEnd = viewDistance * 0.5F;
-
-            data.skyEnd = data.environmentalEnd;
-            data.cloudEnd = data.environmentalEnd;
+            data.skyEnd = data.environmentalEnd
+            data.cloudEnd = data.environmentalEnd
         }
     }
 

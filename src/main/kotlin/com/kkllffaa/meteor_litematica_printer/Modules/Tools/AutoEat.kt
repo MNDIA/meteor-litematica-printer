@@ -26,7 +26,7 @@ import net.minecraft.item.Item
 import net.minecraft.item.Items
 import java.util.function.BiPredicate
 
-// import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter;
+// import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter
 object AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     // Settings groups
     private val sgGeneral = settings.defaultGroup

@@ -344,12 +344,12 @@ object Printer : Module(Addon.CRUD, "litematica-printer", "Automatically prints 
                     it.x + 0.5, it.y + 0.5, it.z + 0.5
                 )
             } ?: 0.0
-        });
+        })
     }
 
     enum class SortingSecond(val algorithm: Comparator<BlockPos>) {
         None(SortAlgorithm.None.algorithm),
         Nearest(SortAlgorithm.Nearest.algorithm),
-        Furthest(SortAlgorithm.Furthest.algorithm);
+        Furthest(SortAlgorithm.Furthest.algorithm)
     }
 }
