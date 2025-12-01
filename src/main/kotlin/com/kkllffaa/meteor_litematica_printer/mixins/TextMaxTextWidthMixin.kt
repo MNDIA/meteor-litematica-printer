@@ -13,7 +13,6 @@ import net.minecraft.block.entity.HangingSignBlockEntity
 import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen
 import net.minecraft.client.gui.widget.TextFieldWidget
 import net.minecraft.screen.AnvilScreenHandler
-import net.minecraft.network.packet.c2s.play.RenameItemC2SPacket
 
 @Mixin(SignBlockEntity::class, HangingSignBlockEntity::class)
 class SignBlockEntityMixin {
