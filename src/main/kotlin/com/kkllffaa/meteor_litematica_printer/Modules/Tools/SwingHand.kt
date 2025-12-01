@@ -56,6 +56,7 @@ object SwingHand : Module(Addon.TOOLS, "SwingHand", "Swing your hands with LR Cl
         if (event.action == KeyAction.Press && isPlayerInControl
             && (mc.options.attackKey.matchesMouse(event.click) || mc.options.useKey.matchesMouse(event.click))
         ) {
+            toggleOnBindRelease = true
             event.cancel()
         }
     }
