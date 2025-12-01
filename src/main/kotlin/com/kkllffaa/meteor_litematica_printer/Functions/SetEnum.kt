@@ -4,15 +4,17 @@ import meteordevelopment.meteorclient.utils.render.color.SettingColor
 import kotlin.random.Random.Default
 
 enum class SignColorMode {
-        None,
-        `§`,
-        `&`
-    }
+    None,
+    `§`,
+    `&`
+}
+
 enum class SafetyFaceMode {
     PlayerRotation,
     PlayerPosition,  // 射线方向
     None,
 }
+
 enum class ColorScheme(val sideColor: SettingColor, val lineColor: SettingColor) {
     红(SettingColor(204, 0, 0, 10), SettingColor(204, 0, 0, 255)),
     绿(SettingColor(0, 204, 0, 10), SettingColor(0, 204, 0, 255)),
@@ -21,6 +23,7 @@ enum class ColorScheme(val sideColor: SettingColor, val lineColor: SettingColor)
     紫(SettingColor(204, 0, 204, 10), SettingColor(204, 0, 204, 255)),
     青(SettingColor(0, 204, 204, 10), SettingColor(0, 204, 204, 255))
 }
+
 enum class RandomDelayMode(private val delays: IntArray?) {
     None(null),
     Fast(intArrayOf(0, 0, 1)),
@@ -61,3 +64,8 @@ enum class SafetyFace {
     PlayerPosition,
 }
 
+enum class PreferPerspective {
+    NONE,
+    FIRST_PERSON,
+    THIRD_PERSON_FRONT,
+}

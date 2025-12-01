@@ -2,6 +2,7 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
+import com.kkllffaa.meteor_litematica_printer.Functions.*
 import com.kkllffaa.meteor_litematica_printer.Addon
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.events.world.TickEvent
@@ -28,6 +29,13 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
             .min(1).sliderMax(10)
             .build()
     )
+    private val preferPerspectiveSetting = sgGeneral.add(
+        EnumSetting.Builder<PreferPerspective>()
+            .name("prefer-perspective")
+            .description("Preferred perspective mode when activating the module.")
+            .defaultValue(PreferPerspective.THIRD_PERSON_FRONT)
+            .build()
+    )
 
     private var tickCounter = 0
     private var 视野模式OnActivate: Perspective? = null
@@ -39,7 +47,11 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         }
         tickCounter = 0
         视野模式OnActivate = mc.options.perspective
-        mc.options.perspective = Perspective.THIRD_PERSON_FRONT
+        when (preferPerspectiveSetting.get()) {
+            PreferPerspective.NONE -> {}
+            PreferPerspective.FIRST_PERSON -> mc.options.perspective = Perspective.FIRST_PERSON
+            PreferPerspective.THIRD_PERSON_FRONT -> mc.options.perspective = Perspective.THIRD_PERSON_FRONT
+        }
         CommonSettings.OnlyRotateCam.set(true)
     }
 
@@ -54,7 +66,7 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         mc.player?.pitch = MathHelper.clamp(CommonSettings.cameraPitch, -90f, 90f)
 
         视野模式OnActivate?.let {
-            mc.options.perspective = it
+            if (preferPerspectiveSetting.get() != PreferPerspective.NONE) mc.options.perspective = it
         }
         CommonSettings.OnlyRotateCam.set(false)
     }
