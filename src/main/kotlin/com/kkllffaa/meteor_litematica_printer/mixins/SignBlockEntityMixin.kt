@@ -10,11 +10,11 @@ import meteordevelopment.meteorclient.MeteorClient.mc
 import net.minecraft.client.gui.screen.ingame.AbstractSignEditScreen
 @Mixin(SignBlockEntity::class)
 class SignBlockEntityMixin {
-    @Inject(method = ["getMaxTextWidth"], at = [At("RETURN")])
-    private fun modifyMaxTextWidth(callback: CallbackInfoReturnable<Int>) {
+    @Inject(method = ["getMaxTextWidth"], at = [At("RETURN")], cancellable = true)
+    private fun modifyMaxTextWidth(ci: CallbackInfoReturnable<Int>) {
         val customWidth = CommonSettings.SignMaxTextWidth.get()
         if (customWidth > 0 && mc.currentScreen is AbstractSignEditScreen) {
-            callback.returnValue = customWidth
+            ci.returnValue = customWidth
         }
     }
 }

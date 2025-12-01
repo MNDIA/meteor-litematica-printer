@@ -18,6 +18,7 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
     }
 
     private val sgGeneral = settings.defaultGroup
+    private val sgOther = settings.createGroup("Other")
 
     private val distanceProtection: Setting<DistanceMode> = sgGeneral.add(
         EnumSetting.Builder<DistanceMode>()
@@ -38,7 +39,7 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .visible { distanceProtection.get() == DistanceMode.Max }
             .build()
     )
-    val SignMaxTextWidth: Setting<Int> = sgGeneral.add(
+    val SignMaxTextWidth: Setting<Int> = sgOther.add(
         IntSetting.Builder()
             .name("Sign-max-text-width")
             .description("0 for default auto")
@@ -46,6 +47,16 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .min(0)
             .build()
     )
+
+    val NoFogInLava: Setting<Boolean> = sgOther.add(
+        BoolSetting.Builder()
+            .name("No-fog-in-lava")
+            .description("See blocks in lava.")
+            .defaultValue(true)
+            .build()
+    )
+
+
     val PlayerHandDistance: Double
         get() = when (distanceProtection.get()) {
             DistanceMode.Auto -> {

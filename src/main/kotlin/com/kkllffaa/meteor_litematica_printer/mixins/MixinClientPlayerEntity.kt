@@ -30,7 +30,7 @@ open class MixinClientPlayerEntity(world: ClientWorld, profile: GameProfile) :
     var networkHandler: ClientPlayNetworkHandler? = null
 
     @Inject(method = ["openEditSignScreen"], at = [At("HEAD")], cancellable = true)
-    fun openEditSignScreen(sign: SignBlockEntity, front: Boolean, ci: CallbackInfo) {
+    private fun openEditSignScreen(sign: SignBlockEntity, front: Boolean, ci: CallbackInfo) {
         getTargetSignEntity(sign)?.let { signBlockEntity ->
             val targetText = signBlockEntity.getText(front)
             val lines = (0..3).map { getFormattedLine(targetText.getMessage(it, false)) }

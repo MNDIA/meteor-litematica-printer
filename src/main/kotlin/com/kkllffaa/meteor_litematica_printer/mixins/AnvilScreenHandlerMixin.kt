@@ -11,19 +11,18 @@ import net.minecraft.text.Text
 import net.minecraft.util.StringHelper
 import net.minecraft.screen.slot.Slot
 
-import net.minecraft.client.render.fog.LavaFogModifier
 @Mixin(AnvilScreenHandler::class)
 class AnvilScreenHandlerMixin {
 
 
-    // @Inject(method = ["setNewItemName"], at = [At("HEAD")], cancellable = true)
-    // fun setNewItemName(newItemName: String, cir: CallbackInfoReturnable<Boolean>) {
+    @Inject(method = ["setNewItemName"], at = [At("HEAD")], cancellable = true)
+    private fun setNewItemName(newItemName: String, ci: CallbackInfoReturnable<Boolean>) {
       
-    //         cir.returnValue = true;
-    //     // } else {
-    //     //     cir.returnValue = false;
-    //     // }
-    //     // cir.cancel();
-    // }
+            ci.returnValue = true;
+        // } else {
+        //     cir.returnValue = false;
+        // }
+        // cir.cancel();
+    }
 
 }
