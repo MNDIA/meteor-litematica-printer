@@ -35,11 +35,13 @@ class Addon : MeteorAddon() {
         Modules.get().add(AutoEat)
         Modules.get().add(HangUp)
         Modules.get().add(SwingHand)
+        Modules.get().add(Hello)
         Modules.get().add(ItemFinder)
         Modules.get().add(Parkour)
         Modules.get().add(MidiParser)
         Modules.get().add(ChatLogger)
         Modules.get().add(ShopLimiter)
+        Modules.get().add(MovePacketLogger)
     }
 
     override fun getPackage(): String = "com.kkllffaa.meteor_litematica_printer"
