@@ -9,7 +9,8 @@
     "SignBlockEntityMixin",
     "AnvilScreenHandlerMixin",
     "LavaFogModifierMixin",
-    "StringHelperMixin"
+    "StringHelperMixin",
+    "FormattingMixin"
   ],
   "injectors": {
     "defaultRequire": 1

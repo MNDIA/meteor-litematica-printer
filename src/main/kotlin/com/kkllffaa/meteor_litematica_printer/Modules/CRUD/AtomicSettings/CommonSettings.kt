@@ -39,9 +39,9 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .visible { distanceProtection.get() == DistanceMode.Max }
             .build()
     )
-    val SignMaxTextWidth: Setting<Int> = sgOther.add(
+    val TextMaxTextWidth: Setting<Int> = sgOther.add(
         IntSetting.Builder()
-            .name("Sign-max-text-width")
+            .name("Text-max-text-width")
             .description("0 for default auto")
             .defaultValue(99999)
             .min(0)
@@ -56,10 +56,18 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .build()
     )
 
-    val allowWhitespace: Setting<Boolean> = sgOther.add(
+    // val WhitespaceIsNOTBlank: Setting<Boolean> = sgOther.add(
+    //     BoolSetting.Builder()
+    //         .name("whitespace-is-NOT-blank")
+    //         .description("You can use the anvil to name blank names(not removing DataComponentTypes.CUSTOM_NAME)")
+    //         .defaultValue(true)
+    //         .build()
+    // )
+
+    val EveryCharIsValid: Setting<Boolean> = sgOther.add(
         BoolSetting.Builder()
-            .name("allow-whitespace-in-everything")
-            .description("Allow whitespace characters in text everywhere.")
+            .name("every-char-is-valid")
+            .description("Allow every char in text everywhere.")
             .defaultValue(true)
             .build()
     )

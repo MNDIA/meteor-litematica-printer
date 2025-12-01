@@ -15,9 +15,21 @@ class StringHelperMixin {
         @Inject(method = ["isBlank"], at = [At("HEAD")], cancellable = true)
         @JvmStatic
         private fun isBlank(string: String?, ci: CallbackInfoReturnable<Boolean>) {
-            if (CommonSettings.allowWhitespace.get()) {
-                ci.returnValue = string == null || string.isEmpty()
-            }
+            // if (CommonSettings.WhitespaceIsNOTBlank.get()) {
+            ci.returnValue = string == null || string.isEmpty()
+            // }
+        }
+
+        @Inject(method = ["isValidChar"], at = [At("HEAD")], cancellable = true)
+        @JvmStatic
+        private fun isValidChar(c: Int, ci: CallbackInfoReturnable<Boolean>) {
+            if (CommonSettings.EveryCharIsValid.get()) ci.returnValue = true
+        }
+
+        @Inject(method = ["stripTextFormat"], at = [At("HEAD")], cancellable = true)
+        @JvmStatic
+        private fun stripTextFormat(string: String?, ci: CallbackInfoReturnable<String?>) {
+            if (CommonSettings.EveryCharIsValid.get()) ci.returnValue = string
         }
     }
 
