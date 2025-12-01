@@ -56,6 +56,14 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .build()
     )
 
+    val allowWhitespace: Setting<Boolean> = sgOther.add(
+        BoolSetting.Builder()
+            .name("allow-whitespace-in-everything")
+            .description("Allow whitespace characters in text everywhere.")
+            .defaultValue(true)
+            .build()
+    )
+
 
     val PlayerHandDistance: Double
         get() = when (distanceProtection.get()) {

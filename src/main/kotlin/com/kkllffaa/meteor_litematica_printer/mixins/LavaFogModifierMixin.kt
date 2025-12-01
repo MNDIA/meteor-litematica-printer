@@ -1,20 +1,11 @@
 package com.kkllffaa.meteor_litematica_printer.mixins
 
-import net.minecraft.block.enums.CameraSubmersionType
-import net.minecraft.client.render.Camera
+
 import net.minecraft.client.render.RenderTickCounter
 import net.minecraft.client.render.fog.FogData
-import net.minecraft.client.render.fog.FogModifier
-import net.minecraft.screen.AnvilScreenHandler
 import org.spongepowered.asm.mixin.Mixin
-import org.spongepowered.asm.mixin.Shadow
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
-import net.minecraft.component.DataComponentTypes
-import net.minecraft.text.Text
-import net.minecraft.util.StringHelper
-import net.minecraft.screen.slot.Slot
 
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
 import net.minecraft.client.render.fog.LavaFogModifier

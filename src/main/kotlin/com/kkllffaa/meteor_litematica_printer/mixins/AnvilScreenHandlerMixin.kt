@@ -10,19 +10,17 @@ import net.minecraft.component.DataComponentTypes
 import net.minecraft.text.Text
 import net.minecraft.util.StringHelper
 import net.minecraft.screen.slot.Slot
+import net.minecraft.client.gui.screen.ingame.AnvilScreen
 
 @Mixin(AnvilScreenHandler::class)
 class AnvilScreenHandlerMixin {
 
-
-    @Inject(method = ["setNewItemName"], at = [At("HEAD")], cancellable = true)
-    private fun setNewItemName(newItemName: String, ci: CallbackInfoReturnable<Boolean>) {
-      
-            ci.returnValue = true;
-        // } else {
-        //     cir.returnValue = false;
-        // }
-        // cir.cancel();
+    private companion object {
+        @Inject(method = ["sanitize"], at = [At("HEAD")], cancellable = true)
+        @JvmStatic
+        private fun sanitize(name: String, ci: CallbackInfoReturnable<String?>) {
+            ci.returnValue = name
+        }
     }
 
 }

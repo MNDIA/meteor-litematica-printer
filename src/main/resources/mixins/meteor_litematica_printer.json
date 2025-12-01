@@ -8,7 +8,8 @@
     "MixinClientPlayerEntity",
     "SignBlockEntityMixin",
     "AnvilScreenHandlerMixin",
-    "LavaFogModifierMixin"
+    "LavaFogModifierMixin",
+    "StringHelperMixin"
   ],
   "injectors": {
     "defaultRequire": 1
