@@ -12,7 +12,7 @@ import kotlin.random.Random
 import net.minecraft.client.option.Perspective;
 import net.minecraft.util.math.MathHelper;
 
-object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends you're crazy") {
+object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends you're crazy :D") {
     init {
         toggleOnBindRelease = true
     }

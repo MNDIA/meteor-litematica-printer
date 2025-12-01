@@ -39,9 +39,9 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .visible { distanceProtection.get() == DistanceMode.Max }
             .build()
     )
-    val TextMaxTextWidth: Setting<Int> = sgOther.add(
+    val MaxTextWidth: Setting<Int> = sgOther.add(
         IntSetting.Builder()
-            .name("Text-max-text-width")
+            .name("max-text-width")
             .description("0 for default auto")
             .defaultValue(99999)
             .min(0)

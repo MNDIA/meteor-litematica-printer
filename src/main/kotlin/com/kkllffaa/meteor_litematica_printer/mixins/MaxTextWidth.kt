@@ -18,7 +18,7 @@ import net.minecraft.screen.AnvilScreenHandler
 class SignBlockEntityMixin {
     @Inject(method = ["getMaxTextWidth"], at = [At("RETURN")], cancellable = true)
     private fun modifyMaxTextWidth(ci: CallbackInfoReturnable<Int>) {
-        val customWidth = CommonSettings.TextMaxTextWidth.get()
+        val customWidth = CommonSettings.MaxTextWidth.get()
         if (customWidth > 0 && mc.currentScreen is AbstractSignEditScreen) {
             ci.returnValue = customWidth
         }
@@ -47,7 +47,7 @@ class TextFieldWidgetMixin {
 
     @Inject(method = ["getMaxLength"], at = [At("HEAD")], cancellable = true)
     private fun getMaxLength(ci: CallbackInfoReturnable<Int>) {
-        val len = CommonSettings.TextMaxTextWidth.get()
+        val len = CommonSettings.MaxTextWidth.get()
         if (len > 0) {
             this.maxLength = len
             ci.returnValue = len
@@ -56,7 +56,7 @@ class TextFieldWidgetMixin {
 
     @Inject(method = ["setMaxLength"], at = [At("HEAD")], cancellable = true)
     private fun setMaxLength(maxLength: Int, ci: CallbackInfo) {
-        val len = CommonSettings.TextMaxTextWidth.get()
+        val len = CommonSettings.MaxTextWidth.get()
         if (len > 0) {
             this.maxLength = len
             ci.cancel()
