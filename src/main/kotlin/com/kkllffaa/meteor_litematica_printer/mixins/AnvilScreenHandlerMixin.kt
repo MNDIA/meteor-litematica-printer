@@ -14,10 +14,10 @@ import net.minecraft.screen.slot.Slot
 @Mixin(AnvilScreenHandler::class)
 class AnvilScreenHandlerMixin {
     @Shadow
-    private var newItemName: String? = null
+    private var newItemName: String = ""
 
     @Shadow
-    fun getSlot(index: Int): Slot? = null
+    fun getSlot(index: Int): Slot = Slot(null, 0, 0, 0)
 
     @Shadow
     fun updateResult() = Unit
