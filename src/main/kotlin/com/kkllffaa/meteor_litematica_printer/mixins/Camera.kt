@@ -3,7 +3,6 @@ package com.kkllffaa.meteor_litematica_printer.mixins
 import meteordevelopment.meteorclient.MeteorClient
 import meteordevelopment.meteorclient.mixininterface.ICamera
 import meteordevelopment.meteorclient.systems.modules.Modules
-import meteordevelopment.meteorclient.systems.modules.movement.*
 import meteordevelopment.meteorclient.systems.modules.render.FreeLook
 import meteordevelopment.meteorclient.systems.modules.render.Freecam
 import meteordevelopment.meteorclient.systems.modules.world.HighwayBuilder
@@ -51,7 +50,7 @@ abstract class EntityMixin {
 }
 
 
-@Mixin(Camera::class)
+@Mixin(Camera::class, priority = 1001)
 abstract class CameraMixin : ICamera {
     @Shadow
     private var yaw: Float = 0F
