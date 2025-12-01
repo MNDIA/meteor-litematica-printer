@@ -61,14 +61,17 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         val player = mc.player ?: return
         if (tickCounter % tickDelay.get() == 0) {
             var yaw = Random.nextFloat() * 360f
-            while (abs(player.yaw - yaw) < 120F) {
+            while (abs(MathHelper.wrapDegrees((player.yaw - yaw))) < 130F) {
                 yaw = Random.nextFloat() * 360f
             }
             player.yaw = yaw
+            var pitch = (Random.nextFloat() - 0.5f) * 179.998f
+            while (abs(player.pitch - pitch) < 45F) {
+                pitch = (Random.nextFloat() - 0.5f) * 179.998f
+            }
+            player.pitch = pitch
         }
-
-        player.pitch = (Random.nextFloat() - 0.5f) * 179.998f
-        mc.options.sneakKey.isPressed = Random.nextBoolean()
+        mc.options.sneakKey.isPressed = !mc.options.sneakKey.isPressed
         tickCounter++
 
         if (tickCounter % 4 == 0) {
