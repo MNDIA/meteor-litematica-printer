@@ -197,9 +197,11 @@ fun ClientPlayerEntity.switchItem(
         isCreative -> {
             val slot = InvUtils.find({ it.isEmpty }, 0, 8)
                 .takeIf { it.found() }?.slot() ?: 0
+            val stack = item.defaultStack
             mc.networkHandler?.sendPacket(
-                CreativeInventoryActionC2SPacket(36 + slot, item.defaultStack)
+                CreativeInventoryActionC2SPacket(36 + slot, stack)
             )
+            inventory.setStack(slot, stack)
             swapAndTry(slot)
         }
 
