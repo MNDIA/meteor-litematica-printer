@@ -24,8 +24,8 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
     private val tickDelay = sgGeneral.add(
         IntSetting.Builder()
             .name("tick-delay")
-            .description("Ticks between actions")
-            .defaultValue(1)
+            .description("Server animation updates don't work well if you update every tick.")
+            .defaultValue(3)
             .min(1).sliderMax(10)
             .build()
     )
@@ -65,13 +65,10 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
                 yaw = Random.nextFloat() * 360f
             }
             player.yaw = yaw
-            var pitch = (Random.nextFloat() - 0.5f) * 179.998f
-            while (abs(player.pitch - pitch) < 45F) {
-                pitch = (Random.nextFloat() - 0.5f) * 179.998f
-            }
-            player.pitch = pitch
-            mc.options.sneakKey.isPressed = !mc.options.sneakKey.isPressed
         }
+
+        player.pitch = (Random.nextFloat() - 0.5f) * 179.998f
+        mc.options.sneakKey.isPressed = Random.nextBoolean()
         tickCounter++
 
         if (tickCounter % 4 == 0) {
