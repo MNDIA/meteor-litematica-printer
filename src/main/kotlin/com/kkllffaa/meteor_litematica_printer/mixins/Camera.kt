@@ -29,14 +29,14 @@ abstract class EntityMixin {
         val freecam = Modules.get().get<Freecam?>(Freecam::class.java)
         val freeLook = Modules.get().get<FreeLook?>(FreeLook::class.java)
 
-        if (freecam!!.isActive()) {
+        if (freecam!!.isActive) {
             freecam.changeLookDirection(cursorDeltaX * 0.15, cursorDeltaY * 0.15)
             ci.cancel()
         } else if (Modules.get().isActive(HighwayBuilder::class.java)) {
-            val camera = MeteorClient.mc.gameRenderer.getCamera()
+            val camera = MeteorClient.mc.gameRenderer.camera
             (camera as ICamera).`meteor$setRot`(
-                camera.getYaw() + cursorDeltaX * 0.15,
-                camera.getPitch() + cursorDeltaY * 0.15
+                camera.yaw + cursorDeltaX * 0.15,
+                camera.pitch + cursorDeltaY * 0.15
             )
             ci.cancel()
         } else if (freeLook!!.cameraMode()) {
@@ -67,13 +67,13 @@ abstract class CameraMixin : ICamera {
         val freecam = Modules.get().get<Freecam?>(Freecam::class.java)
         val freeLook = Modules.get().get<FreeLook?>(FreeLook::class.java)
 
-        if (freecam!!.isActive()) {
+        if (freecam!!.isActive) {
             args.set<Float?>(0, freecam.getYaw(tickDelta).toFloat())
             args.set<Float?>(1, freecam.getPitch(tickDelta).toFloat())
         } else if (Modules.get().isActive(HighwayBuilder::class.java)) {
             args.set<Float?>(0, yaw)
             args.set<Float?>(1, pitch)
-        } else if (freeLook!!.isActive()) {
+        } else if (freeLook!!.isActive) {
             args.set<Float?>(0, freeLook.cameraYaw)
             args.set<Float?>(1, freeLook.cameraPitch)
         }
