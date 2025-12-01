@@ -72,6 +72,20 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .build()
     )
 
+    val OnlyRotateCam: Setting<Boolean> = sgOther.add(
+        BoolSetting.Builder()
+            .name("only-rotate-cam")
+            .description("Only rotate camera when rotating player.")
+            .defaultValue(false)
+            .onChanged {
+                val player = mc.player ?: return@onChanged
+                cameraYaw = player.yaw
+                cameraPitch = player.pitch
+            }
+            .build()
+    )
+    var cameraYaw: Float = 0F
+    var cameraPitch: Float = 0F
 
     val PlayerHandDistance: Double
         get() = when (distanceProtection.get()) {
