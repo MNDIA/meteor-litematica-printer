@@ -26,7 +26,7 @@ abstract class EntityMixin {
     @Inject(method = ["changeLookDirection"], at = [At("HEAD")], cancellable = true)
     private fun updateChangeLookDirection(cursorDeltaX: Double, cursorDeltaY: Double, ci: CallbackInfo) {
         if (this as Any !== MeteorClient.mc.player) return
-        if (CommonSettings.OnlyRotateCam.get()) {
+        if (CommonSettings.OnlyRotateCam.get() && !(Modules.get().get(Freecam::class.java)?.isActive == true)) {
             CommonSettings.cameraYaw += (cursorDeltaX / 8F).toFloat()
             CommonSettings.cameraPitch += (cursorDeltaY / 8F).toFloat()
 
@@ -34,14 +34,12 @@ abstract class EntityMixin {
                 if (CommonSettings.cameraPitch > 0.0f) 90.0f else -90.0f
             ci.cancel()
         }
-
-
     }
 }
 
 
 @Mixin(Camera::class, priority = 1001)
-abstract class CameraMixin : ICamera {
+abstract class CameraMixin {
     // @Shadow
     // private var yaw: Float = 0F
 
@@ -53,7 +51,7 @@ abstract class CameraMixin : ICamera {
         at = At(value = "INVOKE", target = "Lnet/minecraft/client/render/Camera;setRotation(FF)V")
     )
     private fun onUpdateSetRotationArgs(args: Args, @Local(argsOnly = true) tickDelta: Float) {
-        if (CommonSettings.OnlyRotateCam.get()) {
+        if (CommonSettings.OnlyRotateCam.get() && !(Modules.get().get(Freecam::class.java)?.isActive == true)) {
             args.set<Float?>(0, CommonSettings.cameraYaw)
             args.set<Float?>(1, CommonSettings.cameraPitch)
         }
