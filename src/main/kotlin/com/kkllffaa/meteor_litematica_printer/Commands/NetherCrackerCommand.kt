@@ -84,30 +84,29 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
         })
     }
 
-    companion object {
-        private const val SEARCH_RADIUS = 128
+    private const val SEARCH_RADIUS = 128
 
-        private fun addBedrockBlocks(chunk: WorldChunk, blockCandidates: MutableList<BlockPos>) {
-            val mutablePos = BlockPos.Mutable()
-            val chunkPos = chunk.getPos()
+    private fun addBedrockBlocks(chunk: WorldChunk, blockCandidates: MutableList<BlockPos>) {
+        val mutablePos = BlockPos.Mutable()
+        val chunkPos = chunk.getPos()
 
-            for (x in 0..15) {
-                for (z in 0..15) {
-                    val worldX = chunkPos.getStartX() + x
-                    val worldZ = chunkPos.getStartZ() + z
+        for (x in 0..15) {
+            for (z in 0..15) {
+                val worldX = chunkPos.getStartX() + x
+                val worldZ = chunkPos.getStartZ() + z
 
-                    mutablePos.set(worldX, 4, worldZ)
-                    if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
-                        blockCandidates.add(mutablePos.toImmutable())
-                        continue
-                    }
+                mutablePos.set(worldX, 4, worldZ)
+                if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
+                    blockCandidates.add(mutablePos.toImmutable())
+                    continue
+                }
 
-                    mutablePos.set(worldX, 123, worldZ)
-                    if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
-                        blockCandidates.add(mutablePos.toImmutable())
-                    }
+                mutablePos.set(worldX, 123, worldZ)
+                if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
+                    blockCandidates.add(mutablePos.toImmutable())
                 }
             }
         }
     }
+
 }
