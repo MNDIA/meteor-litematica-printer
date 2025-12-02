@@ -42,6 +42,7 @@ class Addon : MeteorAddon() {
         Modules.get().add(ChatLogger)
         Modules.get().add(ShopLimiter)
         Modules.get().add(MovePacketLogger)
+        Modules.get().add(BetterThirdPerson)
     }
 
     override fun getPackage(): String = "com.kkllffaa.meteor_litematica_printer"

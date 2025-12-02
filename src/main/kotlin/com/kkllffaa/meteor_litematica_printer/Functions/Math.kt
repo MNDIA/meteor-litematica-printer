@@ -26,3 +26,9 @@ operator fun Vec3i.plus(other: Vec3i): Vec3i = add(other)
 
 infix fun Boolean.implies(other: Boolean): Boolean = !this || other
 operator fun Vec3d.plus(other: Vec3d): Vec3d = add(other)
+
+operator fun Boolean.plus(other: Boolean): Float = (if (this) 1f else 0f) + (if (other) 1f else 0f)
+operator fun Boolean.minus(other: Boolean): Float = (if (this) 1f else 0f) - (if (other) 1f else 0f)
+operator fun Boolean.unaryPlus(): Float = if (this) 1f else 0f
+operator fun Boolean.unaryMinus(): Float = if (this) -1f else 0f
+

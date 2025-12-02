@@ -13,7 +13,8 @@
     "StringHelperMixin",
     "FormattingMixin",
     "EntityMixin",
-    "CameraMixin"
+    "CameraMixin",
+    "GameOptionsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

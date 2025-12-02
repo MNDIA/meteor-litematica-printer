@@ -59,6 +59,7 @@ val Float.normalizeAsYaw get() = wrapDegrees(this)
 const val DEG_TO_RAD: Double = Math.PI / 180.0
 const val DEG_TO_RAD_F: Float = DEG_TO_RAD.toFloat()
 const val RAD_TO_DEG: Double = 180.0 / Math.PI
+const val RAD_TO_DEG_F: Float = RAD_TO_DEG.toFloat()
 
 val <T : Position> Pair<T, T>.Rotation: Rotation
     get() {
