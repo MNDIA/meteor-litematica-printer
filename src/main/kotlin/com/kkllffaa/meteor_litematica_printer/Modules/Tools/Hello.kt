@@ -39,14 +39,17 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
 
     private var tickCounter = 0
     private var 视野模式OnActivate: Perspective? = null
-    private var wasBetterThirdPerson = false
+    private var wasOnlyRotateCam = false
+    private var wasRotation = Rotation(0F, 0F)
     override fun onActivate() {
         val player = mc.player ?: run {
             this.toggle()
             return
         }
-        wasBetterThirdPerson = BetterThirdPerson.isActive
-        BetterThirdPerson.disable()
+        wasRotation = Rotation(player.yaw, player.pitch)
+        wasOnlyRotateCam = CommonSettings.OnlyRotateCam.get()
+        if (!wasOnlyRotateCam) CommonSettings.OnlyRotateCam.set(true)
+
 
         tickCounter = 0
         视野模式OnActivate = mc.options.perspective
@@ -55,20 +58,22 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
             PreferPerspective.FIRST_PERSON -> mc.options.perspective = Perspective.FIRST_PERSON
             PreferPerspective.THIRD_PERSON_BACK -> mc.options.perspective = Perspective.THIRD_PERSON_BACK
         }
-        CommonSettings.OnlyRotateCam.set(true)
     }
 
     override fun onDeactivate() {
         视野模式OnActivate?.let {
             if (preferPerspectiveSetting.get() != PreferPerspective.NONE) mc.options.perspective = it
         }
-        CommonSettings.OnlyRotateCam.set(false)
+        mc.player?.let {
+            it.yaw = wasRotation.yaw
+            it.pitch = wasRotation.pitch
+        }
+        if (!wasOnlyRotateCam) CommonSettings.OnlyRotateCam.set(false)
         mc.options.sneakKey.isPressed = Input.isPressed(mc.options.sneakKey)
         mc.options.forwardKey.isPressed = Input.isPressed(mc.options.forwardKey)
         mc.options.backKey.isPressed = Input.isPressed(mc.options.backKey)
         mc.options.rightKey.isPressed = Input.isPressed(mc.options.rightKey)
         mc.options.leftKey.isPressed = Input.isPressed(mc.options.leftKey)
-        if (wasBetterThirdPerson) BetterThirdPerson.enable()
     }
 
     @EventHandler

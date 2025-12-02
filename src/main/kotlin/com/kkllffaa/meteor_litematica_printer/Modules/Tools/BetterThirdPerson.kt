@@ -7,6 +7,8 @@ import com.kkllffaa.meteor_litematica_printer.Addon
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
+import meteordevelopment.meteorclient.systems.modules.Modules
+import meteordevelopment.meteorclient.systems.modules.render.Freecam
 import meteordevelopment.meteorclient.utils.misc.input.Input
 import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.option.Perspective
@@ -79,7 +81,7 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
 
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
-        if (mc.options.perspective != Perspective.THIRD_PERSON_BACK || !第三人称代理中) return
+        if (mc.options.perspective != Perspective.THIRD_PERSON_BACK || !第三人称代理中 || Modules.get().isActive(Freecam::class.java)) return
         val player = mc.player ?: return
 
         val 前 = Input.isPressed(mc.options.forwardKey)
