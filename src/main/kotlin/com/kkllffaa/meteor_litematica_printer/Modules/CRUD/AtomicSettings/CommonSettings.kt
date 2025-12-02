@@ -79,8 +79,13 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .defaultValue(false)
             .onChanged {
                 val player = mc.player ?: return@onChanged
-                cameraYaw = player.yaw
-                cameraPitch = player.pitch
+                if (OnlyRotateCam.get()) {
+                    cameraYaw = player.yaw
+                    cameraPitch = player.pitch
+                } else {
+                    player.yaw = CommonSettings.cameraYaw
+                    player.pitch = CommonSettings.cameraPitch
+                }
             }
             .build()
     )

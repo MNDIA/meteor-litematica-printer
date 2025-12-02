@@ -11,6 +11,7 @@ import meteordevelopment.meteorclient.utils.misc.input.Input
 import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.option.Perspective
 import net.minecraft.util.math.MathHelper
+import kotlin.math.abs
 
 
 object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
@@ -40,8 +41,6 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
             .sliderRange(1.0, 50.0)
             .build()
     )
-
-    // 旋转速度状态
     private var 当前旋转速度: Float = 0f
 
     override fun onActivate() {
@@ -61,8 +60,6 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
 
     private fun 尝试退出第三人称代理() {
         if (!第三人称代理中) return
-        mc.player?.yaw = MathHelper.wrapDegrees(CommonSettings.cameraYaw)
-        mc.player?.pitch = MathHelper.clamp(CommonSettings.cameraPitch, -90f, 90f)
         CommonSettings.OnlyRotateCam.set(false)
         mc.options.forwardKey.isPressed = Input.isPressed(mc.options.forwardKey)
         mc.options.backKey.isPressed = Input.isPressed(mc.options.backKey)
@@ -95,7 +92,7 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
         val 要移动 = intentForward != 0F || intentRight != 0F
         val targetYaw = if (要移动) {
             val 镜头参考系下的移动Yaw = kotlin.math.atan2(intentRight, intentForward)
-            MathHelper.wrapDegrees((CommonSettings.cameraYaw + 镜头参考系下的移动Yaw * RAD_TO_DEG_F))
+            CommonSettings.cameraYaw + 镜头参考系下的移动Yaw * RAD_TO_DEG_F
         } else {
             player.yaw
         }
@@ -103,35 +100,32 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
         val yawDelta = MathHelper.wrapDegrees(targetYaw - player.yaw)
         val absYawDelta = kotlin.math.abs(yawDelta)
         val 加速度 = 旋转加速度.get().toFloat()
-        // val 最大速度 = 最大旋转速度.get().toFloat()
-        // val 摩擦系数 = 减速摩擦.get().toFloat()
-        if (absYawDelta < 0.1f) {
-            player.yaw += yawDelta
+        val smoothYaw = if (absYawDelta < 0.1f) {
             当前旋转速度 = 0f
+            player.yaw + yawDelta
         } else {
             val direction = kotlin.math.sign(yawDelta)
             val 刹车距离 = (当前旋转速度 * 当前旋转速度) / (2f * 加速度)
 
             if (absYawDelta <= 刹车距离 && direction * 当前旋转速度 > 0) {
                 当前旋转速度 -= direction * 加速度
-                // 当前旋转速度 = MathHelper.clamp(当前旋转速度, -最大速度, 最大速度)
-                if (direction * 当前旋转速度 <= 0 || 当前旋转速度 > yawDelta) {
-                    player.yaw += yawDelta / 2
+                if (direction * 当前旋转速度 <= 0 || abs(当前旋转速度) > absYawDelta) {
                     当前旋转速度 = 0f
+                    player.yaw + yawDelta / 2
                 } else {
-                    player.yaw += 当前旋转速度
+                    player.yaw + 当前旋转速度
                 }
             } else {
                 当前旋转速度 += direction * 加速度
-                // 当前旋转速度 = MathHelper.clamp(当前旋转速度, -最大速度, 最大速度)
-                if (当前旋转速度 > yawDelta) {
-                    player.yaw += yawDelta / 2
+                if (direction * 当前旋转速度 > 0 && abs(当前旋转速度) > absYawDelta) {
                     当前旋转速度 = 0f
+                    player.yaw + yawDelta / 2
                 } else {
-                    player.yaw += 当前旋转速度
+                    player.yaw + 当前旋转速度
                 }
             }
         }
+        player.yaw = smoothYaw
         player.pitch = CommonSettings.cameraPitch
 
 

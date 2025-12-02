@@ -39,12 +39,15 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
 
     private var tickCounter = 0
     private var 视野模式OnActivate: Perspective? = null
-
+    private var wasBetterThirdPerson = false
     override fun onActivate() {
         val player = mc.player ?: run {
             this.toggle()
             return
         }
+        wasBetterThirdPerson = BetterThirdPerson.isActive
+        BetterThirdPerson.disable()
+
         tickCounter = 0
         视野模式OnActivate = mc.options.perspective
         when (preferPerspectiveSetting.get()) {
@@ -56,19 +59,16 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
     }
 
     override fun onDeactivate() {
+        视野模式OnActivate?.let {
+            if (preferPerspectiveSetting.get() != PreferPerspective.NONE) mc.options.perspective = it
+        }
+        CommonSettings.OnlyRotateCam.set(false)
         mc.options.sneakKey.isPressed = Input.isPressed(mc.options.sneakKey)
         mc.options.forwardKey.isPressed = Input.isPressed(mc.options.forwardKey)
         mc.options.backKey.isPressed = Input.isPressed(mc.options.backKey)
         mc.options.rightKey.isPressed = Input.isPressed(mc.options.rightKey)
         mc.options.leftKey.isPressed = Input.isPressed(mc.options.leftKey)
-
-        mc.player?.yaw = MathHelper.wrapDegrees(CommonSettings.cameraYaw)
-        mc.player?.pitch = MathHelper.clamp(CommonSettings.cameraPitch, -90f, 90f)
-
-        视野模式OnActivate?.let {
-            if (preferPerspectiveSetting.get() != PreferPerspective.NONE) mc.options.perspective = it
-        }
-        CommonSettings.OnlyRotateCam.set(false)
+        if (wasBetterThirdPerson) BetterThirdPerson.enable()
     }
 
     @EventHandler
