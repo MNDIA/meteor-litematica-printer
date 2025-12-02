@@ -22,8 +22,8 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
     "nethercracker",
     "Finds bedrock at Y=4 and Y=123 in the Nether within a specified radius."
 ) {
-    override fun build(builder: LiteralArgumentBuilder<CommandSource?>) {
-        builder.executes(Command { context: CommandContext<CommandSource?>? ->
+    override fun build(builder: LiteralArgumentBuilder<CommandSource>) {
+        builder.executes(Command { context: CommandContext<CommandSource> ->
             if (mc.player == null || mc.world == null) {
                 error("Player or world not available.")
                 return@executes SINGLE_SUCCESS
@@ -49,7 +49,7 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
                             continue
                         }
 
-                        val chunk: Chunk? = mc.world!!.getChunk(chunkX, chunkZ)
+                        val chunk: Chunk = mc.world!!.getChunk(chunkX, chunkZ)
 
                         if (chunk is WorldChunk) {
                             addBedrockBlocks(chunk, bedrockCandidates)
