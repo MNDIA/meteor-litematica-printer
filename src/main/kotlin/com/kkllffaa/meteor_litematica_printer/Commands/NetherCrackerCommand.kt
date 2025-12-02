@@ -1,6 +1,5 @@
 package com.kkllffaa.meteor_litematica_printer.Commands
 
-import com.mojang.brigadier.Command
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import net.minecraft.block.Blocks
@@ -23,17 +22,17 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
     "Finds bedrock at Y=4 and Y=123 in the Nether within a specified radius."
 ) {
     override fun build(builder: LiteralArgumentBuilder<CommandSource>) {
-        builder.executes(Command { context: CommandContext<CommandSource> ->
+        builder.executes {
             if (mc.player == null || mc.world == null) {
                 error("Player or world not available.")
                 return@executes SINGLE_SUCCESS
             }
-            if (mc.world!!.getRegistryKey() != World.NETHER) {
+            if (mc.world!!.registryKey != World.NETHER) {
                 error("You must be in the Nether to use this command.")
                 return@executes SINGLE_SUCCESS
             }
 
-            val playerPos = mc.player!!.getBlockPos()
+            val playerPos = mc.player!!.blockPos
             val centerChunkPos = mc.world!!.getChunk(playerPos).getPos()
 
             val bedrockCandidates: MutableList<BlockPos> = ArrayList<BlockPos>()
@@ -63,7 +62,7 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
             if (!bedrockCandidates.isEmpty()) {
                 val sb = StringBuilder()
                 for (pos in bedrockCandidates) {
-                    sb.append(String.format("%d %d %d\n", pos.getX(), pos.getY(), pos.getZ()))
+                    sb.append(String.format("%d %d %d\n", pos.x, pos.y, pos.z))
                 }
                 val coords: String = sb.toString().trim { it <= ' ' }
 
@@ -81,7 +80,7 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
                 info(copyText)
             }
             SINGLE_SUCCESS
-        })
+        }
     }
 
     private const val SEARCH_RADIUS = 128
@@ -92,8 +91,8 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
 
         for (x in 0..15) {
             for (z in 0..15) {
-                val worldX = chunkPos.getStartX() + x
-                val worldZ = chunkPos.getStartZ() + z
+                val worldX = chunkPos.startX + x
+                val worldZ = chunkPos.startZ + z
 
                 mutablePos.set(worldX, 4, worldZ)
                 if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
