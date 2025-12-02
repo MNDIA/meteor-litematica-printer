@@ -4,14 +4,19 @@ package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
 import com.kkllffaa.meteor_litematica_printer.Functions.*
 import com.kkllffaa.meteor_litematica_printer.Addon
+import meteordevelopment.meteorclient.events.meteor.MouseClickEvent
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
 import meteordevelopment.meteorclient.systems.modules.Modules
 import meteordevelopment.meteorclient.systems.modules.render.Freecam
 import meteordevelopment.meteorclient.utils.misc.input.Input
+import meteordevelopment.meteorclient.utils.misc.input.KeyAction
 import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.option.Perspective
+import net.minecraft.entity.passive.AbstractHorseEntity
+import net.minecraft.entity.vehicle.AbstractBoatEntity
+import net.minecraft.entity.vehicle.AbstractMinecartEntity
 import net.minecraft.util.math.MathHelper
 import kotlin.math.abs
 import kotlin.random.Random
@@ -44,9 +49,19 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
             .sliderRange(1.0, 50.0)
             .build()
     )
+    private val 骑马鞘翅倍数: Setting<Double> = sgGeneral.add(
+        DoubleSetting.Builder()
+            .name("Horse/Elytra Boost")
+            .description("Increase rotation speed when riding a horse or elytra.")
+            .defaultValue(2.5)
+            .min(1.0)
+            .sliderRange(1.0, 3.0)
+            .build()
+    )
     private var 当前旋转速度: Float = 0f
 
     override fun onActivate() {
+        counter = 0
         onPerspectiveChanged(mc.options.perspective)
     }
 
@@ -80,13 +95,44 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
         }
     }
 
+    private var 静止模式Yaw相机参考系: Float? = null
+    private var 静止模式Yaw玩家参考系: Float? = null
+    private var counter = 0
+
+    @EventHandler
+    private fun onMouse(event: MouseClickEvent) {
+        if (event.action == KeyAction.Press && isPlayerInControl && !Hello.isActive
+            && (mc.options.attackKey.matchesMouse(event.click) || mc.options.useKey.matchesMouse(event.click))
+        ) {
+            counter = 40
+            尝试退出第三人称代理()
+        }
+    }
+
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
-        if (mc.options.perspective != Perspective.THIRD_PERSON_BACK || !第三人称代理中 || Modules.get()
-                .isActive(Freecam::class.java)
-        ) return
+        if ((mc.options.attackKey.isPressed || mc.options.useKey.isPressed) && !Hello.isActive) {
+            counter = 40
+            尝试退出第三人称代理()
+            return
+        }
+        if (counter > 0) {
+            counter--
+            if (counter == 0) onPerspectiveChanged(mc.options.perspective)
+            return
+        }
+        if (!第三人称代理中 || Modules.get().isActive(Freecam::class.java)) return
         val player = mc.player ?: return
-
+        if (!isPlayerInControl) {
+            静止模式Yaw相机参考系 = null
+            静止模式Yaw玩家参考系 = null
+            当前旋转速度 = 0f
+            mc.options.forwardKey.isPressed = false
+            mc.options.backKey.isPressed = false
+            mc.options.rightKey.isPressed = false
+            mc.options.leftKey.isPressed = false
+            return
+        }
         val 前 = Input.isPressed(mc.options.forwardKey)
         val 后 = Input.isPressed(mc.options.backKey)
         val 左 = Input.isPressed(mc.options.leftKey)
@@ -96,15 +142,26 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
         val intentRight = 右 - 左
         val 要移动 = intentForward != 0F || intentRight != 0F
         val targetYaw = if (要移动) {
+            静止模式Yaw相机参考系 = null
+            静止模式Yaw玩家参考系 = null
             val 镜头参考系下的移动Yaw = kotlin.math.atan2(intentRight, intentForward)
             CommonSettings.cameraYaw + 镜头参考系下的移动Yaw * RAD_TO_DEG_F
         } else {
-            player.yaw
+            if (静止模式Yaw相机参考系 == null) 静止模式Yaw相机参考系 = CommonSettings.cameraYaw
+            if (静止模式Yaw玩家参考系 == null) 静止模式Yaw玩家参考系 = player.yaw
+            val 拖动镜头Yaw = CommonSettings.cameraYaw - 静止模式Yaw相机参考系!!
+            MathHelper.clamp(
+                静止模式Yaw玩家参考系!! + 拖动镜头Yaw,
+                静止模式Yaw玩家参考系!! - 30,
+                静止模式Yaw玩家参考系!! + 30
+            )
         }
 
         val yawDelta = MathHelper.wrapDegrees(targetYaw - player.yaw)
         val absYawDelta = kotlin.math.abs(yawDelta)
-        val 加速度 = 旋转加速度.get().toFloat()
+        val 加速度 = 旋转加速度.get().toFloat() * if (player.isGliding
+            || player.vehicle is AbstractHorseEntity
+        ) 骑马鞘翅倍数.get().toFloat() else 1f
         val smoothYaw = if (absYawDelta < 0.1f) {
             当前旋转速度 = 0f
             player.yaw + yawDelta
@@ -139,16 +196,18 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
         player.pitch = CommonSettings.cameraPitch
 
 
-        val yawDiff = Math.toRadians((CommonSettings.cameraYaw - player.yaw).toDouble())
-        val cos = kotlin.math.cos(yawDiff).toFloat()
-        val sin = kotlin.math.sin(yawDiff).toFloat()
+        if (player.vehicle !is AbstractBoatEntity) {
+            val yawDiff = Math.toRadians((CommonSettings.cameraYaw - player.yaw).toDouble())
+            val cos = kotlin.math.cos(yawDiff).toFloat()
+            val sin = kotlin.math.sin(yawDiff).toFloat()
 
-        val actualForward = intentForward * cos - intentRight * sin
-        val actualRight = intentForward * sin + intentRight * cos
-        val 移动分量阈值 = 移动分量阈值.get().toFloat()
-        mc.options.forwardKey.isPressed = actualForward > 移动分量阈值
-        mc.options.backKey.isPressed = actualForward < -移动分量阈值
-        mc.options.rightKey.isPressed = actualRight > 移动分量阈值
-        mc.options.leftKey.isPressed = actualRight < -移动分量阈值
+            val actualForward = intentForward * cos - intentRight * sin
+            val actualRight = intentForward * sin + intentRight * cos
+            val 移动分量阈值 = 移动分量阈值.get().toFloat()
+            mc.options.forwardKey.isPressed = actualForward > 移动分量阈值
+            mc.options.backKey.isPressed = actualForward < -移动分量阈值
+            mc.options.rightKey.isPressed = actualRight > 移动分量阈值
+            mc.options.leftKey.isPressed = actualRight < -移动分量阈值
+        }
     }
 }
