@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.kkllffaa.meteor_litematica_printer.mixins",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_25",
   "client": [
     "ClientPlayerInteractionManagerMixin",
     "MixinClientPlayerEntity",

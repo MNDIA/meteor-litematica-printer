@@ -4,7 +4,8 @@ import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.*
 import com.kkllffaa.meteor_litematica_printer.Modules.Tools.*
 import com.kkllffaa.meteor_litematica_printer.Modules.Tools.OnlyESP.*
-
+import com.kkllffaa.meteor_litematica_printer.Commands.*
+import meteordevelopment.meteorclient.commands.Commands
 import meteordevelopment.meteorclient.addons.MeteorAddon
 import meteordevelopment.meteorclient.systems.modules.Category
 import meteordevelopment.meteorclient.systems.modules.Modules
@@ -43,6 +44,8 @@ class Addon : MeteorAddon() {
         Modules.get().add(ShopLimiter)
         Modules.get().add(MovePacketLogger)
         Modules.get().add(BetterThirdPerson)
+
+        Commands.add(NetherCrackerCommand);
     }
 
     override fun getPackage(): String = "com.kkllffaa.meteor_litematica_printer"
