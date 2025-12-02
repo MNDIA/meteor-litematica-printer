@@ -1,6 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.Commands
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
+import meteordevelopment.meteorclient.commands.Command
 import net.minecraft.block.Blocks
 import net.minecraft.command.CommandSource
 import net.minecraft.text.ClickEvent.CopyToClipboard
@@ -11,64 +12,56 @@ import net.minecraft.text.Texts
 import net.minecraft.util.Formatting
 import net.minecraft.util.math.BlockPos
 import net.minecraft.world.World
-import net.minecraft.world.chunk.Chunk
 import net.minecraft.world.chunk.WorldChunk
-import kotlin.collections.ArrayList
 
-object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
+private const val SEARCH_RADIUS = 128
+private val BEDROCK_Y_LEVELS = intArrayOf(4, 123)
+
+object NetherCrackerCommand : Command(
     "nethercracker",
     "Finds bedrock at Y=4 and Y=123 in the Nether within a specified radius."
 ) {
     override fun build(builder: LiteralArgumentBuilder<CommandSource>) {
         builder.executes {
-            val player = mc.player?: run {
-                error("Player not found.")
-                return@executes SINGLE_SUCCESS
-            }
-            val world = mc.world?: run {
-                error("World not found.")
-                return@executes SINGLE_SUCCESS
-            }
+            val player = mc.player ?: return@executes error("Player not found.").let { SINGLE_SUCCESS }
+            val world = mc.world ?: return@executes error("World not found.").let { SINGLE_SUCCESS }
+
             if (world.registryKey != World.NETHER) {
                 error("You must be in the Nether to use this command.")
                 return@executes SINGLE_SUCCESS
             }
 
-            val playerPos = player.blockPos
-            val centerChunkPos = world.getChunk(playerPos).getPos()
+            val centerChunkPos = world.getChunk(player.blockPos).pos
+            val chunkRadius = SEARCH_RADIUS / 16
 
-            val bedrockCandidates: MutableList<BlockPos> = ArrayList()
+            info("Scanning chunks in a $SEARCH_RADIUS block radius ($chunkRadius chunk radius)...")
 
-            val chunkRadius: Int = (SEARCH_RADIUS shr 4) + 1
+            val bedrockCandidates = buildList {
+                for (r in 0..chunkRadius) {
+                    val xRange = centerChunkPos.x - r..centerChunkPos.x + r
+                    val zRange = centerChunkPos.z - r..centerChunkPos.z + r
 
-            info("Scanning chunks in a %d block radius (%d chunk radius)...", SEARCH_RADIUS, chunkRadius)
+                    for (chunkX in xRange) {
+                        for (chunkZ in zRange) {
+                            // Skip inner chunks (already processed in previous radii)
+                            if (r > 0 && chunkX in (xRange.first + 1)..<xRange.last && chunkZ in (zRange.first + 1)..<zRange.last) {
+                                continue
+                            }
 
-            for (r in 0..<chunkRadius) {
-                for (chunkX in centerChunkPos.x - r..centerChunkPos.x + r) {
-                    for (chunkZ in centerChunkPos.z - r..centerChunkPos.z + r) {
-                        if (r > 0 && (chunkX > centerChunkPos.x - r && chunkX < centerChunkPos.x + r) && (chunkZ > centerChunkPos.z - r && chunkZ < centerChunkPos.z + r)) {
-                            continue
-                        }
-
-                        val chunk: Chunk = world.getChunk(chunkX, chunkZ)
-
-                        if (chunk is WorldChunk) {
-                            addBedrockBlocks(chunk, bedrockCandidates)
+                            world.getChunk(chunkX, chunkZ)?.let { chunk ->
+                                addAll(chunk.findBedrockBlocks())
+                            }
                         }
                     }
                 }
             }
 
-            info(String.format("Found %d bedrock blocks at y=4 and y=123.", bedrockCandidates.size))
+            info("Found ${bedrockCandidates.size} bedrock blocks at y=4 and y=123.")
 
-            if (!bedrockCandidates.isEmpty()) {
-                val sb = StringBuilder()
-                for (pos in bedrockCandidates) {
-                    sb.append(String.format("%d %d %d\n", pos.x, pos.y, pos.z))
-                }
-                val coords: String = sb.toString().trim { it <= ' ' }
+            if (bedrockCandidates.isNotEmpty()) {
+                val coords = bedrockCandidates.joinToString("\n") { "${it.x} ${it.y} ${it.z}" }
 
-                val copyText: Text = Texts.bracketed(
+                val copyText = Texts.bracketed(
                     Text.literal("Copy Coords")
                         .fillStyle(
                             Style.EMPTY
@@ -78,36 +71,30 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
                                 .withInsertion(coords)
                         )
                 )
-
                 info(copyText)
             }
+
             SINGLE_SUCCESS
         }
     }
 
-    private const val SEARCH_RADIUS = 128
-
-    private fun addBedrockBlocks(chunk: WorldChunk, blockCandidates: MutableList<BlockPos>) {
+    private fun WorldChunk.findBedrockBlocks(): List<BlockPos> = buildList {
+        val chunkPos = pos
         val mutablePos = BlockPos.Mutable()
-        val chunkPos = chunk.getPos()
 
         for (x in 0..15) {
             for (z in 0..15) {
                 val worldX = chunkPos.startX + x
                 val worldZ = chunkPos.startZ + z
 
-                mutablePos.set(worldX, 4, worldZ)
-                if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
-                    blockCandidates.add(mutablePos.toImmutable())
-                    continue
-                }
-
-                mutablePos.set(worldX, 123, worldZ)
-                if (chunk.getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
-                    blockCandidates.add(mutablePos.toImmutable())
+                for (y in BEDROCK_Y_LEVELS) {
+                    mutablePos.set(worldX, y, worldZ)
+                    if (getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
+                        add(mutablePos.toImmutable())
+                        break // 找到一个就跳过该位置的其他Y层
+                    }
                 }
             }
         }
     }
-
 }
