@@ -47,6 +47,7 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         }
         tickCounter = 0
         视野模式OnActivate = mc.options.perspective
+        info("Activated with perspective: ${视野模式OnActivate}")
         when (preferPerspectiveSetting.get()) {
             PreferPerspective.NONE -> {}
             PreferPerspective.FIRST_PERSON -> mc.options.perspective = Perspective.FIRST_PERSON
