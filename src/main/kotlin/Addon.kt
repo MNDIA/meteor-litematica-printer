@@ -45,6 +45,7 @@ class Addon : MeteorAddon() {
         Modules.get().add(MovePacketLogger)
         Modules.get().add(BetterThirdPerson)
 
+        // https://github.com/19MisterX98/Nether_Bedrock_Cracker
         Commands.add(NetherCrackerCommand);
     }
 
@@ -59,10 +60,10 @@ class Addon : MeteorAddon() {
     companion object {
         @JvmField
         val CRUD = Category("CRUD", ItemStack(Items.PINK_CARPET))
-        
+
         @JvmField
         val SettingsForCRUD = Category("SetForCRUD", ItemStack(Items.PINK_CARPET))
-        
+
         @JvmField
         val TOOLS = Category("EXTools", ItemStack(Items.PINK_CARPET))
     }

@@ -1,7 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.Commands
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
-import com.mojang.brigadier.context.CommandContext
 import net.minecraft.block.Blocks
 import net.minecraft.command.CommandSource
 import net.minecraft.text.ClickEvent.CopyToClipboard
@@ -15,7 +14,6 @@ import net.minecraft.world.World
 import net.minecraft.world.chunk.Chunk
 import net.minecraft.world.chunk.WorldChunk
 import kotlin.collections.ArrayList
-import kotlin.collections.MutableList
 
 object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
     "nethercracker",
@@ -23,19 +21,23 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
 ) {
     override fun build(builder: LiteralArgumentBuilder<CommandSource>) {
         builder.executes {
-            if (mc.player == null || mc.world == null) {
-                error("Player or world not available.")
+            val player = mc.player?: run {
+                error("Player not found.")
                 return@executes SINGLE_SUCCESS
             }
-            if (mc.world!!.registryKey != World.NETHER) {
+            val world = mc.world?: run {
+                error("World not found.")
+                return@executes SINGLE_SUCCESS
+            }
+            if (world.registryKey != World.NETHER) {
                 error("You must be in the Nether to use this command.")
                 return@executes SINGLE_SUCCESS
             }
 
-            val playerPos = mc.player!!.blockPos
-            val centerChunkPos = mc.world!!.getChunk(playerPos).getPos()
+            val playerPos = player.blockPos
+            val centerChunkPos = world.getChunk(playerPos).getPos()
 
-            val bedrockCandidates: MutableList<BlockPos> = ArrayList<BlockPos>()
+            val bedrockCandidates: MutableList<BlockPos> = ArrayList()
 
             val chunkRadius: Int = (SEARCH_RADIUS shr 4) + 1
 
@@ -48,7 +50,7 @@ object NetherCrackerCommand : meteordevelopment.meteorclient.commands.Command(
                             continue
                         }
 
-                        val chunk: Chunk = mc.world!!.getChunk(chunkX, chunkZ)
+                        val chunk: Chunk = world.getChunk(chunkX, chunkZ)
 
                         if (chunk is WorldChunk) {
                             addBedrockBlocks(chunk, bedrockCandidates)
