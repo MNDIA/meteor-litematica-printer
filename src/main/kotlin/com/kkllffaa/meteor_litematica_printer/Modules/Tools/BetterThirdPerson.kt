@@ -14,6 +14,7 @@ import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.option.Perspective
 import net.minecraft.util.math.MathHelper
 import kotlin.math.abs
+import kotlin.random.Random
 
 
 object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
@@ -127,7 +128,7 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
                 }
             }
         }
-        player.yaw = smoothYaw
+        player.yaw = if (Random.nextFloat() < 0.05f) player.yaw else smoothYaw
         player.pitch = CommonSettings.cameraPitch
 
 
