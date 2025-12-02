@@ -82,7 +82,9 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
 
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
-        if (mc.options.perspective != Perspective.THIRD_PERSON_BACK || !第三人称代理中 || Modules.get().isActive(Freecam::class.java)) return
+        if (mc.options.perspective != Perspective.THIRD_PERSON_BACK || !第三人称代理中 || Modules.get()
+                .isActive(Freecam::class.java)
+        ) return
         val player = mc.player ?: return
 
         val 前 = Input.isPressed(mc.options.forwardKey)
@@ -128,7 +130,12 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
                 }
             }
         }
-        player.yaw = if (Random.nextFloat() < 0.05f) player.yaw else smoothYaw
+        if (smoothYaw != player.yaw) {
+            val randomYaw = if (Random.nextFloat() < 0.05f) player.yaw
+            else if (Random.nextBoolean()) smoothYaw + Random.nextFloat() - 0.5F
+            else smoothYaw
+            player.yaw = randomYaw
+        }
         player.pitch = CommonSettings.cameraPitch
 
 
