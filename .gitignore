@@ -20,7 +20,7 @@ local.gradle
 *.iws
 
 # vscode
-
+.kotlin
 .settings/
 .vscode/
 bin/
