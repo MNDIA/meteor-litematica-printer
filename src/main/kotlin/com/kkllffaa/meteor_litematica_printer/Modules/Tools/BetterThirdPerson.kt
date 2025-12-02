@@ -101,7 +101,7 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
 
     @EventHandler
     private fun onMouse(event: MouseClickEvent) {
-        if (event.action == KeyAction.Press && isPlayerInControl && !Hello.isActive
+        if (event.action == KeyAction.Press && mc.currentScreen == null && !Hello.isActive
             && (mc.options.attackKey.matchesMouse(event.click) || mc.options.useKey.matchesMouse(event.click))
         ) {
             counter = 40
@@ -111,7 +111,7 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
 
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
-        if ((mc.options.attackKey.isPressed || mc.options.useKey.isPressed) && !Hello.isActive) {
+        if ((mc.options.attackKey.isPressed || mc.options.useKey.isPressed) && mc.currentScreen == null && !Hello.isActive) {
             counter = 40
             尝试退出第三人称代理()
             return
