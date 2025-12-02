@@ -33,7 +33,7 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         EnumSetting.Builder<PreferPerspective>()
             .name("prefer-perspective")
             .description("Preferred perspective mode when activating the module.")
-            .defaultValue(PreferPerspective.THIRD_PERSON_FRONT)
+            .defaultValue(PreferPerspective.THIRD_PERSON_BACK)
             .build()
     )
 
@@ -47,11 +47,10 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
         }
         tickCounter = 0
         视野模式OnActivate = mc.options.perspective
-        info("Activated with perspective: ${视野模式OnActivate}")
         when (preferPerspectiveSetting.get()) {
             PreferPerspective.NONE -> {}
             PreferPerspective.FIRST_PERSON -> mc.options.perspective = Perspective.FIRST_PERSON
-            PreferPerspective.THIRD_PERSON_FRONT -> mc.options.perspective = Perspective.THIRD_PERSON_FRONT
+            PreferPerspective.THIRD_PERSON_BACK -> mc.options.perspective = Perspective.THIRD_PERSON_BACK
         }
         CommonSettings.OnlyRotateCam.set(true)
     }

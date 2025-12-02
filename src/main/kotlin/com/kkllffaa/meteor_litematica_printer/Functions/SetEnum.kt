@@ -67,5 +67,5 @@ enum class SafetyFace {
 enum class PreferPerspective {
     NONE,
     FIRST_PERSON,
-    THIRD_PERSON_FRONT,
+    THIRD_PERSON_BACK,
 }

@@ -22,9 +22,9 @@ class GameOptionsMixin {
 
         val current = this.perspective
         val newPerspective =
-            if (BetterThirdPerson.禁用第三人称Back.get() && perspectiveIn == Perspective.THIRD_PERSON_BACK) {
+            if (BetterThirdPerson.禁用第三人称Front.get() && perspectiveIn == Perspective.THIRD_PERSON_FRONT) {
                 when (current) {
-                    Perspective.FIRST_PERSON -> Perspective.THIRD_PERSON_FRONT
+                    Perspective.FIRST_PERSON -> Perspective.THIRD_PERSON_BACK
                     else -> Perspective.FIRST_PERSON
                 }
             } else {
@@ -35,15 +35,5 @@ class GameOptionsMixin {
             BetterThirdPerson.onPerspectiveChanged(newPerspective)
         }
         ci.cancel()
-    }
-
-    @Inject(method = ["getPerspective"], at = [At("HEAD")], cancellable = true)
-    private fun onGetPerspective(ci: CallbackInfoReturnable<Perspective>) {
-        if (!BetterThirdPerson.isActive) return
-
-        ci.returnValue = when {
-            BetterThirdPerson.禁用第三人称Back.get() && this.perspective == Perspective.THIRD_PERSON_BACK -> Perspective.THIRD_PERSON_FRONT
-            else -> this.perspective
-        }
     }
 }

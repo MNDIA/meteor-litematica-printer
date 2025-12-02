@@ -24,10 +24,10 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
             .sliderRange(0.001, 1.0)
             .build()
     )
-    val 禁用第三人称Back: Setting<Boolean> = sgGeneral.add(
+    val 禁用第三人称Front: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
-            .name("Disable Third Person Back")
-            .description("Perspective.THIRD_PERSON_BACK")
+            .name("Disable Third Person Front")
+            .description("Perspective.THIRD_PERSON_FRONT")
             .defaultValue(true)
             .build()
     )
@@ -82,7 +82,7 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
 
     @EventHandler
     private fun onTick(event: TickEvent.Pre) {
-        if (mc.options.perspective != Perspective.THIRD_PERSON_FRONT || !第三人称代理中) return
+        if (mc.options.perspective != Perspective.THIRD_PERSON_BACK || !第三人称代理中) return
         val player = mc.player ?: return
 
         val 前 = Input.isPressed(mc.options.forwardKey)
