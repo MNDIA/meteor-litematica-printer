@@ -47,7 +47,7 @@ object NetherCrackerCommand : Command(
                                 continue
                             }
 
-                            world.getChunk(chunkX, chunkZ)?.let { chunk ->
+                            world.chunkManager.getWorldChunk(chunkX, chunkZ, false)?.let { chunk ->
                                 addAll(chunk.findBedrockBlocks())
                             }
                         }
