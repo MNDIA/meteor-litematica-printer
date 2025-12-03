@@ -17,31 +17,11 @@ import kotlin.math.floor
 
 val PlayerHandDistance get() = CommonSettings.PlayerHandDistance
 val ClientPlayerEntity.EyeCenterPos get() = Vec3d(x, y + getEyeHeight(pose), z)
-fun ClientPlayerEntity.YawDirectionBy(容差: Float = 45f): Direction? {
-    val yaw = yaw.normalizeAsYaw
-    if (yaw.isNearIn(90f, 容差)) {
-        return Direction.WEST
-    } else if (yaw.isNearIn(0f, 容差)) {
-        return Direction.SOUTH
-    } else if (yaw.isNearIn(-90f, 容差)) {
-        return Direction.EAST
-    } else if (yaw.isNearIn(180f, 容差) || yaw.isNearIn(-180f, 容差)) {
-        return Direction.NORTH
-    }
-    return null
-}
 
-fun ClientPlayerEntity.PitchDirectionBy(容差: Float = 45f): Direction? {
-    val pitch = pitch.clampAsPitch
-    if (pitch.isNearIn(90f, 容差)) {
-        return Direction.DOWN
-    } else if (pitch.isNearIn(-90f, 容差)) {
-        return Direction.UP
-    } else if (pitch.isNearIn(0f, 容差)) {
-        return Direction.NORTH
-    }
-    return null
-}
+
+fun ClientPlayerEntity.YawDirectionBy(容差: Float = 45f): Direction? = CommonSettings.YawDirectionBy(this, 容差)
+
+fun ClientPlayerEntity.PitchDirectionBy(容差: Float = 45f): Direction? = CommonSettings.PitchDirectionBy(this, 容差)
 
 const val 十六分之周 = 22.50f
 fun ClientPlayerEntity.YawInt16By(容差: Float = 11.25f): Int? {
@@ -59,6 +39,7 @@ fun ClientPlayerEntity.YawInt16By(容差: Float = 11.25f): Int? {
     // 规范化到 0-15
     return ((result % 16) + 16) % 16
 }
+
 //region 玩家角度对准方块的面
 
 //region 方块锚点到方块面(四顶点)的偏移常量Vec3i[4]

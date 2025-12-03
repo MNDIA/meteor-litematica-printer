@@ -484,12 +484,12 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
     fun TryPlaceBlock(required: BlockState, pos: BlockPos, worldPoState: BlockState?): Boolean {
         val player = mc.player ?: return false
         val world = mc.world ?: return false
-        val worldPosState = worldPoState ?: world.getBlockState(pos)
         val block = required.block
         // 检查点
-        if ( required.isAir || !required.isMultiStructurePlacementAllowed) return false//无法放置的东西
+        if (required.isAir || block is FluidBlock || !required.isMultiStructurePlacementAllowed) return false//无法放置的东西
 
         if (!World.isValid(pos) || !required.canPlaceAt(world, pos)) return false
+        val worldPosState = worldPoState ?: world.getBlockState(pos)
 
         val 已经放好了: Boolean =
             worldPosState.block === block && when (block) {
@@ -777,7 +777,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         true
                     }
 
-                    SwapDoResult.没有物品 ->{
+                    SwapDoResult.没有物品 -> {
                         // info("没有物品${item}，无法放置${block}在$pos")
                         false
                     }

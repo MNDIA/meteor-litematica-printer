@@ -2,10 +2,14 @@ package com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings
 
 import com.kkllffaa.meteor_litematica_printer.Addon
 import com.kkllffaa.meteor_litematica_printer.Functions.*
+import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
 import meteordevelopment.meteorclient.systems.modules.Module
+import meteordevelopment.orbit.EventHandler
+import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Box
+import net.minecraft.util.math.Direction
 
 object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to configure AtomicSettings.") {
     override fun toggle() {
@@ -113,4 +117,34 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             }
         } ?: false
 
+    @EventHandler
+    private fun onTick(event: TickEvent.Post) {
+
+    }
+
+    private fun ClientPlayerEntity.computeYawDirection(容差: Float): Direction? {
+        val yaw = yaw.normalizeAsYaw
+        if (yaw.isNearIn(90f, 容差)) {
+            return Direction.WEST
+        } else if (yaw.isNearIn(0f, 容差)) {
+            return Direction.SOUTH
+        } else if (yaw.isNearIn(-90f, 容差)) {
+            return Direction.EAST
+        } else if (yaw.isNearIn(180f, 容差) || yaw.isNearIn(-180f, 容差)) {
+            return Direction.NORTH
+        }
+        return null
+    }
+
+    private fun ClientPlayerEntity.computePitchDirection(容差: Float): Direction? {
+        val pitch = pitch.clampAsPitch
+        if (pitch.isNearIn(90f, 容差)) {
+            return Direction.DOWN
+        } else if (pitch.isNearIn(-90f, 容差)) {
+            return Direction.UP
+        } else if (pitch.isNearIn(0f, 容差)) {
+            return Direction.NORTH
+        }
+        return null
+    }
 }
