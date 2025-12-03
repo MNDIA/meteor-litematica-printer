@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 import com.kkllffaa.meteor_litematica_printer.Addon
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Printer
+import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.Printer
 import meteordevelopment.meteorclient.events.entity.player.ItemUseCrosshairTargetEvent
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.pathing.PathManagers
@@ -26,7 +26,7 @@ import net.minecraft.item.Item
 import net.minecraft.item.Items
 import java.util.function.BiPredicate
 
-// import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.Deleter
+// import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.Deleter
 object AutoEat : Module(Addon.TOOLS, "auto-eat-+", "Automatically eats food.") {
     // Settings groups
     private val sgGeneral = settings.defaultGroup
