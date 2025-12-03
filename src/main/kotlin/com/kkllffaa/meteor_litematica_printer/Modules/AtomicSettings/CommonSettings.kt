@@ -60,7 +60,7 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
         IntSetting.Builder()
             .name("rotation-stable-ticks")
             .description("Number of ticks the rotation must remain stable.")
-            .defaultValue(25)
+            .defaultValue(10)
             .min(1).sliderMin(1)
             .max(40).sliderMax(10)
             .build()
@@ -139,21 +139,45 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             }
         } ?: false
 
+    // 稳定过滤器：连续 stableTicks 个 tick 结果相同才返回
+    private class StableFilter<T>(private val compute: () -> T?) {
+        private var lastValue: T? = null
+        private var stableCount: Int = 0
+
+        fun tick() {
+            val current = compute()
+            if (current == lastValue) {
+                stableCount++
+            } else {
+                lastValue = current
+                stableCount = 1
+            }
+        }
+
+        fun value(): T? = if (stableCount >= stableTicks.get()) lastValue else null
+    }
+
+    private val yawDirectionFilter = StableFilter { mc.player?.computeYawDirection() }
+    private val pitchDirectionFilter = StableFilter { mc.player?.computePitchDirection() }
+    private val yawInt16Filter = StableFilter { mc.player?.computeYawInt16() }
+
     @EventHandler
     private fun onTick(event: TickEvent.Post) {
-
+        yawDirectionFilter.tick()
+        pitchDirectionFilter.tick()
+        yawInt16Filter.tick()
     }
 
     fun YawDirection(player: ClientPlayerEntity): Direction? {
-        return player.computeYawDirection()
+        return yawDirectionFilter.value()
     }
 
     fun PitchDirection(player: ClientPlayerEntity): Direction? {
-        return player.computePitchDirection()
+        return pitchDirectionFilter.value()
     }
 
     fun YawInt16(player: ClientPlayerEntity): Int? {
-        return player.computeYawInt16()
+        return yawInt16Filter.value()
     }
 
     private fun ClientPlayerEntity.computeYawDirection(): Direction? {
