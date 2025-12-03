@@ -487,7 +487,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
         val worldPosState = worldPoState ?: world.getBlockState(pos)
         val block = required.block
         // 检查点
-        if (!required.fluidState.isEmpty || required.isAir || !required.isMultiStructurePlacementAllowed) return false//无法放置的东西
+        if ( required.isAir || !required.isMultiStructurePlacementAllowed) return false//无法放置的东西
 
         if (!World.isValid(pos) || !required.canPlaceAt(world, pos)) return false
 
@@ -778,12 +778,12 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     }
 
                     SwapDoResult.没有物品 ->{
-                        // info("没有物品${item}，无法放置${block.name}在$pos")
+                        // info("没有物品${item}，无法放置${block}在$pos")
                         false
                     }
 
                     SwapDoResult.执行False -> {
-                        info("${block.name}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
+                        info("${block}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
                         false
                     }
 
