@@ -767,14 +767,24 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
                 var item = required.block.asItem()
                 if (dirtgrass.get() && item === Items.GRASS_BLOCK) item = Items.DIRT
-                val result = player.switchItem(item, returnHand.get()) {
+
+                val res = player.switchItemThenDo(item) {
                     place(BlockHitResult(hitPos, face, neighbour, false))
                 }
-                if (!result) {
-                    info("${block}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
+                return when (res) {
+                    SwapDoResult.Success -> {
+                        // info("$block 成功放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
+                        true
+                    }
+
+                    SwapDoResult.SwapFailed -> false
+
+                    SwapDoResult.DoFailed -> {
+                        info("${block}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
+                        false
+                    }
+
                 }
-                // else  info("$block 成功放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
-                return result
             }
 
         }

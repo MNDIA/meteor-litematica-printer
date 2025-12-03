@@ -69,3 +69,4 @@ enum class PreferPerspective {
     FIRST_PERSON,
     THIRD_PERSON_BACK,
 }
+

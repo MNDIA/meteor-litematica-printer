@@ -1,7 +1,9 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings
 
 import com.kkllffaa.meteor_litematica_printer.Addon
-import meteordevelopment.meteorclient.settings.SettingGroup
+import com.kkllffaa.meteor_litematica_printer.Functions.SwapDoResult
+import meteordevelopment.meteorclient.settings.*
+import meteordevelopment.meteorclient.settings.Setting
 import meteordevelopment.meteorclient.systems.modules.Module
 import meteordevelopment.meteorclient.utils.player.InvUtils
 import net.minecraft.client.network.ClientPlayerEntity
@@ -19,79 +21,115 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
     }
 
     private val sgGeneral = settings.defaultGroup
+    private val useSlotsLen: Setting<Int> = sgGeneral.add(
+        IntSetting.Builder()
+            .name("use-slots")
+            .description("The number of slots assigned to automatic processing, reverse(default is Slots 8 and 9)")
+            .defaultValue(2)
+            .range(1, 9)
+            .sliderRange(1, 9)
+            .build()
+    )
+
+    private val SelectBackDelay: Setting<Int> = sgGeneral.add(
+        IntSetting.Builder()
+            .name("select-back-delay")
+            .description("Delay in ticks for free SlotSelect back.")
+            .defaultValue(15)
+            .range(0, 100)
+            .build()
+    )
+
+    private val FreeItemsDelay: Setting<Int> = sgGeneral.add(
+        IntSetting.Builder()
+            .name("free-items-delay")
+            .description("Delay in ticks for free SlotItems back.")
+            .defaultValue(15)
+            .range(0, 100)
+            .build()
+    )
+
+    private val useSlots get() = 9 - useSlotsLen.get()..8
+
+    private val 成功使用的Slots = linkedSetOf<Int>()
+    private var 最近的成功使用槽位: Int
+        get() = 成功使用的Slots.lastOrNull() ?: 8
+        set(value) {
+            成功使用的Slots.remove(value)
+            成功使用的Slots.add(value)
+        }
+    private val 最久没用过的可用槽位: Int
+        get() =
+            useSlots.sortedDescending().firstOrNull { it !in 成功使用的Slots } ?: 成功使用的Slots.first()
 
 
-    private var usedSlot = 8
     fun switchItem(
+        player: ClientPlayerEntity,
         item: Item,
-        returnHand: Boolean,
         action: () -> Boolean
-    ): Boolean {
-        val player = mc.player ?: return false
-        val selectedSlot = player.inventory.selectedSlot
-        val result = InvUtils.find(item)
+    ): SwapDoResult {
 
-        // 执行操作并处理槽位记录
-        fun tryAction(updateUsedSlot: Boolean = true): Boolean {
+        fun 执行(): Boolean {
             return if (action()) {
-                if (updateUsedSlot) usedSlot = player.inventory.selectedSlot
+                最近的成功使用槽位 = player.inventory.selectedSlot
                 true
             } else false
         }
 
-        // 切换槽位，执行操作，失败则切回
-        fun swapAndTry(slot: Int, updateUsedSlot: Boolean = true): Boolean {
-            InvUtils.swap(slot, returnHand)
-            return if (tryAction(updateUsedSlot)) {
-                true
-            } else {
-                InvUtils.swap(selectedSlot, returnHand)
-                false
-            }
+        fun 切换并执行(slot: Int): Boolean {
+            InvUtils.swap(slot, true)
+            return 执行()
         }
+
+        val result by lazy { InvUtils.find(item) }
+        val recentSlot by lazy { 最近的成功使用槽位 }
 
         return when {
             // 情况1：主手已持有目标物品
-            player.mainHandStack.item === item -> tryAction()
+            player.mainHandStack.item === item -> if (执行()) SwapDoResult.Success else SwapDoResult.DoFailed
 
             // 情况2：之前使用的槽位仍有目标物品
-            player.inventory.getStack(usedSlot).item === item -> swapAndTry(usedSlot, updateUsedSlot = false)
+            player.inventory.getStack(recentSlot).item === item -> if (切换并执行(recentSlot)) SwapDoResult.Success else SwapDoResult.DoFailed
 
             // 情况3：在背包中找到目标物品
             result.found() -> when {
-                result.isHotbar -> swapAndTry(result.slot())
+                result.isHotbar -> if (切换并执行(result.slot)) SwapDoResult.Success else SwapDoResult.DoFailed
+
                 result.isMain -> {
                     // 物品在主背包，需要先移到快捷栏
-                    val empty = InvUtils.find({ it.isEmpty }, 0, 8)
+                    val emptySlot = useSlots.asSequence()
+                        .sortedDescending()
+                        .firstOrNull { player.inventory.getStack(it).isEmpty }
+
                     when {
-                        empty.found() -> {
-                            InvUtils.move().from(result.slot).toHotbar(empty.slot)
-                            swapAndTry(empty.slot)
+                        emptySlot != null -> {
+                            InvUtils.quickSwap().fromId(emptySlot).to(result.slot)
+                            if (切换并执行(emptySlot)) SwapDoResult.Success else SwapDoResult.DoFailed
                         }
 
                         else -> {
-                            InvUtils.move().from(result.slot).toHotbar(usedSlot)
-                            swapAndTry(usedSlot, updateUsedSlot = false)
+                            val lruSlot = 最久没用过的可用槽位
+                            InvUtils.quickSwap().fromId(lruSlot).to(result.slot)
+                            if (切换并执行(lruSlot)) SwapDoResult.Success else SwapDoResult.DoFailed
                         }
                     }
                 }
 
-                else -> false
+                else -> SwapDoResult.SwapFailed
             }
 
             // 情况4：创造模式，直接生成物品
             player.abilities.creativeMode -> {
-                val slot = InvUtils.find({ it.isEmpty }, 0, 8)
-                    .takeIf { it.found() }?.slot() ?: 0
+                val slot = 8
                 val stack = item.defaultStack
                 mc.networkHandler?.sendPacket(
                     CreativeInventoryActionC2SPacket(36 + slot, stack)
                 )
                 player.inventory.setStack(slot, stack)
-                swapAndTry(slot)
+                if (切换并执行(slot)) SwapDoResult.Success else SwapDoResult.DoFailed
             }
 
-            else -> false
+            else -> SwapDoResult.SwapFailed
         }
     }
 }
