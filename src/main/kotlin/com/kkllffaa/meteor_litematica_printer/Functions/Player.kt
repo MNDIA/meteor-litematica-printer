@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.Functions
 
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.CommonSettings
 import meteordevelopment.meteorclient.MeteorClient.mc
 import meteordevelopment.meteorclient.utils.player.InvUtils
 import meteordevelopment.meteorclient.systems.modules.movement.GUIMove

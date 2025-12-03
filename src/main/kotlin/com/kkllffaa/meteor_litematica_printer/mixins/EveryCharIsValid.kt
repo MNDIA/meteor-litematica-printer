@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.mixins
 
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.CommonSettings
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject

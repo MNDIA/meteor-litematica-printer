@@ -1,6 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.mixins
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.CommonSettings
 import meteordevelopment.meteorclient.MeteorClient
 import meteordevelopment.meteorclient.systems.modules.Modules
 import meteordevelopment.meteorclient.systems.modules.render.Freecam

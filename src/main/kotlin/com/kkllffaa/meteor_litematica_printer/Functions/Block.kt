@@ -1,6 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.Functions
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.*
 import meteordevelopment.meteorclient.MeteorClient.mc
 import meteordevelopment.meteorclient.events.render.Render3DEvent
 import meteordevelopment.meteorclient.renderer.ShapeMode

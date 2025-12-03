@@ -1,6 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.*
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.*
 import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel.*
 import com.kkllffaa.meteor_litematica_printer.Modules.Tools.*
 import com.kkllffaa.meteor_litematica_printer.Modules.Tools.OnlyESP.*

@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings
+package com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings
 
 import com.kkllffaa.meteor_litematica_printer.Addon
 import com.kkllffaa.meteor_litematica_printer.Functions.*

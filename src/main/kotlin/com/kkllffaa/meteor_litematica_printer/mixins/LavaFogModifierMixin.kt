@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.CommonSettings
 import net.minecraft.client.render.fog.LavaFogModifier
 import net.minecraft.client.world.ClientWorld
 import net.minecraft.entity.Entity

@@ -1,6 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.mixins
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.BreakSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.BreakSettings
 import net.minecraft.client.network.ClientPlayerInteractionManager
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At

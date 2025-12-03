@@ -1,6 +1,6 @@
 package com.kkllffaa.meteor_litematica_printer.Functions
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.PlaceSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.PlaceSettings
 import net.minecraft.text.*
 import net.minecraft.util.Formatting
 import java.util.*

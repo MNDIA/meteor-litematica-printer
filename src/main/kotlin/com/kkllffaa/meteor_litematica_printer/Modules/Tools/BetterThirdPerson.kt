@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 
-import com.kkllffaa.meteor_litematica_printer.Modules.CRUD.AtomicSettings.CommonSettings
+import com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings.CommonSettings
 import com.kkllffaa.meteor_litematica_printer.Functions.*
 import com.kkllffaa.meteor_litematica_printer.Addon
 import meteordevelopment.meteorclient.events.meteor.MouseClickEvent
