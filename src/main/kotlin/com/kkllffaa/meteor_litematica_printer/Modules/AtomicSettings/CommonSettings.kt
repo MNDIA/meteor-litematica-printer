@@ -10,6 +10,7 @@ import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Box
 import net.minecraft.util.math.Direction
+import kotlin.math.floor
 
 object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to configure AtomicSettings.") {
     override fun toggle() {
@@ -22,6 +23,8 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
     }
 
     private val sgGeneral = settings.defaultGroup
+
+    private val sgRotation = settings.createGroup("Rotation")
     private val sgOther = settings.createGroup("Other")
 
     private val distanceProtection: Setting<DistanceMode> = sgGeneral.add(
@@ -41,6 +44,16 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .max(1024.0)
             .sliderRange(1.0, 5.5)
             .visible { distanceProtection.get() == DistanceMode.Max }
+            .build()
+    )
+
+    private val 容差: Setting<Int> = sgRotation.add(
+        IntSetting.Builder()
+            .name("angle-range")
+            .description("Angle range for direction detection (degrees).")
+            .defaultValue(25)
+            .min(1).sliderMin(1)
+            .max(45).sliderMax(44)
             .build()
     )
     val MaxTextWidth: Setting<Int> = sgOther.add(
@@ -121,13 +134,21 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
     private fun onTick(event: TickEvent.Post) {
 
     }
-    fun YawDirectionBy(player: ClientPlayerEntity, 容差: Float = 45f): Direction? {
+
+    fun YawDirection(player: ClientPlayerEntity): Direction? {
+        return player.computeYawDirection()
     }
 
-    fun PitchDirectionBy(player: ClientPlayerEntity, 容差: Float = 45f): Direction? {
+    fun PitchDirection(player: ClientPlayerEntity): Direction? {
+        return player.computePitchDirection()
     }
 
-    private fun ClientPlayerEntity.computeYawDirection(容差: Float): Direction? {
+    fun YawInt16(player: ClientPlayerEntity): Int? {
+        return player.computeYawInt16()
+    }
+
+    private fun ClientPlayerEntity.computeYawDirection(): Direction? {
+        val 容差 = 容差.get().toFloat()
         val yaw = yaw.normalizeAsYaw
         if (yaw.isNearIn(90f, 容差)) {
             return Direction.WEST
@@ -141,7 +162,8 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
         return null
     }
 
-    private fun ClientPlayerEntity.computePitchDirection(容差: Float): Direction? {
+    private fun ClientPlayerEntity.computePitchDirection(): Direction? {
+        val 容差 = 容差.get().toFloat()
         val pitch = pitch.clampAsPitch
         if (pitch.isNearIn(90f, 容差)) {
             return Direction.DOWN
@@ -151,5 +173,23 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             return Direction.NORTH
         }
         return null
+    }
+
+    const val 十六分之周 = 22.50f
+    private fun ClientPlayerEntity.computeYawInt16(): Int? {
+        val 容差 = 容差.get().toFloat() / 4
+        val yaw = ((yaw % 360.00f) + 360.00f) % 360.00f
+        val 周期 = floor(yaw / 十六分之周).toInt()
+        val 余数 = yaw - 周期 * 十六分之周
+
+        val result = if (余数.isNearIn(0f, 容差)) {
+            周期
+        } else if (余数.isNearIn(十六分之周, 容差)) {
+            周期 + 1
+        } else {
+            return null
+        }
+        // 规范化到 0-15
+        return ((result % 16) + 16) % 16
     }
 }

@@ -128,14 +128,6 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .build()
     )
 
-    private val returnHand: Setting<Boolean> = sgGeneral.add(
-        BoolSetting.Builder()
-            .name("return-slot")
-            .description("Return to old slot.")
-            .defaultValue(false)
-            .build()
-    )
-
     private val dirtgrass: Setting<Boolean> = sgGeneral.add(
         BoolSetting.Builder()
             .name("dirt-as-grass")
@@ -158,17 +150,6 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             .name("direction-protection")
             .description("Only place directional blocks when player is facing the correct direction.")
             .defaultValue(true)
-            .build()
-    )
-
-    private val angleRangeForDirectionProtection: Setting<Int> = sgDirectional.add(
-        IntSetting.Builder()
-            .name("angle-range")
-            .description("Angle range for direction detection (degrees).")
-            .defaultValue(25)
-            .min(1).sliderMin(1)
-            .max(45).sliderMax(44)
-            .visible { directionProtection.get() }
             .build()
     )
 
@@ -403,11 +384,9 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             val inListLeft = block in YawLeft.get()
             val inListRight = block in YawRight.get()
             if (!(inListUp || inListDown || inListForward || inListBackward || inListLeft || inListRight)) return true
-            val 容差 = angleRangeForDirectionProtection.get().toFloat()
-
 
             if (Properties.ROTATION in this) {
-                val YawInt16 = mc.player?.YawInt16By(容差 / 4) ?: return false
+                val YawInt16 = mc.player?.YawInt16 ?: return false
                 val BlockInt16 = this.get(Properties.ROTATION)
                 return when (BlockInt16) {
                     YawInt16 -> inListForward
@@ -420,8 +399,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
             val requiredDirection = this.ATagFaceOf6 ?: return true
             val 六向砖 = inListUp || inListDown
-            val playerPitchDirection = mc.player?.PitchDirectionBy(容差)
-            val playerYawDirection = mc.player?.YawDirectionBy(容差)
+            val playerPitchDirection = mc.player?.PitchDirection
+            val playerYawDirection = mc.player?.YawDirection
 
             if (六向砖 && (playerPitchDirection == Direction.UP || playerPitchDirection == Direction.DOWN)) {
                 if (Properties.ORIENTATION !in this || playerYawDirection?.let {
