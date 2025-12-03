@@ -56,6 +56,15 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
             .max(45).sliderMax(44)
             .build()
     )
+    private val stableTicks: Setting<Int> = sgRotation.add(
+        IntSetting.Builder()
+            .name("rotation-stable-ticks")
+            .description("Number of ticks the rotation must remain stable.")
+            .defaultValue(25)
+            .min(1).sliderMin(1)
+            .max(40).sliderMax(10)
+            .build()
+    )
     val MaxTextWidth: Setting<Int> = sgOther.add(
         IntSetting.Builder()
             .name("max-text-width")
