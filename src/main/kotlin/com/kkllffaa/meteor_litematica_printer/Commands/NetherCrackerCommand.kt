@@ -43,7 +43,6 @@ object NetherCrackerCommand : Command(
 
                     for (chunkX in xRange) {
                         for (chunkZ in zRange) {
-                            // Skip inner chunks (already processed in previous radii)
                             if (r > 0 && chunkX in (xRange.first + 1)..<xRange.last && chunkZ in (zRange.first + 1)..<zRange.last) {
                                 continue
                             }
@@ -91,7 +90,7 @@ object NetherCrackerCommand : Command(
                     mutablePos.set(worldX, y, worldZ)
                     if (getBlockState(mutablePos).isOf(Blocks.BEDROCK)) {
                         add(mutablePos.toImmutable())
-                        break // 找到一个就跳过该位置的其他Y层
+                        break
                     }
                 }
             }
