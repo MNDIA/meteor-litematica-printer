@@ -555,7 +555,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
         for (face in Direction.entries) {
             var tempHitPos = Vec3d(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5)
-            // 特殊砖:根据状态属性/点击面有 不同的 点击面保护和视角保护的变化/点击点偏移/面不能点
+            // 特殊砖:根据状态属性/点击面有 不同的 点击面保护和视角保护的变化/点击点偏移/面能不能点
             var disableDirectionProtection = false
             var disableFaceProtection = false
             var disableAirPlace = false
@@ -771,7 +771,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                     place(BlockHitResult(hitPos, face, neighbour, false))
                 }
                 if (!result) {
-                    info("$block 失败放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
+                    info("${block}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
                 }
                 // else  info("$block 成功放在 $pos,  \n点了$neighbour 的$face 面 于$hitPos")
                 return result
