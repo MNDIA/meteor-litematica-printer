@@ -121,6 +121,11 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
     private fun onTick(event: TickEvent.Post) {
 
     }
+    fun YawDirectionBy(player: ClientPlayerEntity, 容差: Float = 45f): Direction? {
+    }
+
+    fun PitchDirectionBy(player: ClientPlayerEntity, 容差: Float = 45f): Direction? {
+    }
 
     private fun ClientPlayerEntity.computeYawDirection(容差: Float): Direction? {
         val yaw = yaw.normalizeAsYaw
