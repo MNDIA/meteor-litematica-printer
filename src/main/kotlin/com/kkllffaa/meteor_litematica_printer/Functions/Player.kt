@@ -18,9 +18,9 @@ import kotlin.math.floor
 val PlayerHandDistance get() = CommonSettings.PlayerHandDistance
 val ClientPlayerEntity.EyeCenterPos get() = Vec3d(x, y + getEyeHeight(pose), z)
 
-val ClientPlayerEntity.YawDirection: Direction? get() = CommonSettings.YawDirection(this)
-val ClientPlayerEntity.PitchDirection: Direction? get() = CommonSettings.PitchDirection(this)
-val ClientPlayerEntity.YawInt16: Int? get() = CommonSettings.YawInt16(this)
+val PlayerYawDirection: Direction? get() = CommonSettings.playerYawDirection
+val PlayerPitchDirection: Direction? get() = CommonSettings.playerPitchDirection
+val PlayerYawInt16: Int? get() = CommonSettings.playerYawInt16
 
 //region 玩家角度对准方块的面
 

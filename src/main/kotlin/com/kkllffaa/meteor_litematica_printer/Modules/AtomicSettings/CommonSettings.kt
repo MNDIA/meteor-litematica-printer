@@ -168,17 +168,11 @@ object CommonSettings : Module(Addon.SettingsForCRUD, "Common", "Module to confi
         yawInt16Filter.tick()
     }
 
-    fun YawDirection(player: ClientPlayerEntity): Direction? {
-        return yawDirectionFilter.value()
-    }
+    val playerYawDirection: Direction? get() = yawDirectionFilter.value()
 
-    fun PitchDirection(player: ClientPlayerEntity): Direction? {
-        return pitchDirectionFilter.value()
-    }
+    val playerPitchDirection: Direction? get() = pitchDirectionFilter.value()
 
-    fun YawInt16(player: ClientPlayerEntity): Int? {
-        return yawInt16Filter.value()
-    }
+    val playerYawInt16: Int? get() = yawInt16Filter.value()
 
     private fun ClientPlayerEntity.computeYawDirection(): Direction? {
         val 容差 = 容差.get().toFloat()

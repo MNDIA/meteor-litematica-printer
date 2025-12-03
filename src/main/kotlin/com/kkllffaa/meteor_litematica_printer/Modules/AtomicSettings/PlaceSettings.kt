@@ -386,7 +386,7 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
             if (!(inListUp || inListDown || inListForward || inListBackward || inListLeft || inListRight)) return true
 
             if (Properties.ROTATION in this) {
-                val YawInt16 = mc.player?.YawInt16 ?: return false
+                val YawInt16 = PlayerYawInt16 ?: return false
                 val BlockInt16 = this.get(Properties.ROTATION)
                 return when (BlockInt16) {
                     YawInt16 -> inListForward
@@ -399,8 +399,8 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
 
             val requiredDirection = this.ATagFaceOf6 ?: return true
             val 六向砖 = inListUp || inListDown
-            val playerPitchDirection = mc.player?.PitchDirection
-            val playerYawDirection = mc.player?.YawDirection
+            val playerPitchDirection = PlayerPitchDirection
+            val playerYawDirection = PlayerYawDirection
 
             if (六向砖 && (playerPitchDirection == Direction.UP || playerPitchDirection == Direction.DOWN)) {
                 if (Properties.ORIENTATION !in this || playerYawDirection?.let {
