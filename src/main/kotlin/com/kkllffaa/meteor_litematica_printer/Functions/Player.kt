@@ -140,8 +140,8 @@ fun ClientPlayerEntity.switchItemThenDo(
 
 enum class SwapDoResult {
     Success,
-    SwapFailed,
-    DoFailed,
+    没有物品,
+    执行False,
 }
 
 fun ClientPlayerEntity.swing(hand: Hand = Hand.MAIN_HAND, swingMode: ActionMode = ActionMode.Normal) {

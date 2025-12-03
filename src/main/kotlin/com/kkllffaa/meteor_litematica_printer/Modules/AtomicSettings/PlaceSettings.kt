@@ -777,10 +777,13 @@ object PlaceSettings : Module(Addon.SettingsForCRUD, "Place", "Module to configu
                         true
                     }
 
-                    SwapDoResult.SwapFailed -> false
+                    SwapDoResult.没有物品 ->{
+                        // info("没有物品${item}，无法放置${block.name}在$pos")
+                        false
+                    }
 
-                    SwapDoResult.DoFailed -> {
-                        info("${block}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
+                    SwapDoResult.执行False -> {
+                        info("${block.name}失败放在$pos,\n点了${neighbour}的${face}面 于$hitPos")
                         false
                     }
 

@@ -86,14 +86,25 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
 
         return when {
             // 情况1：主手已持有目标物品
-            player.mainHandStack.item === item -> if (执行()) SwapDoResult.Success else SwapDoResult.DoFailed
+            player.mainHandStack.item === item -> if (执行()) SwapDoResult.Success else SwapDoResult.执行False
 
             // 情况2：之前使用的槽位仍有目标物品
-            player.inventory.getStack(recentSlot).item === item -> if (切换并执行(recentSlot)) SwapDoResult.Success else SwapDoResult.DoFailed
+            player.inventory.getStack(recentSlot).item === item -> if (切换并执行(recentSlot)) SwapDoResult.Success else SwapDoResult.执行False
 
-            // 情况3：在背包中找到目标物品
+            // 情况3：创造模式，直接生成物品
+            player.abilities.creativeMode -> {
+                val slot = 8
+                val stack = item.defaultStack
+                mc.networkHandler?.sendPacket(
+                    CreativeInventoryActionC2SPacket(36 + slot, stack)
+                )
+                player.inventory.setStack(slot, stack)
+                if (切换并执行(slot)) SwapDoResult.Success else SwapDoResult.执行False
+            }
+
+            // 情况4：在背包中找到目标物品
             result.found() -> when {
-                result.isHotbar -> if (切换并执行(result.slot)) SwapDoResult.Success else SwapDoResult.DoFailed
+                result.isHotbar -> if (切换并执行(result.slot)) SwapDoResult.Success else SwapDoResult.执行False
 
                 result.isMain -> {
                     // 物品在主背包，需要先移到快捷栏
@@ -104,32 +115,21 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
                     when {
                         emptySlot != null -> {
                             InvUtils.quickSwap().fromId(emptySlot).to(result.slot)
-                            if (切换并执行(emptySlot)) SwapDoResult.Success else SwapDoResult.DoFailed
+                            if (切换并执行(emptySlot)) SwapDoResult.Success else SwapDoResult.执行False
                         }
 
                         else -> {
                             val lruSlot = 最久没用过的可用槽位
                             InvUtils.quickSwap().fromId(lruSlot).to(result.slot)
-                            if (切换并执行(lruSlot)) SwapDoResult.Success else SwapDoResult.DoFailed
+                            if (切换并执行(lruSlot)) SwapDoResult.Success else SwapDoResult.执行False
                         }
                     }
                 }
 
-                else -> SwapDoResult.SwapFailed
+                else -> SwapDoResult.没有物品
             }
 
-            // 情况4：创造模式，直接生成物品
-            player.abilities.creativeMode -> {
-                val slot = 8
-                val stack = item.defaultStack
-                mc.networkHandler?.sendPacket(
-                    CreativeInventoryActionC2SPacket(36 + slot, stack)
-                )
-                player.inventory.setStack(slot, stack)
-                if (切换并执行(slot)) SwapDoResult.Success else SwapDoResult.DoFailed
-            }
-
-            else -> SwapDoResult.SwapFailed
+            else -> SwapDoResult.没有物品
         }
     }
 }
