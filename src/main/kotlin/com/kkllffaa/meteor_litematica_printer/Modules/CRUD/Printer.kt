@@ -1,4 +1,4 @@
-package com.kkllffaa.meteor_litematica_printer.Modules.CRUD.CRUDMainPanel
+package com.kkllffaa.meteor_litematica_printer.Modules.CRUD
 
 import com.kkllffaa.meteor_litematica_printer.Addon
 import com.kkllffaa.meteor_litematica_printer.Functions.*
