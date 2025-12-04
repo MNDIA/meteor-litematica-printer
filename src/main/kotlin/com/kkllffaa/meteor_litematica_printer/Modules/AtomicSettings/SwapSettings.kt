@@ -39,7 +39,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         IntSetting.Builder()
             .name("select-back-delay")
             .description("Delay in ticks for free SlotSelect back.")
-            .defaultValue(15)
+            .defaultValue(7)
             .range(0, 100)
             .build()
     )
@@ -48,22 +48,25 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         IntSetting.Builder()
             .name("free-items-delay")
             .description("Delay in ticks for free SlotItems back.")
-            .defaultValue(15)
+            .defaultValue(10)
             .range(0, 100)
             .build()
     )
 
     @EventHandler
     private fun onTick(event: TickEvent.Post) {
-        val interactionManager = mc.interactionManager ?: return
-        val player = mc.player ?: return
-
-        if (useSlotIndex == player.getInventory().selectedSlot) {
-            InvUtils.swapBack()
+        if (回切倒计时 > 0) {
+            回切倒计时--
         } else {
-            InvUtils.previousSlot = -1
+            切回Slot()
+            回切倒计时 = SelectBackDelay.get()
         }
-
+        if (物品回切倒计时 > 0) {
+            物品回切倒计时--
+        } else {
+            切回全部Item()
+            物品回切倒计时 = FreeItemsDelay.get()
+        }
     }
 
     private val useSlots get() = 9 - useSlotsLen.get()..8
@@ -125,7 +128,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             InvUtils.quickSwap().fromId(slot).to(previousStackSlot)
         }
         hotbarPrevious[slot] = null
-        
+
     }
 
     private fun 切回全部Item() {
