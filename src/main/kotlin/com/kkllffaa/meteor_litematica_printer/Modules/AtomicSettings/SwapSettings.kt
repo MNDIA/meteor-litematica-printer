@@ -15,6 +15,8 @@ import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.client.option.KeyBinding
 import net.minecraft.item.Item
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket
+import net.minecraft.network.packet.c2s.play.PlayerInputC2SPacket
+import net.minecraft.util.PlayerInput
 import net.minecraft.item.ItemStack
 
 object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure AtomicSettings.") {
@@ -32,7 +34,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         IntSetting.Builder()
             .name("use-slots")
             .description("The number of slots assigned to automatic processing, reverse(default is Slots 8 and 9)")
-            .defaultValue(2)
+            .defaultValue(8)
             .range(1, 9)
             .sliderRange(1, 9)
             .build()
@@ -42,7 +44,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         IntSetting.Builder()
             .name("select-back-delay")
             .description("Delay in ticks for free SlotSelect back.")
-            .defaultValue(10)
+            .defaultValue(20)
             .range(1, 100)
             .build()
     )
@@ -51,7 +53,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         IntSetting.Builder()
             .name("free-items-delay")
             .description("Delay in ticks for free SlotItems back.")
-            .defaultValue(10)
+            .defaultValue(20)
             .range(1, 100)
             .build()
     )
@@ -66,7 +68,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         IntSetting.Builder()
             .name("stop-delay")
             .description("Delay in ticks to resume moving after switching items.")
-            .defaultValue(1)
+            .defaultValue(3)
             .visible { stopMovingWhenSwitchItemStack.get() }
             .range(1, 20)
             .build()
@@ -160,6 +162,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         if (stopMovingWhenSwitchItemStack.get()) {
             松开按键(*移动按键)
             移动恢复倒计时 = stopDelay.get()
+            mc.networkHandler?.sendPacket(PlayerInputC2SPacket(PlayerInput.DEFAULT))
         }
         InvUtils.quickSwap().fromId(ToHotbarSlot).to(FromMainSlot)
     }
@@ -180,6 +183,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
                 if (stopMovingWhenSwitchItemStack.get()) {
                     松开按键(*移动按键)
                     移动恢复倒计时 = stopDelay.get()
+                    mc.networkHandler?.sendPacket(PlayerInputC2SPacket(PlayerInput.DEFAULT))
                 }
                 InvUtils.quickSwap().fromId(HBSlot).to(lookingfor.slot)
             }
