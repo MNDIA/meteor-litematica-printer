@@ -51,46 +51,35 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
 
     private val useSlots get() = 9 - useSlotsLen.get()..8
 
-    private val 成功使用的Slots = linkedSetOf<Int>()
-    private var 最近的成功使用槽位: Int
-        get() = 成功使用的Slots.lastOrNull() ?: 8
+    private val 使用的Slots = linkedSetOf<Int>()
+    private var 最近的使用槽位: Int
+        get() = 使用的Slots.lastOrNull() ?: 8
         set(value) {
-            成功使用的Slots.remove(value)
-            成功使用的Slots.add(value)
+            使用的Slots.remove(value)
+            使用的Slots.add(value)
         }
-    private val 最久没用过的可用槽位: Int
+    private val 最久没用过的槽位: Int
         get() =
-            useSlots.sortedDescending().firstOrNull { it !in 成功使用的Slots } ?: 成功使用的Slots.first()
+            useSlots.sortedDescending().firstOrNull { it !in 使用的Slots } ?: 使用的Slots.first()
 
-
-    fun switchItem(
+    fun switchTo(
         player: ClientPlayerEntity,
         item: Item,
-        action: () -> Boolean
-    ): SwapDoResult {
-
-        fun 执行(): Boolean {
-            return if (action()) {
-                最近的成功使用槽位 = player.inventory.selectedSlot
+    ): Boolean {
+        val result by lazy { InvUtils.find(item) }
+        val recentSlot by lazy { 最近的使用槽位 }
+        fun 切换(slot: Int): Boolean {
+            return if (InvUtils.swap(slot, true)) {
+                最近的使用槽位 = slot
                 true
             } else false
         }
-
-        fun 切换并执行(slot: Int): Boolean {
-            InvUtils.swap(slot, true)
-            return 执行()
-        }
-
-        val result by lazy { InvUtils.find(item) }
-        val recentSlot by lazy { 最近的成功使用槽位 }
-
         return when {
             // 情况1：主手已持有目标物品
-            player.mainHandStack.item === item -> if (执行()) SwapDoResult.Success else SwapDoResult.执行False
+            player.mainHandStack.item === item -> true
 
             // 情况2：之前使用的槽位仍有目标物品
-            player.inventory.getStack(recentSlot).item === item -> if (切换并执行(recentSlot)) SwapDoResult.Success else SwapDoResult.执行False
-
+            player.inventory.getStack(recentSlot).item === item -> 切换(recentSlot)
             // 情况3：创造模式，直接生成物品
             player.abilities.creativeMode -> {
                 val slot = 8
@@ -99,12 +88,12 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
                     CreativeInventoryActionC2SPacket(36 + slot, stack)
                 )
                 player.inventory.setStack(slot, stack)
-                if (切换并执行(slot)) SwapDoResult.Success else SwapDoResult.执行False
+                切换(slot)
             }
 
             // 情况4：在背包中找到目标物品
             result.found() -> when {
-                result.isHotbar -> if (切换并执行(result.slot)) SwapDoResult.Success else SwapDoResult.执行False
+                result.isHotbar -> 切换(result.slot)
 
                 result.isMain -> {
                     // 物品在主背包，需要先移到快捷栏
@@ -115,21 +104,23 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
                     when {
                         emptySlot != null -> {
                             InvUtils.quickSwap().fromId(emptySlot).to(result.slot)
-                            if (切换并执行(emptySlot)) SwapDoResult.Success else SwapDoResult.执行False
+                            切换(emptySlot)
                         }
 
                         else -> {
-                            val lruSlot = 最久没用过的可用槽位
+                            val lruSlot = 最久没用过的槽位
                             InvUtils.quickSwap().fromId(lruSlot).to(result.slot)
-                            if (切换并执行(lruSlot)) SwapDoResult.Success else SwapDoResult.执行False
+                            切换(lruSlot)
                         }
                     }
                 }
 
-                else -> SwapDoResult.没有物品
+                else -> false
             }
 
-            else -> SwapDoResult.没有物品
+            else -> false
         }
+
     }
+
 }
