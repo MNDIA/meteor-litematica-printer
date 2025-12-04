@@ -1,7 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings
 
 import com.kkllffaa.meteor_litematica_printer.Addon
-import com.kkllffaa.meteor_litematica_printer.Functions.isItemsAndComponentsEqualIgnoringDamage
+import com.kkllffaa.meteor_litematica_printer.Functions.物品及非耐久属性全部相同于
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
 import meteordevelopment.meteorclient.settings.Setting
@@ -50,6 +50,13 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             .description("Delay in ticks for free SlotItems back.")
             .defaultValue(10)
             .range(0, 100)
+            .build()
+    )
+    private val stopMovingWhenSwitchItemStack: Setting<Boolean> = sgGeneral.add(
+        BoolSetting.Builder()
+            .name("stop-moving-when-switch")
+            .description("Stop moving when switching items.")
+            .defaultValue(true)
             .build()
     )
 
@@ -121,13 +128,13 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
         if (previousItem == null) return
         val player = mc.player ?: return
         val currentItem = player.inventory.getStack(HBSlot)
-        if (currentItem.isItemsAndComponentsEqualIgnoringDamage(使用的Items[HBSlot])//玩家没有手动更换物品
-            && !currentItem.isItemsAndComponentsEqualIgnoringDamage(previousItem)
+        if (currentItem.物品及非耐久属性全部相同于(使用的Items[HBSlot]) //玩家没有手动更换物品
+            && !currentItem.物品及非耐久属性全部相同于(previousItem)
         ) {
             var lookingfor =
-                InvUtils.find({ previousItem.isItemsAndComponentsEqualIgnoringDamage(it) }, 9, 35)
+                InvUtils.find({ previousItem.物品及非耐久属性全部相同于(it) }, 9, 35)
             if (!lookingfor.found()) lookingfor =
-                InvUtils.find({ previousItem.isItemsAndComponentsEqualIgnoringDamage(it) }, 0, 8)
+                InvUtils.find({ previousItem.物品及非耐久属性全部相同于(it) }, 0, 8)
             if (lookingfor.found()) InvUtils.quickSwap().fromId(HBSlot).to(lookingfor.slot)
         }
         previousItems[HBSlot] = null
