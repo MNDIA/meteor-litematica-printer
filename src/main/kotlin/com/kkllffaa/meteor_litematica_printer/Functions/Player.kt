@@ -95,9 +95,8 @@ fun ClientPlayerEntity.RotationInTheFaceOfBlock(blockPos: Vec3i, face: Direction
 
 // endregion
 
-fun ClientPlayerEntity.switchTo(
-    item: Item
-):Boolean = SwapSettings.switchTo(this, item)
+fun ClientPlayerEntity.switchTo(item: Item): Boolean = SwapSettings.switchTo(this, item)
+fun ClientPlayerEntity.switchTo(slot: Int): Boolean = SwapSettings.switchTo(this, slot)
 
 
 enum class SwapDoResult {
