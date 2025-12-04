@@ -88,7 +88,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             使用过HBSlots.add(value)
         }
     private val 最久的HBSlot: Int
-        get() = 分配的自动HBSlots.sortedDescending().firstOrNull { it !in 使用过HBSlots } ?: 使用过HBSlots.filter { it in 分配的自动HBSlots }.first()
+        get() = 分配的自动HBSlots.sortedDescending().firstOrNull { it !in 使用过HBSlots } ?: 使用过HBSlots.first { it in 分配的自动HBSlots }
 
     private fun 切换Slot(slot: Int): Boolean {
         val player = mc.player ?: return false
