@@ -20,6 +20,7 @@ class Addon : MeteorAddon() {
         Modules.get().add(InteractSettings)
         Modules.get().add(ContainerSettings)
         Modules.get().add(BreakSettings)
+        Modules.get().add(SwapSettings)
 
         Modules.get().add(Printer)
         // Modules.get().add(Deleter())

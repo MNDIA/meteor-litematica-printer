@@ -1,11 +1,11 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings
 
 import com.kkllffaa.meteor_litematica_printer.Addon
+import com.kkllffaa.meteor_litematica_printer.Functions.isItemsAndComponentsEqualIgnoringDamage
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
 import meteordevelopment.meteorclient.settings.Setting
 import meteordevelopment.meteorclient.systems.modules.Module
-import meteordevelopment.meteorclient.systems.modules.Modules
 import meteordevelopment.meteorclient.utils.player.InvUtils
 import meteordevelopment.meteorclient.utils.player.SlotUtils
 import meteordevelopment.orbit.EventHandler
@@ -94,8 +94,8 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
     }
 
     private fun 切回Slot() {
+        if (InvUtils.previousSlot == -1) return
         val player = mc.player ?: return
-        if (InvUtils.previousSlot != -1) return
         val current = player.inventory.selectedSlot
         if (current == 最近的自动槽位 && current != InvUtils.previousSlot) {
             InvUtils.swapBack()
@@ -110,22 +110,24 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
 
     private fun 切换Item(FromMainSlot: Int, ToHotbarSlot: Int) {
         val player = mc.player ?: return
-        if (hotbarPrevious[ToHotbarSlot] == null) hotbarPrevious[ToHotbarSlot] =
-            player.inventory.getStack(ToHotbarSlot)
         hotbar最近使用[ToHotbarSlot] = player.inventory.getStack(FromMainSlot)
+        if (hotbarPrevious[ToHotbarSlot] == null) hotbarPrevious[ToHotbarSlot] = player.inventory.getStack(ToHotbarSlot)
         InvUtils.quickSwap().fromId(ToHotbarSlot).to(FromMainSlot)
     }
 
     private fun 切回Item(slot: Int) {
-        val player = mc.player ?: return
         val previousStack = hotbarPrevious[slot]
         if (previousStack == null) return
+        val player = mc.player ?: return
         val currentStack = player.inventory.getStack(slot)
-        if (ItemStack.areItemsAndComponentsEqual(currentStack, hotbar最近使用[slot])
-            && !ItemStack.areItemsAndComponentsEqual(previousStack, currentStack)
+        if (currentStack.isItemsAndComponentsEqualIgnoringDamage(hotbar最近使用[slot])
+            && !previousStack.isItemsAndComponentsEqualIgnoringDamage(currentStack)
         ) {
-            val previousStackSlot = InvUtils.find({ ItemStack.areItemsAndComponentsEqual(previousStack, it) }, 0, 35)
-            InvUtils.quickSwap().fromId(slot).to(previousStackSlot)
+            var lookingfor =
+                InvUtils.find({ previousStack.isItemsAndComponentsEqualIgnoringDamage(it) }, 9, 35)
+            if (!lookingfor.found()) lookingfor =
+                InvUtils.find({ previousStack.isItemsAndComponentsEqualIgnoringDamage(it) }, 0, 8)
+            if (lookingfor.found()) InvUtils.quickSwap().fromId(slot).to(lookingfor.slot)
         }
         hotbarPrevious[slot] = null
 

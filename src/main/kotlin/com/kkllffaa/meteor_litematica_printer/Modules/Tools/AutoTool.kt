@@ -1,6 +1,7 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.Tools
 
 import com.kkllffaa.meteor_litematica_printer.Addon
+import com.kkllffaa.meteor_litematica_printer.Functions.switchTo
 import meteordevelopment.meteorclient.events.entity.player.StartBreakingBlockEvent
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
@@ -74,26 +75,6 @@ object AutoTool :
             .build()
     )
 
-    private val switchBackDelay: Setting<Int> = sgGeneral.add(
-        (IntSetting.Builder()
-            .name("switch-back-delay")
-            .description("Delay in ticks for switching tools back.")
-            .defaultValue(15)
-            .range(0, 100)
-            .build()
-                )
-    )
-
-    private val useSlot: Setting<Int> = sgGeneral.add(
-        IntSetting.Builder()
-            .name("use-slot")
-            .description("the only one static hotbar slot to use.")
-            .defaultValue(2)
-            .range(1, 9)
-            .sliderRange(1, 9)
-            .build()
-    )
-
     //endregion
     //region Whitelist and blacklist
     private val listMode: Setting<ListMode> = sgWhitelist.add(
@@ -122,8 +103,6 @@ object AutoTool :
             .build()
     )
 
-    private var useSlotIndex = useSlot.get() - 1
-
     override fun onActivate() {
         resolveModuleConflict()
     }
@@ -141,18 +120,7 @@ object AutoTool :
         val interactionManager = mc.interactionManager ?: return
         val player = mc.player ?: return
         if (interactionManager.isBreakingBlock) {
-            busyTick = switchBackDelay.get()
-        }
-        if (busyTick == 0) {
-            if (useSlotIndex == player.getInventory().selectedSlot) {
-                InvUtils.swapBack()
-            } else {
-                InvUtils.previousSlot = -1
-            }
-            busyTick = -1
-        }
-        if (busyTick > 0) {
-            busyTick--
+            player.switchTo(player.inventory.selectedSlot)
         }
     }
 
@@ -190,9 +158,7 @@ object AutoTool :
         }
         if (bestSlot == -1) {
             val cursorStack = player.currentScreenHandler.cursorStack
-            if (!cursorStack.isEmpty && !(listMode.get() == ListMode.Whitelist && !whitelist.get()
-                    .contains(cursorStack.item)) && !(listMode.get() == ListMode.Blacklist && blacklist.get()
-                    .contains(cursorStack.item))
+            if (!cursorStack.isEmpty && !(listMode.get() == ListMode.Whitelist && cursorStack.item !in whitelist.get()) && !(listMode.get() == ListMode.Blacklist && cursorStack.item in blacklist.get())
             ) {
                 val score: Double = getScore(
                     cursorStack,
@@ -216,36 +182,21 @@ object AutoTool :
                 prefer.get()
             ) { itemStack: ItemStack -> !shouldStopUsing(itemStack) }
         ) {
-            if (bestSlot != player.getInventory().selectedSlot) {
-                if (SlotUtils.isHotbar(bestSlot)) {
-                    useSlotIndex = bestSlot
-                } else {
-                    useSlotIndex = useSlot.get() - 1
-                    if (bestSlot == -2) {
-                        InvUtils.click().slot(useSlotIndex)
-                        if (!player.currentScreenHandler.cursorStack.isEmpty) {
-                            val emptySlot = InvUtils.findEmpty()
-                            if (emptySlot.found()) {
-                                InvUtils.click().slot(emptySlot.slot())
-                            } else {
-                                warning("No empty slot found")
-                            }
-                        }
+            if (bestSlot == -2) {
+                InvUtils.click().slot(8)
+                if (!player.currentScreenHandler.cursorStack.isEmpty) {
+                    val emptySlot = InvUtils.findEmpty()
+                    if (emptySlot.found()) {
+                        InvUtils.click().slot(emptySlot.slot())
                     } else {
-                        InvUtils.move().fromHotbar(bestSlot).to(useSlotIndex)
-                        if (!player.currentScreenHandler.cursorStack.isEmpty) {
-                            val emptySlot = InvUtils.findEmpty()
-                            if (emptySlot.found()) {
-                                InvUtils.click().slot(emptySlot.slot())
-                            } else {
-                                InvUtils.click().slot(bestSlot)
-                                warning("No empty slot found, put back to original slot")
-                            }
-                        }
+                        warning("No empty slot found")
                     }
                 }
-                InvUtils.swap(useSlotIndex, true)
+                player.switchTo(8)
+            } else {
+                player.switchTo(bestSlot)
             }
+
         } else {
             //没有有耐久的工具
         }
@@ -256,7 +207,7 @@ object AutoTool :
             mc.options.attackKey.isPressed = false
             event.cancel()
         } else {
-            busyTick = switchBackDelay.get()
+            player.switchTo(player.inventory.selectedSlot)
         }
     }
 
