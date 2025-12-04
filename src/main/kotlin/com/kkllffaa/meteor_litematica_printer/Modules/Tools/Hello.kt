@@ -69,11 +69,13 @@ object Hello : Module(Addon.TOOLS, "Hello", "Say hello via showing your friends 
             it.pitch = wasRotation.pitch
         }
         if (!wasOnlyRotateCam) CommonSettings.OnlyRotateCam.set(false)
-        mc.options.sneakKey.isPressed = Input.isPressed(mc.options.sneakKey)
-        mc.options.forwardKey.isPressed = Input.isPressed(mc.options.forwardKey)
-        mc.options.backKey.isPressed = Input.isPressed(mc.options.backKey)
-        mc.options.rightKey.isPressed = Input.isPressed(mc.options.rightKey)
-        mc.options.leftKey.isPressed = Input.isPressed(mc.options.leftKey)
+        恢复按键到物理状态(
+            mc.options.sneakKey,
+            mc.options.forwardKey,
+            mc.options.backKey,
+            mc.options.rightKey,
+            mc.options.leftKey
+        )
     }
 
     @EventHandler

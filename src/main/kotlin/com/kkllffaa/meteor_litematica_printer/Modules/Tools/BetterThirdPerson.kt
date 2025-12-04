@@ -16,7 +16,6 @@ import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.option.Perspective
 import net.minecraft.entity.passive.AbstractHorseEntity
 import net.minecraft.entity.vehicle.AbstractBoatEntity
-import net.minecraft.entity.vehicle.AbstractMinecartEntity
 import net.minecraft.util.math.MathHelper
 import kotlin.math.abs
 import kotlin.random.Random
@@ -79,10 +78,12 @@ object BetterThirdPerson : Module(Addon.TOOLS, "BetterThirdPerson", "") {
     private fun 尝试退出第三人称代理() {
         if (!第三人称代理中) return
         CommonSettings.OnlyRotateCam.set(false)
-        mc.options.forwardKey.isPressed = Input.isPressed(mc.options.forwardKey)
-        mc.options.backKey.isPressed = Input.isPressed(mc.options.backKey)
-        mc.options.rightKey.isPressed = Input.isPressed(mc.options.rightKey)
-        mc.options.leftKey.isPressed = Input.isPressed(mc.options.leftKey)
+        恢复按键到物理状态(
+            mc.options.forwardKey,
+            mc.options.backKey,
+            mc.options.rightKey,
+            mc.options.leftKey
+        )
     }
 
     /**

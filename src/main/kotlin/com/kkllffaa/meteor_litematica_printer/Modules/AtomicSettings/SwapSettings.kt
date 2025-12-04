@@ -1,6 +1,8 @@
 package com.kkllffaa.meteor_litematica_printer.Modules.AtomicSettings
 
 import com.kkllffaa.meteor_litematica_printer.Addon
+import com.kkllffaa.meteor_litematica_printer.Functions.松开按键
+import com.kkllffaa.meteor_litematica_printer.Functions.恢复按键到物理状态
 import com.kkllffaa.meteor_litematica_printer.Functions.物品及非耐久属性全部相同于
 import meteordevelopment.meteorclient.events.world.TickEvent
 import meteordevelopment.meteorclient.settings.*
@@ -10,6 +12,7 @@ import meteordevelopment.meteorclient.utils.player.InvUtils
 import meteordevelopment.meteorclient.utils.player.SlotUtils
 import meteordevelopment.orbit.EventHandler
 import net.minecraft.client.network.ClientPlayerEntity
+import net.minecraft.client.option.KeyBinding
 import net.minecraft.item.Item
 import net.minecraft.network.packet.c2s.play.CreativeInventoryActionC2SPacket
 import net.minecraft.item.ItemStack
@@ -40,7 +43,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             .name("select-back-delay")
             .description("Delay in ticks for free SlotSelect back.")
             .defaultValue(10)
-            .range(0, 100)
+            .range(1, 100)
             .build()
     )
 
@@ -49,7 +52,7 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             .name("free-items-delay")
             .description("Delay in ticks for free SlotItems back.")
             .defaultValue(10)
-            .range(0, 100)
+            .range(1, 100)
             .build()
     )
     private val stopMovingWhenSwitchItemStack: Setting<Boolean> = sgGeneral.add(
@@ -59,20 +62,42 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             .defaultValue(true)
             .build()
     )
+    private val stopDelay: Setting<Int> = sgGeneral.add(
+        IntSetting.Builder()
+            .name("stop-delay")
+            .description("Delay in ticks to resume moving after switching items.")
+            .defaultValue(1)
+            .visible { stopMovingWhenSwitchItemStack.get() }
+            .range(1, 20)
+            .build()
+    )
+
+    @EventHandler
+    private fun onTick(event: TickEvent.Pre) {
+        if (移动恢复倒计时 > 0) {
+            移动恢复倒计时--
+            if (移动恢复倒计时 == 0) {
+                恢复按键到物理状态(*移动按键)
+            } else {
+                松开按键(*移动按键)
+            }
+        }
+    }
 
     @EventHandler
     private fun onTick(event: TickEvent.Post) {
+
         if (HBSlot回切倒计时 > 0) {
             HBSlot回切倒计时--
-        } else {
-            切回Slot()
-            HBSlot回切倒计时 = SelectBackDelay.get()
+            if (HBSlot回切倒计时 == 0) {
+                切回Slot()
+            }
         }
         if (HBItems回切倒计时 > 0) {
             HBItems回切倒计时--
-        } else {
-            切回全部Item()
-            HBItems回切倒计时 = FreeItemsDelay.get()
+            if (HBItems回切倒计时 == 0) {
+                切回全部Item()
+            }
         }
     }
 
@@ -88,7 +113,8 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
             使用过HBSlots.add(value)
         }
     private val 最久的HBSlot: Int
-        get() = 分配的自动HBSlots.sortedDescending().firstOrNull { it !in 使用过HBSlots } ?: 使用过HBSlots.first { it in 分配的自动HBSlots }
+        get() = 分配的自动HBSlots.sortedDescending().firstOrNull { it !in 使用过HBSlots }
+            ?: 使用过HBSlots.first { it in 分配的自动HBSlots }
 
     private fun 切换Slot(slot: Int): Boolean {
         val player = mc.player ?: return false
@@ -115,11 +141,26 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
 
     private val previousItems: Array<ItemStack?> = arrayOfNulls(9)
     private val 使用的Items: Array<ItemStack?> = arrayOfNulls(9)
+    private val 移动按键: Array<KeyBinding>
+        get() = arrayOf(
+            mc.options.forwardKey,
+            mc.options.backKey,
+            mc.options.leftKey,
+            mc.options.rightKey,
+            mc.options.jumpKey
+        )
+
+    private var 移动恢复倒计时 = 0
 
     private fun 切换Item(FromMainSlot: Int, ToHotbarSlot: Int) {
         val player = mc.player ?: return
         使用的Items[ToHotbarSlot] = player.inventory.getStack(FromMainSlot)
         if (previousItems[ToHotbarSlot] == null) previousItems[ToHotbarSlot] = player.inventory.getStack(ToHotbarSlot)
+
+        if (stopMovingWhenSwitchItemStack.get()) {
+            松开按键(*移动按键)
+            移动恢复倒计时 = stopDelay.get()
+        }
         InvUtils.quickSwap().fromId(ToHotbarSlot).to(FromMainSlot)
     }
 
@@ -135,7 +176,13 @@ object SwapSettings : Module(Addon.SettingsForCRUD, "Swap", "Module to configure
                 InvUtils.find({ previousItem.物品及非耐久属性全部相同于(it) }, 9, 35)
             if (!lookingfor.found()) lookingfor =
                 InvUtils.find({ previousItem.物品及非耐久属性全部相同于(it) }, 0, 8)
-            if (lookingfor.found()) InvUtils.quickSwap().fromId(HBSlot).to(lookingfor.slot)
+            if (lookingfor.found()) {
+                if (stopMovingWhenSwitchItemStack.get()) {
+                    松开按键(*移动按键)
+                    移动恢复倒计时 = stopDelay.get()
+                }
+                InvUtils.quickSwap().fromId(HBSlot).to(lookingfor.slot)
+            }
         }
         previousItems[HBSlot] = null
 
